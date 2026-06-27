@@ -151,64 +151,95 @@ export interface Subscription {
   proximo_cobro: string | null
 }
 
-// ── Database type map (para createClient) ──
+// ── Database type map (para createClient<Database>) ──
+// Debe tener Views/Functions/Enums/CompositeTypes + Relationships por tabla
+// para que supabase-js resuelva los tipos correctamente.
 export interface Database {
   public: {
+    Views:          Record<string, never>
+    Functions:      Record<string, never>
+    Enums:          Record<string, readonly string[]>
+    CompositeTypes: Record<string, Record<string, unknown>>
     Tables: {
       profiles: {
         Row: Profile
         Insert: Omit<Profile, 'created_at' | 'updated_at'>
         Update: Partial<Omit<Profile, 'id'>>
+        Relationships: []
       }
       academy_profiles: {
         Row: AcademyProfile
-        Insert: Omit<AcademyProfile, 'id'>
+        Insert: {
+          id?: string
+          user_id: string
+          plan_name: PlanName
+          subscription_status: SubscriptionStatus
+          subscription_start?: string | null
+          subscription_end?: string | null
+          mp_subscription_id?: string | null
+          tipo_cuenta: TipoCuenta
+          travexa_b2b_member?: boolean
+          puntos?: number
+          nivel?: number
+          onboarding_completo?: boolean
+          ultimo_ingreso?: string | null
+        }
         Update: Partial<Omit<AcademyProfile, 'id' | 'user_id'>>
+        Relationships: []
       }
       academy_categories: {
         Row: Category
         Insert: Omit<Category, 'id'>
         Update: Partial<Omit<Category, 'id'>>
+        Relationships: []
       }
       academy_instructors: {
         Row: Instructor
         Insert: Omit<Instructor, 'id'>
         Update: Partial<Omit<Instructor, 'id'>>
+        Relationships: []
       }
       academy_courses: {
         Row: Omit<Course, 'category' | 'instructor'>
         Insert: Omit<Course, 'id' | 'created_at' | 'total_alumnos' | 'category' | 'instructor'>
         Update: Partial<Omit<Course, 'id' | 'created_at' | 'category' | 'instructor'>>
+        Relationships: []
       }
       academy_modules: {
         Row: Omit<Module, 'lessons'>
         Insert: Omit<Module, 'id' | 'lessons'>
         Update: Partial<Omit<Module, 'id' | 'lessons'>>
+        Relationships: []
       }
       academy_lessons: {
         Row: Lesson
         Insert: Omit<Lesson, 'id'>
         Update: Partial<Omit<Lesson, 'id'>>
+        Relationships: []
       }
       academy_enrollments: {
         Row: Enrollment
         Insert: Omit<Enrollment, 'id' | 'created_at'>
         Update: Partial<Omit<Enrollment, 'id' | 'user_id' | 'course_id' | 'created_at'>>
+        Relationships: []
       }
       academy_lesson_progress: {
         Row: LessonProgress
         Insert: Omit<LessonProgress, 'id'>
         Update: Partial<Omit<LessonProgress, 'id' | 'user_id' | 'lesson_id'>>
+        Relationships: []
       }
       academy_payments: {
         Row: Payment
         Insert: Omit<Payment, 'id' | 'created_at'>
         Update: Partial<Omit<Payment, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
       }
       academy_subscriptions: {
         Row: Subscription
         Insert: Omit<Subscription, 'id'>
         Update: Partial<Omit<Subscription, 'id' | 'user_id'>>
+        Relationships: []
       }
     }
   }

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Play, Lock, CheckCircle2, Clock, Users, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Play, Lock, CheckCircle2, Clock, Users, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/accordion'
 import { useCourseDetail } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCoursePayment } from '@/hooks/usePayment'
 import type { Lesson } from '@/types'
 
 function formatPrice(ars: number | null, tipo_acceso: string): string {
@@ -52,6 +53,7 @@ export default function CourseDetail() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const { data: course, isLoading, error } = useCourseDetail(slug ?? '')
+  const { initiate: initiatePayment, loading: paymentLoading, error: paymentError } = useCoursePayment()
 
   if (isLoading) {
     return (
@@ -86,13 +88,17 @@ export default function CourseDetail() {
   const totalLessons = course.modules?.reduce((acc, m) => acc + (m.lessons?.length ?? 0), 0) ?? 0
   const isFree = course.tipo_acceso === 'free'
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!user) {
       navigate('/registro', { state: { from: `/cursos/${slug}` } })
-    } else {
-      // Día 3: wired to payment flow
-      navigate('/dashboard')
+      return
     }
+    if (isFree) {
+      navigate('/dashboard')
+      return
+    }
+    const initPoint = await initiatePayment(course!.id)
+    if (initPoint) window.location.href = initPoint
   }
 
   return (
@@ -206,12 +212,19 @@ export default function CourseDetail() {
               </div>
 
               <Button
-                onClick={handleEnroll}
+                onClick={() => { void handleEnroll() }}
+                disabled={paymentLoading}
                 className="w-full bg-brand-gold hover:bg-brand-gold-deep text-brand-navy font-semibold h-11"
               >
-                {isFree ? 'Acceder gratis' : 'Inscribirme'}
-                <ChevronRight className="h-4 w-4 ml-1" />
+                {paymentLoading
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <>{isFree ? 'Acceder gratis' : 'Inscribirme'}<ChevronRight className="h-4 w-4 ml-1" /></>
+                }
               </Button>
+
+              {paymentError && (
+                <p className="text-xs text-red-400 text-center">{paymentError}</p>
+              )}
 
               {!user && (
                 <p className="text-xs text-text-muted text-center">

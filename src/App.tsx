@@ -6,6 +6,8 @@ import Login from '@/pages/public/Login'
 import Registro from '@/pages/public/Registro'
 import Catalog from '@/pages/public/Catalog'
 import CourseDetail from '@/pages/public/CourseDetail'
+import PagoConfirmado from '@/pages/public/PagoConfirmado'
+import PagoError from '@/pages/public/PagoError'
 import Dashboard from '@/pages/private/Dashboard'
 
 const queryClient = new QueryClient({
@@ -26,6 +28,8 @@ export default function App() {
             <Route path="/registro" element={<Registro />} />
             <Route path="/cursos" element={<Catalog />} />
             <Route path="/cursos/:slug" element={<CourseDetail />} />
+            <Route path="/pago-confirmado" element={<PagoConfirmado />} />
+            <Route path="/pago-error" element={<PagoError />} />
 
             {/* Private */}
             <Route element={<ProtectedRoute />}>

@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── Design Tokens — Travexa Academy ── */
+@theme inline {
+  /* Fonts */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  /* shadcn semantic mapping → brand palette */
+  --color-background:        var(--brand-navy);
+  --color-foreground:        var(--text-primary);
+  --color-card:              var(--brand-navy-2);
+  --color-card-foreground:   var(--text-primary);
+  --color-popover:           var(--brand-navy-2);
+  --color-popover-foreground: var(--text-primary);
+  --color-primary:           var(--brand-gold);
+  --color-primary-foreground: #0A1E29;
+  --color-secondary:         var(--brand-teal);
+  --color-secondary-foreground: var(--text-primary);
+  --color-muted:             rgba(255,255,255,0.06);
+  --color-muted-foreground:  var(--text-muted);
+  --color-accent:            var(--brand-gold-soft);
+  --color-accent-foreground: #0A1E29;
+  --color-destructive:       oklch(0.704 0.191 22.216);
+  --color-border:            var(--surface-border);
+  --color-input:             var(--surface-border-strong);
+  --color-ring:              var(--brand-gold);
+
+  --radius-sm:  calc(var(--radius) * 0.6);
+  --radius-md:  calc(var(--radius) * 0.8);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* ── Brand CSS Variables ── */
+:root {
+  --brand-navy:             #0A1E29;
+  --brand-navy-2:           #0F2C3B;
+  --brand-gold:             #C99A3A;
+  --brand-gold-deep:        #A87C24;
+  --brand-gold-soft:        #F2E7CB;
+  --brand-teal:             #0E6B5C;
+  --brand-teal-soft:        #D9ECE7;
+  --text-primary:           #F5F3EC;
+  --text-secondary:         #C9D3D6;
+  --text-muted:             #8FA3AB;
+  --surface-card:           rgba(255,255,255,0.05);
+  --surface-card-hover:     rgba(255,255,255,0.08);
+  --surface-border:         rgba(245,243,236,0.12);
+  --surface-border-strong:  rgba(245,243,236,0.22);
+  --radius: 0.625rem;
+}
+
+/* ── Base styles — dark by default ── */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-family: var(--font-body);
+  }
+  body {
+    background-color: var(--brand-navy);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+  }
+}
+
+/* ── Utility classes ── */
+@layer utilities {
+  .font-display { font-family: var(--font-display); }
+  .font-body    { font-family: var(--font-body); }
+  .font-mono    { font-family: var(--font-mono); }
+
+  .text-brand-navy      { color: var(--brand-navy); }
+  .text-brand-gold      { color: var(--brand-gold); }
+  .text-brand-teal      { color: var(--brand-teal); }
+  .text-text-primary    { color: var(--text-primary); }
+  .text-text-secondary  { color: var(--text-secondary); }
+  .text-text-muted      { color: var(--text-muted); }
+
+  .bg-brand-navy        { background-color: var(--brand-navy); }
+  .bg-brand-navy-2      { background-color: var(--brand-navy-2); }
+  .bg-brand-gold        { background-color: var(--brand-gold); }
+  .bg-brand-teal        { background-color: var(--brand-teal); }
+  .bg-surface-card      { background-color: var(--surface-card); }
+
+  .border-brand-gold    { border-color: var(--brand-gold); }
+  .border-surface       { border-color: var(--surface-border); }
+
+  /* Gold glow hover effect para CourseCards */
+  .hover-gold-glow:hover {
+    box-shadow: 0 0 0 1px var(--brand-gold), 0 8px 32px rgba(201,154,58,0.18);
+  }
+}

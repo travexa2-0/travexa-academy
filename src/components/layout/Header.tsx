@@ -172,7 +172,7 @@ export default function Header() {
                   </Button>
                 </Link>
                 <Link to="/registro">
-                  <Button size="sm" className="h-9 font-semibold text-sm" style={{ background: 'var(--primary)', color: 'var(--text-1)' }}>
+                  <Button size="sm" className="h-9 font-semibold text-sm" style={{ background: 'var(--neon)', color: '#0A1E29' }}>
                     Empezar gratis
                   </Button>
                 </Link>

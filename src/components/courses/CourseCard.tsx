@@ -252,7 +252,7 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
           </p>
           <span
             className="inline-flex items-center gap-[6px] font-semibold rounded-[7px]"
-            style={{ background: 'var(--primary)', color: '#fff', fontSize: '12px', padding: '8px 16px' }}
+            style={{ background: 'var(--neon)', color: '#0A1E29', fontSize: '12px', padding: '8px 16px' }}
           >
             {dahLabel}
             <ArrowRight className="w-[11px] h-[11px]" />
@@ -265,7 +265,7 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
         <div className="flex items-center justify-between gap-2">
           {/* Price */}
           {isFree ? (
-            <span className="font-display font-bold" style={{ fontSize: '1.12rem', color: 'var(--primary-l)', letterSpacing: '-.01em' }}>
+            <span className="font-display font-bold" style={{ fontSize: '1.12rem', color: 'var(--neon)', letterSpacing: '-.01em' }}>
               GRATIS
             </span>
           ) : isVivencial && course.vivencial_precio_seña_ars ? (

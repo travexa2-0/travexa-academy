@@ -349,7 +349,7 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, o
         onClick={onEnroll}
         disabled={paymentLoading}
         className="w-full flex items-center justify-center font-semibold rounded-[10px] min-h-12 text-sm transition-all"
-        style={{ background: 'var(--primary)', color: '#fff', fontSize: '14.5px' }}
+        style={{ background: 'var(--neon)', color: '#0A1E29', fontSize: '14.5px' }}
       >
         {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : ctaLabel}
       </motion.button>
@@ -917,7 +917,7 @@ export default function CourseDetail() {
             onClick={() => { void handleEnroll() }}
             disabled={paymentLoading}
             className="flex items-center justify-center font-semibold rounded-xl min-h-11 px-5 text-sm"
-            style={{ background: 'var(--primary)', color: '#fff', minHeight: '44px', fontSize: '13px' }}
+            style={{ background: 'var(--neon)', color: '#0A1E29', minHeight: '44px', fontSize: '13px' }}
           >
             {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : ctaLabel}
           </motion.button>

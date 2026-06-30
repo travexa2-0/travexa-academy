@@ -94,12 +94,12 @@ function SortDropdown({ value, onChange }: { value: SortKey; onChange: (s: SortK
                 className="w-full flex items-center justify-between px-[14px] py-[10px] text-left transition-colors"
                 style={{
                   fontSize:   '12.5px',
-                  color:      value === opt.value ? 'var(--primary-l)' : 'var(--text-2)',
-                  background: value === opt.value ? 'var(--primary-s)' : 'transparent',
+                  color:      value === opt.value ? 'var(--neon)' : 'var(--text-2)',
+                  background: value === opt.value ? 'var(--neon-dim)' : 'transparent',
                 }}
               >
                 {opt.label}
-                {value === opt.value && <Check className="w-[10px] h-[10px]" style={{ color: 'var(--primary-l)' }} />}
+                {value === opt.value && <Check className="w-[10px] h-[10px]" style={{ color: 'var(--neon)' }} />}
               </button>
             ))}
           </motion.div>
@@ -121,11 +121,9 @@ function FilterPill({
       className="flex items-center gap-[5px] font-mono tracking-[.07em] uppercase rounded-full border whitespace-nowrap min-h-8 px-3 transition-all"
       style={{
         fontSize:    '9.5px',
-        color:       active ? 'var(--bg)' : liveStyle ? '#fff' : 'var(--text-3)',
-        background:  active ? 'var(--text-1)' :
-                     liveStyle ? '#EF4444' : 'transparent',
-        borderColor: active ? 'var(--text-1)' :
-                     liveStyle ? '#EF4444' : 'var(--line)',
+        color:       active ? 'var(--neon)'     : liveStyle ? '#fff' : 'var(--text-3)',
+        background:  active ? 'var(--neon-dim)' : liveStyle ? '#EF4444' : 'transparent',
+        borderColor: active ? 'rgba(0,229,200,.35)' : liveStyle ? '#EF4444' : 'var(--line)',
         fontWeight:  active ? 600 : 400,
       }}
     >
@@ -143,9 +141,9 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
       className="flex items-center font-mono tracking-[.07em] uppercase rounded-full border whitespace-nowrap min-h-8 px-3 transition-all"
       style={{
         fontSize:    '9.5px',
-        color:       active ? 'var(--primary-l)' : 'var(--text-3)',
-        background:  active ? 'var(--primary-s)' : 'transparent',
-        borderColor: active ? 'var(--primary)' : 'var(--line)',
+        color:       active ? 'var(--neon)'     : 'var(--text-3)',
+        background:  active ? 'var(--neon-dim)' : 'transparent',
+        borderColor: active ? 'rgba(0,229,200,.35)' : 'var(--line)',
       }}
     >
       {label}

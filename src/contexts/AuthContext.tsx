@@ -9,6 +9,7 @@ interface SignUpData {
   nombre: string
   apellido: string
   tipo_cuenta: TipoCuenta
+  referral_code?: string
 }
 
 interface AuthContextValue {
@@ -16,6 +17,7 @@ interface AuthContextValue {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signInWithGoogle: () => Promise<{ error: string | null }>
   signUp: (data: SignUpData) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
@@ -47,19 +49,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null }
   }
 
-  const signUp = async ({ email, password, nombre, apellido }: SignUpData): Promise<{ error: string | null }> => {
+  const signInWithGoogle = async (): Promise<{ error: string | null }> => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+    return { error: error?.message ?? null }
+  }
+
+  const signUp = async ({ email, password, nombre, apellido, tipo_cuenta, referral_code }: SignUpData): Promise<{ error: string | null }> => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { nombre, apellido } },
+      options: {
+        data: { nombre, apellido, tipo_cuenta, referral_code: referral_code ?? null },
+      },
     })
 
-    if (error) return { error: error.message }
-
-    // El trigger on_profile_created en Supabase crea academy_profiles automáticamente.
-    // Correr supabase/migrations/001_academy_profiles_trigger.sql antes de usar registro.
-
-    return { error: null }
+    return { error: error?.message ?? null }
   }
 
   const signOut = async () => {
@@ -67,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signInWithGoogle, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,11 +1,19 @@
 export default function SkeletonCard() {
   return (
-    <div className="rounded-xl overflow-hidden border border-surface animate-pulse">
-      <div className="aspect-[16/9] bg-surface-card" />
-      <div className="bg-brand-navy-2 p-4 space-y-2">
-        <div className="h-4 bg-surface-card rounded w-3/4" />
-        <div className="h-3 bg-surface-card rounded w-1/2" />
-        <div className="h-3 bg-surface-card rounded w-1/4 mt-2" />
+    <div className="rounded-2xl overflow-hidden border" style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}>
+      <div className="relative overflow-hidden aspect-video" style={{ background: '#162F3E' }}>
+        <div className="sk-sweep" />
+      </div>
+      <div className="px-[15px] py-[13px] space-y-[7px]">
+        {[80, 60, 40].map(w => (
+          <div
+            key={w}
+            className="relative overflow-hidden rounded-[6px] h-[11px]"
+            style={{ width: `${w}%`, background: '#162F3E' }}
+          >
+            <div className="sk-sweep" />
+          </div>
+        ))}
       </div>
     </div>
   )

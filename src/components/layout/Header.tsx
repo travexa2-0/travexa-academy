@@ -1,120 +1,231 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, LogOut, User, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { BookOpen, LogOut, User, Menu, X, Bell, LayoutDashboard, Library, Globe } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
+import { useNotifications } from '@/hooks/useNotifications'
+import NotificationsDrawer from './NotificationsDrawer'
+import { EASE_DRAWER } from '@/lib/motion'
 
 export default function Header() {
   const { user, signOut } = useAuth()
-  const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const [menuOpen, setMenuOpen]   = useState(false)
+  const [notifsOpen, setNotifsOpen] = useState(false)
+  const [visible, setVisible]     = useState(true)
+  const lastY = useRef(0)
+
+  const { unreadCount } = useNotifications(user?.id)
+
+  const { scrollY } = useScroll()
+  useMotionValueEvent(scrollY, 'change', (y) => {
+    if (y < 80) { setVisible(true); lastY.current = y; return }
+    setVisible(y < lastY.current)
+    lastY.current = y
+  })
 
   const handleSignOut = async () => {
+    setMenuOpen(false)
     await signOut()
     navigate('/')
   }
 
+  const isActive = (path: string) => location.pathname.startsWith(path)
+
   return (
-    <header className="sticky top-0 z-50 border-b border-surface bg-brand-navy/90 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <BookOpen className="h-5 w-5 text-brand-gold" />
-          <span className="font-display font-bold text-text-primary text-lg leading-none">
-            Travexa <span className="text-brand-gold">Academy</span>
-          </span>
-        </Link>
-
-        {/* Nav desktop */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/cursos" className="text-text-secondary hover:text-text-primary text-sm font-medium transition-colors">
-            Cursos
+    <>
+      <motion.header
+        className="fixed top-0 left-0 right-0 z-50 border-b"
+        style={{
+          background: 'rgba(6,13,20,.92)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderColor: 'var(--line)',
+        }}
+        animate={{ y: visible ? 0 : '-100%' }}
+        transition={{ duration: 0.22, ease: EASE_DRAWER }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
+              <BookOpen className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-display font-bold text-base leading-none" style={{ color: 'var(--text-1)' }}>
+              Travexa <span style={{ color: 'var(--gold)' }}>Academy</span>
+            </span>
           </Link>
-          {user && (
-            <Link to="/dashboard" className="text-text-secondary hover:text-text-primary text-sm font-medium transition-colors">
-              Mi panel
-            </Link>
-          )}
-        </nav>
 
-        {/* Auth desktop */}
-        <div className="hidden md:flex items-center gap-3">
-          {user ? (
-            <>
-              <Link to="/mi-cuenta">
-                <Button variant="ghost" size="sm" className="gap-2 text-text-secondary hover:text-text-primary">
-                  <User className="h-4 w-4" />
-                  Mi cuenta
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="gap-2 text-text-muted hover:text-text-primary"
+          {/* Nav desktop */}
+          <nav className="hidden md:flex items-center gap-1">
+            {[
+              { to: '/cursos',     label: 'Cursos',    icon: Library },
+              { to: '/vivencial',  label: 'Vivencial', icon: Globe },
+              ...(user ? [
+                { to: '/dashboard',  label: 'Mi panel',  icon: LayoutDashboard },
+                { to: '/mis-cursos', label: 'Mis cursos', icon: BookOpen },
+              ] : []),
+            ].map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                style={{
+                  color:      isActive(to) ? 'var(--text-1)' : 'var(--text-3)',
+                  background: isActive(to) ? 'var(--primary-s)' : 'transparent',
+                }}
               >
-                <LogOut className="h-4 w-4" />
-                Salir
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link to="/login">
-                <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary">
-                  Ingresar
-                </Button>
+                <Icon className="h-3.5 w-3.5" />
+                {label}
               </Link>
-              <Link to="/registro">
-                <Button size="sm" className="bg-brand-gold hover:bg-brand-gold-deep text-brand-navy font-semibold">
-                  Empezar gratis
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
+            ))}
+          </nav>
 
-        {/* Hamburger mobile */}
-        <button
-          className="md:hidden text-text-secondary hover:text-text-primary"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menu"
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </div>
+          {/* Auth desktop */}
+          <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <>
+                {/* Bell con badge */}
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setNotifsOpen(true)}
+                  className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                  style={{ color: notifsOpen ? 'var(--text-1)' : 'var(--text-3)', background: notifsOpen ? 'var(--primary-s)' : 'transparent' }}
+                  aria-label="Notificaciones"
+                >
+                  <Bell className="h-4 w-4" />
+                  <AnimatePresence>
+                    {unreadCount > 0 && (
+                      <motion.span
+                        key="badge"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full flex items-center justify-center font-mono text-[9px] font-bold text-white px-0.5"
+                        style={{ background: 'var(--pending)' }}
+                      >
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+
+                <Link to="/perfil">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-sm h-9" style={{ color: 'var(--text-2)' }}>
+                    <User className="h-3.5 w-3.5" />
+                    Perfil
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { void handleSignOut() }}
+                  className="gap-1.5 text-sm h-9"
+                  style={{ color: 'var(--text-3)' }}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Salir
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm" className="text-sm h-9" style={{ color: 'var(--text-2)' }}>
+                    Ingresar
+                  </Button>
+                </Link>
+                <Link to="/registro">
+                  <Button size="sm" className="h-9 font-semibold text-sm" style={{ background: 'var(--primary)', color: 'var(--text-1)' }}>
+                    Empezar gratis
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile: bell + hamburger */}
+          <div className="md:hidden flex items-center gap-1">
+            {user && (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setNotifsOpen(true)}
+                className="relative w-9 h-9 flex items-center justify-center rounded-lg"
+                style={{ color: 'var(--text-2)' }}
+                aria-label="Notificaciones"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: 'var(--pending)' }} />
+                )}
+              </motion.button>
+            )}
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-lg"
+              style={{ color: 'var(--text-2)' }}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menú"
+            >
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+      </motion.header>
+
+      {/* Spacer */}
+      <div className="h-16" />
 
       {/* Mobile menu */}
-      {menuOpen && (
-        <div className="md:hidden border-t border-surface bg-brand-navy-2 px-4 py-4 space-y-3">
-          <Link to="/cursos" onClick={() => setMenuOpen(false)} className="block text-text-secondary hover:text-text-primary text-sm font-medium py-2">
-            Cursos
-          </Link>
-          {user ? (
-            <>
-              <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="block text-text-secondary hover:text-text-primary text-sm font-medium py-2">
-                Mi panel
-              </Link>
-              <Link to="/mi-cuenta" onClick={() => setMenuOpen(false)} className="block text-text-secondary hover:text-text-primary text-sm font-medium py-2">
-                Mi cuenta
-              </Link>
-              <button onClick={() => { void handleSignOut(); setMenuOpen(false) }} className="block text-text-muted hover:text-text-primary text-sm font-medium py-2 w-full text-left">
-                Cerrar sesión
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="block text-text-secondary hover:text-text-primary text-sm font-medium py-2">
-                Ingresar
-              </Link>
-              <Link to="/registro" onClick={() => setMenuOpen(false)}>
-                <Button size="sm" className="w-full bg-brand-gold hover:bg-brand-gold-deep text-brand-navy font-semibold">
-                  Empezar gratis
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
-      )}
-    </header>
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="fixed top-16 left-0 right-0 z-40 border-b px-4 py-4 space-y-1"
+            style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}
+          >
+            <Link to="/cursos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+              <Library className="h-4 w-4" /> Cursos
+            </Link>
+            <Link to="/vivencial" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+              <Globe className="h-4 w-4" /> Vivencial
+            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+                  <LayoutDashboard className="h-4 w-4" /> Mi panel
+                </Link>
+                <Link to="/mis-cursos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+                  <BookOpen className="h-4 w-4" /> Mis cursos
+                </Link>
+                <Link to="/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+                  <User className="h-4 w-4" /> Perfil
+                </Link>
+                <button onClick={() => { void handleSignOut() }} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-left" style={{ color: 'var(--text-3)' }}>
+                  <LogOut className="h-4 w-4" /> Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+                  Ingresar
+                </Link>
+                <Link to="/registro" onClick={() => setMenuOpen(false)} className="block">
+                  <Button className="w-full font-semibold" style={{ background: 'var(--primary)', color: 'var(--text-1)' }}>
+                    Empezar gratis
+                  </Button>
+                </Link>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Notifications drawer */}
+      <NotificationsDrawer open={notifsOpen} onClose={() => setNotifsOpen(false)} />
+    </>
   )
 }

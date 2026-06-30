@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vivencial — Travexa Academy</title>
+<meta property="og:title" content="Travexa Academy — Vivencial">
+<meta property="og:description" content="Viajá con asesores de toda Argentina y conocé el destino por dentro.">
+<meta property="og:image" content="">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A1E29;--bg2:#0F2C3B;--bg3:#162F3E;
+  --pr:#0E6B5C;--ph:#0D5E50;--ps:rgba(14,107,92,.16);--pl:#4ECDB8;
+  --neon:#00E5C8;--neon-glow:rgba(0,229,200,.22);--neon-dim:rgba(0,229,200,.08);
+  --gd:#C99A3A;
+  --lv:#EF4444;--urg:#EF6B35;
+  --t1:#F5F3EC;--t2:#C9D3D6;--t3:#8FA3AB;
+  --cd:rgba(255,255,255,.055);--cdh:rgba(255,255,255,.09);
+  --ln:rgba(245,243,236,.11);--ls:rgba(245,243,236,.22);
+  --e:cubic-bezier(0.23,1,0.32,1);
+  --fd:'Space Grotesk',sans-serif;--fb:'Inter',sans-serif;--fm:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:var(--fb);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;min-height:100vh;padding-top:68px}
+button,a{font:inherit;cursor:pointer;background:none;border:none;color:inherit;text-decoration:none}
+input{font:inherit}
+img{display:block;max-width:100%}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ── LIQUID PILL HEADER ── */
+.ho{
+  position:fixed;top:0;left:0;right:0;z-index:300;
+  display:flex;justify-content:center;
+  padding:0;
+  transition:padding 320ms var(--e);
+  pointer-events:none;
+}
+.ho.pill{padding:10px 14px}
+.ho.gone{transform:translateY(-130%);transition:transform 220ms var(--e),padding 320ms var(--e)}
+.hp{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;max-width:1180px;height:56px;padding:0 20px;
+  border-radius:0;
+  background:rgba(8,18,26,0);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:1px solid transparent;
+  box-shadow:none;
+  pointer-events:auto;
+  transition:background 280ms ease,border-color 280ms ease,box-shadow 280ms ease,border-radius 300ms var(--e);
+}
+.ho.pill .hp{
+  border-radius:14px;
+  background:rgba(10,22,32,.78);
+  backdrop-filter:blur(44px) saturate(190%);-webkit-backdrop-filter:blur(44px) saturate(190%);
+  border-color:rgba(255,255,255,.1);
+  box-shadow:0 0 0 1px rgba(255,255,255,.05),0 2px 16px rgba(0,0,0,.35),0 8px 32px rgba(0,0,0,.25);
+}
+.logo{font-family:var(--fd);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;cursor:pointer}
+.logo-m{width:26px;height:26px;background:var(--gd);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-m svg{width:13px;height:13px}
+.logo-a{color:var(--t1)}.logo-b{color:var(--pl)}
+.hnav{display:flex;align-items:center;gap:2px;position:relative}
+@media(max-width:680px){.hnav{display:none}}
+.hlnk{font-size:13px;font-weight:500;color:rgba(245,243,236,.6);padding:7px 12px;border-radius:8px;cursor:pointer;transition:color 160ms ease,background 160ms ease}
+@media(hover:hover)and(pointer:fine){.hlnk:hover{color:var(--t1);background:rgba(255,255,255,.07)}}
+.hlnk.on{color:var(--neon);background:var(--neon-dim)}
+.hlnk.dim{opacity:.35;cursor:default;font-size:12px}
+.hacts{display:flex;align-items:center;gap:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;min-height:38px;cursor:pointer;border:none;white-space:nowrap;transition:transform 130ms var(--e),box-shadow 130ms var(--e),background 150ms ease}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--pr);color:#fff}
+@media(hover:hover)and(pointer:fine){.btn-p:hover{background:var(--ph);box-shadow:0 4px 16px rgba(14,107,92,.4)}}
+.btn-g{color:rgba(245,243,236,.7)}
+@media(hover:hover)and(pointer:fine){.btn-g:hover{background:rgba(255,255,255,.08);color:var(--t1)}}
+.btn-out{background:transparent;border:1px solid var(--ls);color:var(--t2)}
+@media(hover:hover)and(pointer:fine){.btn-out:hover{background:var(--cd);color:var(--t1)}}
+.btn-neon{background:var(--neon);color:#0A1E29;font-weight:700}
+@media(hover:hover)and(pointer:fine){.btn-neon:hover{box-shadow:0 0 24px var(--neon-glow),0 4px 16px rgba(0,0,0,.25)}}
+.btn-lg{font-size:14.5px;padding:12px 24px;min-height:48px;border-radius:10px}
+@media(max-width:480px){.btn-g{display:none}}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 22px}
+
+/* ── HERO SECTION ── */
+.hero{
+  position:relative;
+  min-height:500px;
+  display:flex;align-items:center;
+  background:
+    radial-gradient(ellipse 1100px 620px at 22% 0%, rgba(0,229,200,.16), transparent 62%),
+    radial-gradient(ellipse 700px 460px at 100% 10%, rgba(14,107,92,.22), transparent 58%),
+    linear-gradient(180deg, #0D2A38 0%, var(--bg) 46%, #0D2230 100%);
+  overflow:hidden;
+  padding:88px 0 48px;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(245,243,236,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(245,243,236,.06) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 1000px 560px at 18% 0%, black, transparent 72%);
+  opacity:.6;
+}
+.hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:90px;pointer-events:none;
+  background:linear-gradient(to bottom, transparent, #0D2230);
+}
+.hero-inner{position:relative;z-index:1}
+.hero-eyebrow{
+  font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--neon);display:flex;align-items:center;gap:8px;margin-bottom:20px;
+  opacity:0;animation:fuA .6s var(--e) .1s forwards;
+}
+.hero-eyebrow::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:var(--neon);
+  box-shadow:0 0 0 4px var(--neon-dim);animation:pd 2.4s ease-in-out infinite;
+}
+@keyframes pd{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+.hero-title{
+  font-family:var(--fd);font-weight:700;
+  font-size:clamp(2.6rem,7vw,5rem);
+  line-height:1.02;letter-spacing:-.025em;
+  opacity:0;animation:fuA .8s var(--e) .22s forwards;
+}
+.hero-static{color:var(--t1)}
+.hero-rotate-wrap{
+  display:block;
+  min-height:2.05em;
+  line-height:1.02;
+  position:relative;
+  overflow:hidden;
+}
+.hero-rotate{
+  position:absolute;top:0;left:0;width:100%;
+  color:var(--neon);
+  text-shadow:0 0 48px var(--neon-glow);
+  transition:opacity 260ms ease, transform 260ms var(--e);
+}
+.hero-rotate.out{opacity:0;transform:translateY(-10px)}
+.hero-sub{
+  max-width:520px;margin-top:22px;
+  font-size:clamp(.95rem,1.8vw,1.1rem);color:var(--t3);line-height:1.7;
+  opacity:0;animation:fuA .8s var(--e) .42s forwards;
+}
+.hero-actions{
+  display:flex;align-items:center;gap:12px;margin-top:32px;flex-wrap:wrap;
+  opacity:0;animation:fuA .8s var(--e) .54s forwards;
+}
+.hero-stats{
+  display:flex;align-items:center;gap:24px;margin-top:30px;flex-wrap:wrap;
+  opacity:0;animation:fuA .8s var(--e) .66s forwards;
+}
+.hstat{display:flex;flex-direction:column;gap:2px}
+.hstat-num{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--t1)}
+.hstat-lbl{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.hstat-sep{width:1px;height:36px;background:var(--ln)}
+@keyframes fuA{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── FILTERS ── */
+.filters-wrap{
+  background:#0D2230;
+  padding:18px 0 16px;
+  position:sticky;top:56px;z-index:100;
+  box-shadow:0 1px 0 var(--ln);
+}
+.frow{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.frow:last-child{margin-bottom:0}
+.fgt{font-family:var(--fd);font-size:12.5px;font-weight:700;color:var(--t1);white-space:nowrap;min-width:84px;flex-shrink:0}
+.fpills{display:flex;align-items:center;gap:7px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.fpills::-webkit-scrollbar{display:none}
+.fp{
+  font-family:var(--fm);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--t3);padding:5px 12px;border-radius:99px;border:1px solid var(--ln);
+  cursor:pointer;white-space:nowrap;min-height:32px;display:flex;align-items:center;gap:5px;
+  transition:color 140ms ease,background 140ms ease,border-color 140ms ease,transform 130ms ease;
+}
+.fp:active{transform:scale(.96)}
+.fp.on{background:var(--neon-dim);color:var(--neon);border-color:rgba(0,229,200,.35);font-weight:600}
+.fp-all{background:var(--t1);color:var(--bg);border-color:var(--t1);font-weight:600}
+@media(hover:hover)and(pointer:fine){.fp:not(.on):hover{color:var(--t1);border-color:var(--ls);background:var(--cd)}}
+.fcount{font-family:var(--fm);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#6A8590;padding:14px 0 4px}
+
+/* ── GRID ── */
+.grid-section{padding:0 0 80px;background:#fff;position:relative}
+.grid-section::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:54px;
+  background:linear-gradient(to bottom,#0D2230,#fff);
+  pointer-events:none;
+}
+.grid-section .wrap{position:relative;padding-top:28px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:960px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.grid{grid-template-columns:1fr;gap:14px}}
+
+/* ── VIVENCIAL CARD ── */
+.vcard{
+  background:var(--bg2);border:1px solid rgba(201,154,58,.3);border-radius:18px;
+  overflow:hidden;cursor:pointer;position:relative;
+  opacity:0;transform:translateY(18px);
+  transition:transform 260ms var(--e),border-color 260ms ease,box-shadow 260ms ease;
+}
+.vcard.in{animation:cIn 420ms var(--e) forwards}
+@keyframes cIn{to{opacity:1;transform:translateY(0)}}
+@media(hover:hover)and(pointer:fine){
+  .vcard:hover{border-color:rgba(201,154,58,.7);transform:translateY(-5px);box-shadow:0 10px 36px rgba(0,0,0,.4),0 0 0 1px rgba(201,154,58,.2)}
+  .vcard:hover .vimg{transform:scale(1.06)}
+}
+.vcard:active{transform:scale(.986)!important}
+.vcard.urgent{border-color:rgba(239,107,53,.55)}
+@media(hover:hover)and(pointer:fine){.vcard.urgent:hover{border-color:rgba(239,107,53,.85)}}
+
+/* card thumb */
+.vthumb{position:relative;aspect-ratio:16/10;overflow:hidden;background:#162F3E}
+.vimg{width:100%;height:100%;object-fit:cover;display:block;transition:transform 480ms var(--e)}
+.vov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,20,.04) 0%,rgba(6,13,20,.22) 40%,rgba(6,13,20,.88) 100%);z-index:1}
+.vbdgs{position:absolute;top:9px;left:9px;right:36px;display:flex;align-items:flex-start;gap:5px;z-index:4;flex-wrap:wrap}
+.badge{font-family:var(--fm);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3.5px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;line-height:1.3;backdrop-filter:blur(10px)}
+.bv{background:var(--gd);color:var(--bg);position:relative;overflow:hidden}
+.bv::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:bs 2.4s ease-in-out infinite}
+@keyframes bs{0%{transform:translateX(-200%)}100%{transform:translateX(200%)}}
+.burg{background:rgba(239,107,53,.88);color:#fff}
+.bsold{background:rgba(80,80,80,.85);color:rgba(245,243,236,.5)}
+.bpax{background:rgba(10,30,41,.82);color:var(--t2);border:1px solid rgba(245,243,236,.16)}
+
+/* card overlay info at bottom of thumb */
+.vtw{position:absolute;bottom:10px;left:14px;right:14px;z-index:3}
+.vdest{font-family:var(--fd);font-size:1.05rem;font-weight:700;line-height:1.2;letter-spacing:-.01em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.vcountry{font-family:var(--fm);font-size:9px;color:rgba(201,211,214,.72);letter-spacing:.05em;margin-top:2px;text-transform:uppercase}
+.vwish{position:absolute;top:9px;right:9px;z-index:10;width:30px;height:30px;border-radius:50%;background:rgba(6,13,20,.65);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 150ms ease,transform 150ms var(--e);border:1px solid rgba(255,255,255,.14)}
+@media(hover:hover)and(pointer:fine){.vwish:hover{background:rgba(239,68,68,.28);transform:scale(1.12)}}
+.vwish:active{transform:scale(.88)}
+.vwish svg{width:13px;height:13px;transition:fill 180ms ease,stroke 180ms ease}
+.vwish.on svg{fill:#EF4444;stroke:#EF4444}
+
+/* card body */
+.vbody{padding:14px 16px 16px}
+.vrow{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.vdates{display:flex;flex-direction:column;gap:2px}
+.vdate-main{font-family:var(--fd);font-size:.97rem;font-weight:700;color:var(--t1);letter-spacing:-.01em}
+.vdate-dur{font-family:var(--fm);font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-top:1px}
+.vprice-block{text-align:right}
+.vprice{font-family:var(--fd);font-size:1.08rem;font-weight:700;color:var(--t1);letter-spacing:-.01em}
+.vprice-sub{font-family:var(--fm);font-size:9px;color:var(--t3);letter-spacing:.04em;margin-top:1px}
+.vcupo{margin-top:10px}
+.vcupo-bar-wrap{height:3px;background:rgba(245,243,236,.1);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.vcupo-bar{height:100%;border-radius:2px;transition:width 800ms var(--e)}
+.vcupo-bar.ok{background:var(--pr)}
+.vcupo-bar.low{background:var(--urg)}
+.vcupo-bar.full{background:rgba(239,68,68,.6)}
+.vcupo-txt{font-family:var(--fm);font-size:9px;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.vcupo-txt.low{color:#EF6B35}
+.vsalida{display:flex;align-items:center;gap:5px;margin-top:9px;font-family:var(--fm);font-size:9.5px;color:var(--t3);letter-spacing:.04em}
+.vsalida svg{width:11px;height:11px;flex-shrink:0;color:var(--t3)}
+.vbtns{margin-top:13px}
+.vbtn-main{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--neon);color:#0A1E29;font-family:var(--fd);font-size:13px;font-weight:700;padding:10px 18px;border-radius:9px;cursor:pointer;transition:box-shadow 150ms ease,transform 130ms var(--e)}
+@media(hover:hover)and(pointer:fine){.vbtn-main:hover{box-shadow:0 0 28px var(--neon-glow)}}
+.vbtn-main:active{transform:scale(.97)}
+
+/* ── SKELETON ── */
+.sk{background:var(--bg2);border-radius:18px;overflow:hidden;border:1px solid var(--ln)}
+.skt{aspect-ratio:16/10;background:var(--bg3);position:relative;overflow:hidden}
+.skb{padding:14px 16px 16px}
+.skl{height:11px;border-radius:6px;background:var(--bg3);position:relative;overflow:hidden;margin-bottom:8px}
+.skl.w80{width:80%}.skl.w60{width:60%}.skl.w40{width:40%}
+.skt::after,.skl::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);animation:shim 1.6s ease-in-out infinite}
+@keyframes shim{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* ── DETAIL VIEW ── */
+#pgd{display:none;min-height:100vh}
+#pgd.show{display:block}
+
+.dhero{position:relative;height:480px;overflow:hidden}
+@media(max-width:640px){.dhero{height:260px}}
+.dhero-img{width:100%;height:100%;object-fit:cover;display:block}
+.dhero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,20,.15) 0%,rgba(6,13,20,.55) 50%,rgba(6,13,20,.97) 100%)}
+.dhero-cnt{position:absolute;bottom:30px;left:0;right:0}
+.dback{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);cursor:pointer;padding:5px 0;margin-bottom:13px;transition:color 140ms ease}
+.dback svg{width:13px;height:13px;transition:transform 200ms var(--e)}
+@media(hover:hover)and(pointer:fine){.dback:hover{color:var(--t1)}.dback:hover svg{transform:translateX(-3px)}}
+.dtitle{font-family:var(--fd);font-weight:700;font-size:clamp(1.6rem,4vw,2.8rem);letter-spacing:-.02em;line-height:1.06;max-width:720px}
+.dcountry{font-family:var(--fm);font-size:10px;color:var(--neon);letter-spacing:.12em;text-transform:uppercase;margin-top:6px;display:flex;align-items:center;gap:7px}
+.dcountry::before{content:'';width:16px;height:1px;background:var(--neon)}
+.dmeta{display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap}
+.dmi{font-family:var(--fm);font-size:10px;color:var(--t2);display:flex;align-items:center;gap:5px}
+.dmi svg{width:12px;height:12px;color:var(--t3)}
+.dshare{display:flex;align-items:center;gap:7px;margin-top:13px}
+.dsbtn{display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);padding:5px 10px;border-radius:6px;border:1px solid var(--ln);background:rgba(6,13,20,.5);backdrop-filter:blur(8px);cursor:pointer;transition:color 140ms ease,border-color 140ms ease}
+.dsbtn svg{width:12px;height:12px}
+@media(hover:hover)and(pointer:fine){.dsbtn:hover{color:var(--t1);border-color:var(--ls)}}
+.dsbtn:active{transform:scale(.97)}
+
+.dlayout{display:grid;grid-template-columns:1fr 300px;gap:44px;padding:30px 0 80px;align-items:start}
+@media(max-width:940px){.dlayout{grid-template-columns:1fr}}
+.dsticky{position:sticky;top:calc(68px + 14px)}
+@media(max-width:940px){.dsticky{display:none}}
+
+/* CTA CARD */
+.ctacard{background:var(--bg2);border:1px solid var(--ls);border-radius:18px;padding:24px;box-shadow:0 0 0 1px rgba(245,243,236,.05),0 4px 16px rgba(0,0,0,.32),0 20px 56px rgba(0,0,0,.5),0 0 72px rgba(0,229,200,.05)}
+.cta-badge{display:inline-flex;align-items:center;gap:5px;background:var(--neon-dim);border:1px solid rgba(0,229,200,.3);border-radius:5px;padding:4px 9px;font-family:var(--fm);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--neon);margin-bottom:14px}
+.cta-sena{font-family:var(--fd);font-size:1.12rem;font-weight:700;color:var(--t1)}
+.cta-sena-lbl{font-size:.75rem;color:var(--t3);margin-top:2px;margin-bottom:4px}
+.cta-total{font-size:.82rem;color:var(--t3);margin-bottom:14px}
+.cta-total strong{color:var(--t2)}
+.cta-sep{height:1px;background:var(--ln);margin:14px 0}
+.cta-cupo{margin-bottom:14px}
+.cta-cupo-bar-wrap{height:4px;background:rgba(245,243,236,.1);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.cta-cupo-bar{height:100%;border-radius:2px;background:var(--pr);transition:width 1s var(--e)}
+.cta-cupo-bar.low{background:var(--urg)}
+.cta-cupo-bar.full{background:#EF4444}
+.cta-cupo-txt{font-family:var(--fm);font-size:9.5px;color:#EF6B35;letter-spacing:.05em;text-transform:uppercase}
+.cta-cupo-txt.calm{color:var(--neon)}
+.cta-ft{display:flex;align-items:center;gap:8px;font-size:.79rem;color:var(--t2);margin-bottom:8px}
+.cta-ft svg{width:14px;height:14px;color:var(--neon);flex-shrink:0}
+.cta-wa{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid rgba(37,211,102,.35);background:rgba(37,211,102,.08);font-size:13px;font-weight:600;color:#25D366;cursor:pointer;transition:background 150ms ease,border-color 150ms ease}
+@media(hover:hover)and(pointer:fine){.cta-wa:hover{background:rgba(37,211,102,.14);border-color:rgba(37,211,102,.55)}}
+.cta-wa svg{width:16px;height:16px;fill:#25D366}
+
+/* DETAIL WHITE SECTION */
+.ds{background:#F2F5F4;padding-bottom:0}
+.ds-inner{background:#fff;border-radius:16px 16px 0 0;padding:30px 32px;min-height:480px}
+@media(max-width:940px){.ds-inner{border-radius:0;padding:22px 0}}
+.ds-txt{color:#1A3040}
+.ds-txt-2{color:#4A6070}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid rgba(0,0,0,.1);margin-bottom:24px;overflow-x:auto;scrollbar-width:none;position:relative}
+.tabs::-webkit-scrollbar{display:none}
+.tind{position:absolute;bottom:-1px;left:0;height:2px;background:var(--pr);border-radius:2px;transition:left 220ms var(--e),width 220ms var(--e);pointer-events:none}
+.tbtn{font-size:13px;font-weight:500;color:#6A8590;padding:10px 17px;border:none;background:none;cursor:pointer;transition:color 140ms ease;white-space:nowrap;min-height:44px}
+@media(hover:hover)and(pointer:fine){.tbtn:hover{color:#3A5565}}
+.tbtn.on{color:var(--pr)}
+.tcnt{display:none}
+.tcnt.on{display:block;animation:fu 240ms var(--e) both}
+@keyframes fu{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* ACCORDION (itinerario) */
+.acc{border:1px solid rgba(0,0,0,.1);border-radius:11px;margin-bottom:7px;overflow:hidden;transition:border-color 180ms ease}
+.acc.open{border-color:rgba(0,0,0,.18)}
+.acc-tr{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(0,0,0,.025);cursor:pointer;text-align:left;min-height:48px;transition:background 130ms ease}
+@media(hover:hover)and(pointer:fine){.acc-tr:hover{background:rgba(0,0,0,.04)}}
+.acc-left{display:flex;align-items:center;gap:12px}
+.acc-day{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--pr);background:rgba(14,107,92,.1);border-radius:4px;padding:3px 7px;white-space:nowrap}
+.acc-ttl{font-family:var(--fd);font-size:.88rem;font-weight:600;color:#0A1E29}
+.acc-ch{width:14px;height:14px;color:#6A8590;transition:transform 220ms var(--e);flex-shrink:0}
+.acc.open .acc-ch{transform:rotate(180deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height 300ms var(--e)}
+.acc.open .acc-body{max-height:600px}
+.acc-content{padding:14px 16px 16px;font-size:.87rem;color:#4A6070;line-height:1.7}
+.acc-content strong{color:#0A1E29;font-weight:600}
+
+/* includes list */
+.inc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-top:10px}
+@media(max-width:560px){.inc-grid{grid-template-columns:1fr}}
+.inc-item{display:flex;align-items:flex-start;gap:8px;font-size:.87rem;color:#4A6070;line-height:1.5}
+.inc-item svg{width:15px;height:15px;flex-shrink:0;margin-top:1px}
+.inc-item.yes svg{color:var(--pr)}
+.inc-item.no svg{color:#B0BEC5}
+.inc-item.no span{color:#8FA3AB}
+.inc-ttl{font-family:var(--fd);font-size:.95rem;font-weight:700;color:#0A1E29;margin-bottom:14px;margin-top:22px}
+.inc-ttl:first-child{margin-top:0}
+
+/* REVIEW CARD (mirrors academy_reviews: rating, comentario, user) */
+.rev{background:rgba(0,0,0,.025);border:1px solid rgba(0,0,0,.08);border-radius:11px;padding:16px;margin-bottom:9px}
+.rev-h{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.rev-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:11px;color:#fff;flex-shrink:0;background:var(--pr)}
+.rev-name{font-weight:600;font-size:.84rem;color:#0A1E29}
+.rev-stars{color:var(--gd);font-size:11px;letter-spacing:1px;margin-top:1px}
+.rev-text{font-size:.84rem;color:#4A6070;line-height:1.65}
+
+/* MOBILE CTA */
+.mob-cta{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(9,18,26,.95);backdrop-filter:blur(24px);border-top:1px solid var(--ls);padding:11px 18px;padding-bottom:calc(11px + env(safe-area-inset-bottom,0px));align-items:center;justify-content:space-between;gap:12px}
+@media(max-width:940px){.mob-cta.show{display:flex}}
+.mob-cta-price{display:flex;flex-direction:column;gap:1px}
+.mob-cta-sena{font-family:var(--fd);font-size:1.1rem;font-weight:700}
+.mob-cta-lbl{font-family:var(--fm);font-size:8.5px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase}
+
+/* WHATSAPP FLOAT */
+.wa{position:fixed;bottom:22px;right:22px;z-index:500;width:52px;height:52px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(37,211,102,.38);transition:transform 180ms var(--e),box-shadow 180ms ease;animation:waIn 500ms var(--e) 1.5s both}
+@keyframes waIn{from{opacity:0;transform:scale(.6) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@media(hover:hover)and(pointer:fine){.wa:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(37,211,102,.55)}}
+.wa:active{transform:scale(.95)}
+.wa svg{width:26px;height:26px}
+.wa-tip{position:absolute;right:calc(100% + 9px);bottom:50%;transform:translateY(50%);white-space:nowrap;background:var(--bg2);border:1px solid var(--ls);border-radius:8px;padding:5px 11px;font-size:12px;color:var(--t1);pointer-events:none;opacity:0;transition:opacity 170ms ease;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+@media(hover:hover)and(pointer:fine){.wa:hover .wa-tip{opacity:1}}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg2);border:1px solid var(--ls);border-radius:10px;padding:9px 16px;font-size:13px;font-weight:500;color:var(--t1);box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity 170ms ease,transform 170ms var(--e);white-space:nowrap;z-index:600}
+
+/* ── FLOATING MODAL ── */
+.modal-veil{
+  position:fixed;inset:0;z-index:700;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  background:rgba(6,13,20,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;
+  transition:opacity 260ms ease;
+}
+.modal-veil.show{opacity:1;pointer-events:auto}
+.modal-card{
+  position:relative;
+  width:100%;max-width:420px;
+  background:var(--bg2);
+  border:1px solid var(--ls);
+  border-radius:20px;
+  padding:34px 30px 28px;
+  box-shadow:0 0 0 1px rgba(245,243,236,.04),0 30px 70px rgba(0,0,0,.55),0 0 90px rgba(0,229,200,.08);
+  transform:translateY(18px) scale(.96);
+  opacity:0;
+  transition:transform 320ms var(--e),opacity 280ms var(--e);
+  animation:modalFloat 4s ease-in-out infinite;
+}
+.modal-veil.show .modal-card{transform:translateY(0) scale(1);opacity:1;animation:modalFloat 4s ease-in-out 320ms infinite}
+@keyframes modalFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1)}}
+.modal-x{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--cd);border:1px solid var(--ln);color:var(--t3);cursor:pointer;transition:background 140ms ease,color 140ms ease}
+@media(hover:hover)and(pointer:fine){.modal-x:hover{background:var(--cdh);color:var(--t1)}}
+.modal-x svg{width:14px;height:14px}
+.modal-icon{width:44px;height:44px;border-radius:12px;background:var(--neon-dim);border:1px solid rgba(0,229,200,.3);color:var(--neon);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:18px}
+.modal-title{font-family:var(--fd);font-size:1.3rem;font-weight:700;color:var(--t1);letter-spacing:-.01em;margin-bottom:12px}
+.modal-body{font-size:.9rem;line-height:1.7;color:var(--t2)}
+.modal-body p+p{margin-top:12px}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SECTION DIVIDER between cards and white section */
+.section-fade{height:60px;background:linear-gradient(to bottom,var(--bg),#F2F5F4);margin-top:-1px}
+
+/* EMPTY STATE */
+.estate{grid-column:1/-1;text-align:center;padding:64px 24px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.estate svg{width:28px;height:28px;color:#A8B8BE;margin-bottom:4px}
+.estate h3{font-family:var(--fd);font-size:1rem;font-weight:700;color:#1A3040}
+.estate p{font-size:.84rem;color:#6A8590}
+
+.reveal{opacity:0;transform:translateY(12px);transition:opacity 400ms ease,transform 400ms var(--e)}
+.reveal.vis{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="ho" id="ho">
+  <div class="hp">
+    <div class="logo" onclick="showCat()">
+      <div class="logo-m"><svg viewBox="0 0 14 14" fill="none"><path d="M7 1L13 4V10L7 13L1 10V4L7 1Z" fill="#0A1E29"/></svg></div>
+      <span class="logo-a">TRAVEXA</span><span class="logo-b">&nbsp;ACADEMY</span>
+    </div>
+    <nav class="hnav">
+      <span class="hlnk" onclick="showCat()">Cursos</span>
+      <span class="hlnk on">Vivencial</span>
+      <span class="hlnk dim">Eventos</span>
+    </nav>
+    <div class="hacts">
+      <button class="btn btn-g">Ingresar</button>
+      <button class="btn btn-p">Empezar gratis</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATALOG PAGE -->
+<div id="pgc">
+
+  <!-- HERO ANIMADO -->
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <p class="hero-eyebrow">Travexa Academy · Experiencias vivenciales</p>
+      <h1 class="hero-title" style="opacity:0;animation:fuA .8s var(--e) .22s forwards">
+        <span class="hero-static">Formación para asesores que</span>
+        <span class="hero-rotate-wrap">
+          <span class="hero-rotate" id="heroRotate">viajan para vender mejor.</span>
+        </span>
+      </h1>
+      <p class="hero-sub">Viajá con Yesica y otros asesores de toda Argentina. Conocé el destino por dentro, construí tu argumento de venta y volvé con fotos reales, contactos reales y experiencia de primera mano.</p>
+      <div class="hero-actions">
+        <button class="btn btn-neon btn-lg" onclick="scrollToFiltros()">Ver próximas salidas</button>
+        <button class="btn btn-out btn-lg" onclick="openInfoModal()">¿Qué es un vivencial?</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat">
+          <span class="hstat-num" id="statCount2026">—</span>
+          <span class="hstat-lbl">Destinos en 2026</span>
+        </div>
+        <div class="hstat-sep"></div>
+        <div class="hstat">
+          <span class="hstat-num" id="statCount2027">—</span>
+          <span class="hstat-lbl">Destinos en 2027</span>
+        </div>
+        <div class="hstat-sep"></div>
+        <div class="hstat">
+          <span class="hstat-num">87</span>
+          <span class="hstat-lbl">Asesores formados</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTROS -->
+  <div class="filters-wrap" id="filtersWrap">
+    <div class="wrap">
+      <div class="frow">
+        <span class="fgt">Región</span>
+        <div class="fpills" id="fpRegion">
+          <button class="fp fp-all" data-r="all">Todos</button>
+          <button class="fp" data-r="sudamerica">Sudamérica</button>
+          <button class="fp" data-r="centroamerica">Centroamérica</button>
+          <button class="fp" data-r="caribe">Caribe</button>
+          <button class="fp" data-r="europa">Europa</button>
+        </div>
+      </div>
+      <div class="frow">
+        <span class="fgt">Duración</span>
+        <div class="fpills" id="fpDur">
+          <button class="fp" data-d="all">Todos</button>
+          <button class="fp" data-d="corto">Hasta 7 días</button>
+          <button class="fp" data-d="medio">8 a 12 días</button>
+          <button class="fp" data-d="largo">13+ días</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <main class="grid-section">
+    <div class="wrap">
+      <div class="fcount" id="fcount">6 experiencias disponibles</div>
+      <div class="grid" id="grid">
+
+        <!-- SKELETON (se reemplaza con cards al cargar) -->
+        <div class="sk"><div class="skt"></div><div class="skb"><div class="skl"></div><div class="skl w80"></div><div class="skl w60"></div></div></div>
+        <div class="sk"><div class="skt"></div><div class="skb"><div class="skl"></div><div class="skl w80"></div><div class="skl w60"></div></div></div>
+        <div class="sk"><div class="skt"></div><div class="skb"><div class="skl"></div><div class="skl w80"></div><div class="skl w60"></div></div></div>
+
+      </div>
+    </div>
+  </main>
+
+</div><!-- /pgc -->
+
+<!-- DETAIL PAGE -->
+<div id="pgd">
+
+  <div class="dhero">
+    <img class="dhero-img" id="dheroImg" src="" alt="">
+    <div class="dhero-ov"></div>
+    <div class="dhero-cnt wrap">
+      <div class="dback" onclick="showCat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver a vivenciales
+      </div>
+      <div class="badge bv" style="margin-bottom:10px">✦ Vivencial</div>
+      <h1 class="dtitle" id="dtitle">Machu Picchu & Cusco</h1>
+      <div class="dcountry" id="dcountry">Perú</div>
+      <div class="dmeta">
+        <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="dmeta-fecha">2 ago — 9 ago 2026</span></div>
+        <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span id="dmeta-dur">8 días / 7 noches</span></div>
+        <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span id="dmeta-cupo">Quedan 4 lugares</span></div>
+        <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="dmeta-salida">Sale desde Buenos Aires</span></div>
+      </div>
+      <div class="dshare">
+        <button class="dsbtn" onclick="copyLink()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copiar link</button>
+        <button class="dsbtn" onclick="shareWA()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Compartir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL LAYOUT -->
+  <div class="ds">
+    <div class="wrap">
+      <div class="dlayout">
+
+        <!-- LEFT COLUMN -->
+        <div>
+          <div class="ds-inner">
+            <div class="tabs" id="tabs">
+              <div class="tind" id="tind"></div>
+              <button class="tbtn on" data-tab="0">Descripción</button>
+              <button class="tbtn" data-tab="1">Itinerario</button>
+              <button class="tbtn" data-tab="2">Qué incluye</button>
+              <button class="tbtn" data-tab="3">Instructor</button>
+              <button class="tbtn" data-tab="4">Reseñas</button>
+            </div>
+
+            <!-- Tab 0: Descripción -->
+            <div class="tcnt on" data-tcnt="0">
+              <p style="font-size:.93rem;line-height:1.78;color:#4A6070;margin-bottom:16px">Esta experiencia es para asesores que quieren vender Perú con convicción. Vamos a recorrer Cusco, el Valle Sagrado y Machu Picchu en un grupo de no más de 18 personas, con Yesica como guía y con una mirada pensada para el asesor: cómo armar el paquete, qué hoteles recomendar, qué no incluir y por qué, y cómo hablarle al pasajero de cada experiencia.</p>
+              <p style="font-size:.93rem;line-height:1.78;color:#4A6070;margin-bottom:20px">No es un viaje de placer (aunque lo vas a disfrutar). Es formación de campo. Vas a volver con fotos reales, con contactos reales de proveedores locales y con el argumento de venta que solo te da haber estado ahí.</p>
+              <div style="background:rgba(14,107,92,.08);border-left:3px solid var(--pr);border-radius:8px;padding:14px 18px;margin-bottom:20px">
+                <p style="font-size:.85rem;color:#1A3040;font-weight:600;margin-bottom:4px">¿Para quién es este vivencial?</p>
+                <p style="font-size:.84rem;color:#4A6070;line-height:1.6">Para asesores de viajes de todos los niveles que quieran incorporar Perú a su cartera de destinos, o que ya lo vendan y quieran conocerlo de primera mano para cerrar más ventas.</p>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="background:rgba(0,0,0,.03);border-radius:10px;padding:14px 16px">
+                  <p style="font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8FA3AB;margin-bottom:5px">Nivel</p>
+                  <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Cualquier nivel</p>
+                </div>
+                <div style="background:rgba(0,0,0,.03);border-radius:10px;padding:14px 16px">
+                  <p style="font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8FA3AB;margin-bottom:5px">Idioma</p>
+                  <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Español</p>
+                </div>
+                <div style="background:rgba(0,0,0,.03);border-radius:10px;padding:14px 16px">
+                  <p style="font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8FA3AB;margin-bottom:5px">Cupo máximo</p>
+                  <p style="font-size:.88rem;font-weight:600;color:#0A1E29">18 asesores</p>
+                </div>
+                <div style="background:rgba(0,0,0,.03);border-radius:10px;padding:14px 16px">
+                  <p style="font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8FA3AB;margin-bottom:5px">Salida desde</p>
+                  <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Buenos Aires (EZE)</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 1: Itinerario -->
+            <div class="tcnt" data-tcnt="1">
+              <div class="acc open">
+                <button class="acc-tr" onclick="toggleAcc(this)">
+                  <div class="acc-left"><span class="acc-day">Día 1</span><span class="acc-ttl">Buenos Aires → Lima → Cusco</span></div>
+                  <svg class="acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="acc-body">
+                  <div class="acc-content"><strong>Vuelo</strong> desde EZE a Lima (escala) y conexión a Cusco. Llegada al aeropuerto Alejandro Velasco, traslado al hotel. Tarde libre para aclimatarse a la altura (3.400m). Cena grupal de bienvenida en restaurante local. <strong>Hotel:</strong> Palacio del Inka, Cusco.</div>
+                </div>
+              </div>
+              <div class="acc">
+                <button class="acc-tr" onclick="toggleAcc(this)">
+                  <div class="acc-left"><span class="acc-day">Día 2</span><span class="acc-ttl">Cusco ciudad — visita como asesor</span></div>
+                  <svg class="acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="acc-body">
+                  <div class="acc-content">Recorrido por el centro histórico: Plaza de Armas, Qorikancha, mercado San Pedro. <strong>Workshop de tarde</strong> con Yesica: cómo armar un paquete Cusco competitivo. Visita a dos hoteles de diferente categoría para conocer la diferencia real entre lo que promete booking.com y lo que entrega el hotel.</div>
+                </div>
+              </div>
+              <div class="acc">
+                <button class="acc-tr" onclick="toggleAcc(this)">
+                  <div class="acc-left"><span class="acc-day">Días 3-4</span><span class="acc-ttl">Valle Sagrado de los Incas</span></div>
+                  <svg class="acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="acc-body">
+                  <div class="acc-content">Pisac (ruinas + mercado), Ollantaytambo, Aguas Calientes. <strong>Workshop noche:</strong> cómo diferenciar un cliente que quiere ruinas de uno que quiere experiencia cultural. Pernoctamos en Aguas Calientes para madrugar a Machu Picchu.</div>
+                </div>
+              </div>
+              <div class="acc">
+                <button class="acc-tr" onclick="toggleAcc(this)">
+                  <div class="acc-left"><span class="acc-day">Día 5</span><span class="acc-ttl">Machu Picchu — la visita que cambia todo</span></div>
+                  <svg class="acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="acc-body">
+                  <div class="acc-content">Bus a las 5:30am. Entrada a la ciudadela con guía especializado. Sesión fotográfica con consejos para el asesor: qué fotos tomar para usar en redes y cómo usarlas para generar consultas. Almuerzo en el mirador. Regreso a Cusco en tren.</div>
+                </div>
+              </div>
+              <div class="acc">
+                <button class="acc-tr" onclick="toggleAcc(this)">
+                  <div class="acc-left"><span class="acc-day">Días 6-7</span><span class="acc-ttl">Cusco libre + workshop cierre</span></div>
+                  <svg class="acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="acc-body">
+                  <div class="acc-content">Tiempo libre para explorar opciones gastronómicas, mercados y barrio San Blas. <strong>Workshop:</strong> armamos juntos el paquete que cada uno va a vender cuando vuelva. Cena de despedida grupal.</div>
+                </div>
+              </div>
+              <div class="acc">
+                <button class="acc-tr" onclick="toggleAcc(this)">
+                  <div class="acc-left"><span class="acc-day">Día 8</span><span class="acc-ttl">Cusco → Lima → Buenos Aires</span></div>
+                  <svg class="acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="acc-body">
+                  <div class="acc-content">Traslado al aeropuerto. Vuelo a Lima y conexión a Buenos Aires (EZE). Llegada estimada 23:00hs.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Incluye -->
+            <div class="tcnt" data-tcnt="2">
+              <p class="inc-ttl">Incluye</p>
+              <div class="inc-grid">
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vuelos ida y vuelta desde Buenos Aires</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>7 noches en hoteles 4★ seleccionados</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Desayunos incluidos todos los días</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Traslados aeropuerto — hotel en Perú</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Entrada a Machu Picchu + bus subida/bajada</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Tren Aguas Calientes — Cusco (Vistadome)</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Guía local certificado en Perú</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>4 workshops con Yesica Robles</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Certificado Travexa Academy</span></div>
+                <div class="inc-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Grupo de WhatsApp del viaje (material)</span></div>
+              </div>
+              <p class="inc-ttl">No incluye</p>
+              <div class="inc-grid">
+                <div class="inc-item no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Seguro de viaje (obligatorio, cotizás en Travexa)</span></div>
+                <div class="inc-item no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Gastos personales y compras</span></div>
+                <div class="inc-item no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Almuerzos y cenas (excepto los indicados)</span></div>
+                <div class="inc-item no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Propinas</span></div>
+              </div>
+            </div>
+
+            <!-- Tab 3: Instructor -->
+            <div class="tcnt" data-tcnt="3">
+              <div style="display:flex;align-items:flex-start;gap:18px;margin-bottom:22px">
+                <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--neon));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:1.3rem;color:#0A1E29;flex-shrink:0">YR</div>
+                <div>
+                  <p style="font-family:var(--fd);font-size:1.05rem;font-weight:700;color:#0A1E29">Yesica Robles</p>
+                  <p style="font-size:.85rem;color:var(--pr);font-weight:600;margin-top:2px">CEO Travexa · Asesora de viajes</p>
+                  <p style="font-family:var(--fm);font-size:9px;color:#8FA3AB;letter-spacing:.06em;text-transform:uppercase;margin-top:5px">15 años en el trade turístico argentino</p>
+                </div>
+              </div>
+              <p style="font-size:.9rem;line-height:1.75;color:#4A6070;margin-bottom:14px">Yesica es asesora de viajes hace más de 15 años y fundadora de Travexa, la plataforma del trade turístico argentino. Diseñó el programa vivencial desde cero porque encontró que la única forma de que un asesor venda bien un destino es haberlo recorrido con la mirada del asesor, no del turista.</p>
+              <p style="font-size:.9rem;line-height:1.75;color:#4A6070">Cada vivencial es liderado personalmente por ella o por instructores aliados con experiencia comprobada en el destino. No subcontratamos guías sin criterio; elegimos a las personas que el asesor querría tener de su lado cuando le surge una consulta difícil del pasajero.</p>
+            </div>
+
+            <!-- Tab 4: Reseñas (estructura 1:1 con academy_reviews: rating, comentario, user) -->
+            <div class="tcnt" data-tcnt="4">
+              <div id="reviewsSummary" style="display:flex;align-items:center;gap:14px;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid rgba(0,0,0,.08)"></div>
+              <div id="reviewsList"></div>
+              <p style="font-size:.78rem;color:#8FA3AB;margin-top:8px">Solo pueden reseñar asesores que hicieron este viaje específico.</p>
+            </div>
+
+          </div><!-- /ds-inner -->
+        </div><!-- /left column -->
+
+        <!-- RIGHT COLUMN — CTA STICKY -->
+        <div class="dsticky">
+          <div class="ctacard">
+            <div class="cta-badge">
+              <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+              Reserva tu lugar
+            </div>
+            <div class="cta-sena" id="ctaSena">$ 450.000 ARS</div>
+            <div class="cta-sena-lbl">Seña para confirmar tu lugar</div>
+            <div class="cta-total">Total del viaje: <strong id="ctaTotal">$ 3.200.000 ARS</strong> · Saldo a 60 días</div>
+
+            <div class="cta-cupo">
+              <div class="cta-cupo-bar-wrap"><div class="cta-cupo-bar" id="ctaCupoBar" style="width:77%"></div></div>
+              <div class="cta-cupo-txt" id="ctaCupoTxt">⚠ Quedan 4 de 18 lugares</div>
+            </div>
+
+            <button class="btn btn-neon btn-lg" style="width:100%;margin-bottom:8px">Reservar con seña</button>
+
+            <div class="cta-sep"></div>
+            <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Vuelos incluidos desde Buenos Aires</div>
+            <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Pago en cuotas disponible</div>
+            <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Certificado Travexa Academy</div>
+            <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Cancelación con reembolso hasta 30 días antes</div>
+
+            <button class="btn btn-out" style="width:100%;margin-top:12px" onclick="openFaqModal()">Preguntas frecuentes</button>
+
+            <button class="cta-wa" onclick="consultarWA()">
+              <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 .5C7.4.5.5 7.4.5 16c0 2.8.7 5.5 2.1 7.9L.5 31.5l7.9-2.1c2.3 1.3 4.9 2 7.6 2 8.6 0 15.5-6.9 15.5-15.4S24.6.5 16 .5zm0 28c-2.5 0-4.9-.7-7-2l-.5-.3-5.1 1.3 1.4-4.9-.3-.5C3.2 20.8 2.5 18.5 2.5 16 2.5 8.6 8.6 2.5 16 2.5S29.5 8.6 29.5 16 23.4 28.5 16 28.5zm8.5-10.9c-.5-.2-2.8-1.4-3.2-1.5-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.5-1.5 1.9-.3.3-.5.4-1 .1-.5-.2-2-.7-3.8-2.3-1.4-1.2-2.3-2.7-2.6-3.2-.3-.5 0-.7.2-.9.2-.2.5-.5.7-.7.2-.2.3-.5.5-.8.2-.3.1-.5 0-.7-.1-.2-1.1-2.7-1.5-3.7-.4-.9-.8-.8-1.1-.8-.3 0-.5 0-.8 0s-.8.1-1.2.5C8.5 10.4 7.5 11.5 7.5 13.8s1.6 4.7 1.8 5c.2.3 3.1 4.8 7.5 6.7 1.1.5 1.9.7 2.6.9 1.1.3 2.1.3 2.9.2.9-.1 2.8-1.1 3.2-2.2.4-1.1.4-2 .3-2.2-.1-.2-.4-.3-.9-.5z"/></svg>
+              Consultá por WhatsApp
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /dlayout -->
+    </div><!-- /wrap -->
+  </div><!-- /ds -->
+
+  <!-- MOBILE CTA -->
+  <div class="mob-cta" id="mobCta">
+    <div class="mob-cta-price">
+      <span class="mob-cta-sena" id="mobCtaSena">$ 450.000 ARS</span>
+      <span class="mob-cta-lbl" id="mobCtaLbl">seña · quedan 4 lugares</span>
+    </div>
+    <button class="btn btn-neon" style="flex-shrink:0">Reservar lugar</button>
+  </div>
+
+</div><!-- /pgd -->
+
+<!-- MODAL FLOTANTE (reutilizable: "¿Qué es un vivencial?" / "Preguntas frecuentes") -->
+<div class="modal-veil" id="modalVeil" onclick="closeModal(event)">
+  <div class="modal-card" id="modalCard">
+    <button class="modal-x" onclick="closeModal()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-icon" id="modalIcon">✦</div>
+    <h3 class="modal-title" id="modalTitle">¿Qué es un vivencial?</h3>
+    <div class="modal-body" id="modalBody">
+      <p>Un vivencial es un viaje grupal pensado para asesores, no para turistas. Vas con Yesica o un instructor aliado, conocés el destino con mirada comercial y volvés con el argumento de venta, las fotos y los contactos que solo da haber estado ahí.</p>
+    </div>
+    <button class="btn btn-neon btn-lg" style="width:100%;margin-top:20px" onclick="closeModal()">Entendido</button>
+  </div>
+</div>
+
+<!-- WhatsApp flotante: vive a nivel de app-shell global, no se repite por página. Ver nota para Claude Code. -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── DATA ── */
+const viajes = [
+  {
+    id:'machu-picchu',
+    destino:'Machu Picchu & Cusco',
+    pais:'Perú',
+    region:'sudamerica',
+    foto:'https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800&q=72',
+    fechaSalida:'2 ago 2026',
+    fechaRegreso:'9 ago 2026',
+    duracion:8,
+    noches:7,
+    cupoMax:18,
+    cupoDisp:4,
+    senaARS:450000,
+    totalARS:3200000,
+    ciudadSalida:'Buenos Aires (EZE)',
+  },
+  {
+    id:'cartagena-san-andres',
+    destino:'Cartagena & San Andrés',
+    pais:'Colombia',
+    region:'caribe',
+    foto:'https://images.unsplash.com/photo-1536940385103-c729049165e6?w=800&q=72',
+    fechaSalida:'5 sep 2026',
+    fechaRegreso:'13 sep 2026',
+    duracion:9,
+    noches:8,
+    cupoMax:16,
+    cupoDisp:9,
+    senaARS:380000,
+    totalARS:2850000,
+    ciudadSalida:'Buenos Aires (EZE)',
+  },
+  {
+    id:'torres-del-paine',
+    destino:'Torres del Paine',
+    pais:'Chile',
+    region:'sudamerica',
+    foto:'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=72',
+    fechaSalida:'3 oct 2026',
+    fechaRegreso:'10 oct 2026',
+    duracion:8,
+    noches:7,
+    cupoMax:14,
+    cupoDisp:11,
+    senaARS:420000,
+    totalARS:3600000,
+    ciudadSalida:'Buenos Aires (AEP)',
+  },
+  {
+    id:'maldivas',
+    destino:'Maldivas',
+    pais:'Maldivas',
+    region:'asia',
+    foto:'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=72',
+    fechaSalida:'7 nov 2026',
+    fechaRegreso:'16 nov 2026',
+    duracion:10,
+    noches:9,
+    cupoMax:12,
+    cupoDisp:3,
+    senaARS:650000,
+    totalARS:5800000,
+    ciudadSalida:'Buenos Aires (EZE)',
+  },
+  {
+    id:'rio-iguazu',
+    destino:'Río de Janeiro & Iguazú',
+    pais:'Brasil',
+    region:'sudamerica',
+    foto:'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=800&q=72',
+    fechaSalida:'10 ene 2027',
+    fechaRegreso:'17 ene 2027',
+    duracion:8,
+    noches:7,
+    cupoMax:18,
+    cupoDisp:15,
+    senaARS:340000,
+    totalARS:2400000,
+    ciudadSalida:'Buenos Aires (EZE)',
+  },
+  {
+    id:'toscana',
+    destino:'Toscana & Florencia',
+    pais:'Italia',
+    region:'europa',
+    foto:'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800&q=72',
+    fechaSalida:'15 mar 2027',
+    fechaRegreso:'25 mar 2027',
+    duracion:11,
+    noches:10,
+    cupoMax:16,
+    cupoDisp:16,
+    senaARS:580000,
+    totalARS:4900000,
+    ciudadSalida:'Buenos Aires (EZE)',
+  },
+];
+
+function fmt(n){ return '$ '+n.toLocaleString('es-AR')+' ARS'; }
+
+/* REGLA ÚNICA DE CUPO — no mockeada, se calcula siempre desde disponible/total.
+   Aplica igual a vivenciales y a cursos en vivo con cupo limitado.
+   disp = 0           → agotado (rojo)
+   1 <= disp <= 5      → últimos lugares (naranja) — el umbral de "5" es el que define Yesica
+   disp > 5            → disponible (verde) */
+function cupoEstado(disp){
+  if(disp<=0) return {cls:'full', urgent:true, label:'Agotado'};
+  if(disp<=5) return {cls:'low', urgent:true, label:'Últimos '+disp+' lugar'+(disp===1?'':'es')};
+  return {cls:'ok', urgent:false, label:disp+' lugares disponibles'};
+}
+
+/* Reseñas mock — en producción: SELECT * FROM academy_reviews WHERE course_id = :id AND publicado = true */
+const reviewsByViaje = {
+  'machu-picchu':[
+    {nombre:'Mariana Fuentes', rating:5, comentario:'Volví con tres ventas cerradas en la primera semana. El workshop de armado de paquete fue lo que más me sirvió.'},
+    {nombre:'Diego Salas', rating:5, comentario:'Yesica conoce cada hotel de memoria. Aprendí a venderlo distinto después de estar ahí.'},
+    {nombre:'Lucía Ferreyra', rating:4, comentario:'Excelente organización. El único punto es que el día de Machu Picchu es muy largo, pero vale totalmente la pena.'},
+  ],
+  'cartagena-san-andres':[
+    {nombre:'Pablo Issa', rating:5, comentario:'Cartagena cambia mucho cuando la conocés de noche con un local. Volví con contactos que ya estoy usando.'},
+    {nombre:'Romina Castex', rating:5, comentario:'El grupo fue increíble y aprendí a diferenciar San Andrés de Cartagena en el argumento de venta.'},
+  ],
+  'torres-del-paine':[
+    {nombre:'Federico Lell', rating:5, comentario:'Para quien vende trekking esto es obligatorio. Las fotos que traje las uso todas las semanas.'},
+  ],
+  'maldivas':[
+    {nombre:'Sol Andrade', rating:5, comentario:'Carísimo de vender si no lo conocés. Después del viaje entendí por qué vale cada peso.'},
+    {nombre:'Martín Yapur', rating:5, comentario:'El cupo es chico y se nota en la calidad de la experiencia. Volvería sin pensarlo.'},
+  ],
+  'rio-iguazu':[
+    {nombre:'Carla Wenger', rating:4, comentario:'Buenísima combinación de destinos para vender como paquete. Río de noche es otra cosa.'},
+  ],
+  'toscana':[],
+};
+
+function renderReviews(viajeId){
+  const list = document.getElementById('reviewsList');
+  const summary = document.getElementById('reviewsSummary');
+  const data = reviewsByViaje[viajeId] || [];
+  if(!data.length){
+    summary.innerHTML = '';
+    list.innerHTML = '<p style="font-size:.85rem;color:#8FA3AB">Todavía no hay reseñas de este vivencial. Vas a ser de los primeros en viajar.</p>';
+    return;
+  }
+  const avg = (data.reduce((s,r)=>s+r.rating,0)/data.length);
+  const avgRound = Math.round(avg);
+  summary.innerHTML = `<span style="font-family:var(--fd);font-size:2.2rem;font-weight:700;color:#0A1E29">${avg.toFixed(1)}</span>
+    <div><div style="color:var(--gd);font-size:1rem;letter-spacing:1px">${'★'.repeat(avgRound)}${'☆'.repeat(5-avgRound)}</div>
+    <p style="font-family:var(--fm);font-size:9.5px;color:#8FA3AB;letter-spacing:.06em;text-transform:uppercase;margin-top:3px">${data.length} reseña${data.length>1?'s':''} de este vivencial</p></div>`;
+  list.innerHTML = data.map(r=>{
+    const initials = r.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const stars = '★'.repeat(r.rating)+'☆'.repeat(5-r.rating);
+    return `<div class="rev">
+      <div class="rev-h">
+        <div class="rev-av">${initials}</div>
+        <div><div class="rev-name">${r.nombre}</div><div class="rev-stars">${stars}</div></div>
+      </div>
+      <div class="rev-text">${r.comentario}</div>
+    </div>`;
+  }).join('');
+}
+
+function durLabel(d){
+  if(d<=7) return 'corto';
+  if(d<=12) return 'medio';
+  return 'largo';
+}
+
+/* ── RENDER CARDS ── */
+function renderCards(data){
+  const grid = document.getElementById('grid');
+  document.getElementById('fcount').textContent = data.length + (data.length===1?' experiencia disponible':' experiencias disponibles');
+  if(!data.length){
+    grid.innerHTML = '<div class="estate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><h3>Sin resultados</h3><p>Probá con otros filtros.</p></div>';
+    return;
+  }
+  grid.innerHTML = data.map((v,i)=>{
+    const pct = Math.round((1 - v.cupoDisp/v.cupoMax)*100);
+    const estado = cupoEstado(v.cupoDisp);
+    return `
+    <div class="vcard ${estado.urgent?'urgent':''}" style="animation-delay:${i*70}ms" onclick="showDetail('${v.id}')">
+      <div class="vthumb">
+        <img class="vimg" src="${v.foto}" alt="${v.destino}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=60'">
+        <div class="vov"></div>
+        <div class="vbdgs">
+          <span class="badge bv">✦ Vivencial</span>
+          ${estado.urgent?'<span class="badge burg">⚡ '+estado.label+'</span>':''}
+        </div>
+        <button class="vwish" onclick="toggleWish(event,this)" aria-label="Guardar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <div class="vtw">
+          <div class="vdest">${v.destino}</div>
+          <div class="vcountry">${v.pais}</div>
+        </div>
+      </div>
+      <div class="vbody">
+        <div class="vrow">
+          <div class="vdates">
+            <div class="vdate-main">${v.fechaSalida}</div>
+            <div class="vdate-dur">${v.duracion} días / ${v.noches} noches</div>
+          </div>
+          <div class="vprice-block">
+            <div class="vprice">${fmt(v.senaARS)}</div>
+            <div class="vprice-sub">Seña para reservar</div>
+          </div>
+        </div>
+        <div class="vcupo">
+          <div class="vcupo-bar-wrap"><div class="vcupo-bar ${estado.cls}" style="width:${pct}%"></div></div>
+          <div class="vcupo-txt ${estado.urgent?'low':''}"><span>${estado.urgent?'⚠ ':''}${estado.label}</span><span>${v.cupoMax} cupo total</span></div>
+        </div>
+        <div class="vsalida">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Sale desde ${v.ciudadSalida}
+        </div>
+        <div class="vbtns">
+          <button class="vbtn-main" onclick="showDetail('${v.id}')">Ver viaje</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.vcard').forEach(c=>{ requestAnimationFrame(()=>{ c.classList.add('in'); }); });
+}
+
+/* ── HERO ROTATION ── */
+const phrases = [
+  'viajan para vender mejor.',
+  'conocen el destino primero.',
+  'aprenden viajando, no mirando.',
+  'venden con experiencia real.',
+];
+let phraseIdx = 0;
+const rotEl = document.getElementById('heroRotate');
+function rotatePhrases(){
+  rotEl.classList.add('out');
+  setTimeout(()=>{
+    phraseIdx = (phraseIdx+1) % phrases.length;
+    rotEl.textContent = phrases[phraseIdx];
+    rotEl.classList.remove('out');
+  }, 280);
+}
+setInterval(rotatePhrases, 3200);
+
+/* ── HEADER SCROLL ── */
+const ho = document.getElementById('ho');
+let lastY = 0;
+window.addEventListener('scroll',()=>{
+  const y = window.scrollY;
+  if(y < 20){ ho.classList.remove('pill','gone'); }
+  else if(y < lastY){ ho.classList.add('pill'); ho.classList.remove('gone'); }
+  else{ ho.classList.add('gone'); }
+  lastY = y;
+},{passive:true});
+
+/* ── FILTERS ── */
+let activeRegion='all', activeDur='all';
+function applyFilters(){
+  let data = viajes;
+  if(activeRegion!=='all') data = data.filter(v=>v.region===activeRegion);
+  if(activeDur!=='all') data = data.filter(v=>durLabel(v.duracion)===activeDur);
+  renderCards(data);
+}
+
+document.getElementById('fpRegion').addEventListener('click',e=>{
+  const btn = e.target.closest('[data-r]'); if(!btn) return;
+  activeRegion = btn.dataset.r;
+  document.querySelectorAll('[data-r]').forEach(b=>b.classList.remove('on','fp-all'));
+  btn.classList.add('on');
+  if(activeRegion==='all') btn.classList.add('fp-all');
+  applyFilters();
+});
+document.getElementById('fpDur').addEventListener('click',e=>{
+  const btn = e.target.closest('[data-d]'); if(!btn) return;
+  activeDur = btn.dataset.d;
+  document.querySelectorAll('[data-d]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  applyFilters();
+});
+
+/* ── PAGE SWITCH ── */
+function showCat(){
+  document.getElementById('pgc').style.display='';
+  document.getElementById('pgd').classList.remove('show');
+  document.getElementById('mobCta').classList.remove('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function showDetail(id){
+  const v = viajes.find(x=>x.id===id); if(!v) return;
+  viajeActual = v;
+  document.getElementById('dheroImg').src = v.foto;
+  document.getElementById('dtitle').textContent = v.destino;
+  document.getElementById('dcountry').textContent = v.pais;
+  document.getElementById('dmeta-fecha').textContent = v.fechaSalida+' — '+v.fechaRegreso;
+  document.getElementById('dmeta-dur').textContent = v.duracion+' días / '+v.noches+' noches';
+  const disp = v.cupoDisp; const total = v.cupoMax;
+  const estado = cupoEstado(disp);
+  document.getElementById('dmeta-cupo').textContent = disp===0 ? 'Agotado' : 'Quedan '+disp+' lugares';
+  document.getElementById('dmeta-salida').textContent = 'Sale desde '+v.ciudadSalida;
+  document.getElementById('ctaSena').textContent = fmt(v.senaARS);
+  document.getElementById('ctaTotal').textContent = fmt(v.totalARS);
+
+  const pct = Math.round((1 - disp/total)*100);
+  document.getElementById('ctaCupoBar').style.width = pct+'%';
+  document.getElementById('ctaCupoBar').className = 'cta-cupo-bar '+estado.cls;
+  document.getElementById('ctaCupoTxt').textContent = (estado.urgent?'⚠ ':'')+estado.label+' de '+total;
+  document.getElementById('ctaCupoTxt').className = 'cta-cupo-txt'+(estado.urgent?'':' calm');
+  document.getElementById('mobCtaSena').textContent = fmt(v.senaARS);
+  document.getElementById('mobCtaLbl').textContent = disp===0 ? 'agotado' : 'seña · quedan '+disp+' lugares';
+
+  document.getElementById('pgc').style.display='none';
+  document.getElementById('pgd').classList.add('show');
+  document.getElementById('mobCta').classList.add('show');
+  window.scrollTo({top:0,behavior:'instant'});
+  initTabs();
+  renderReviews(v.id);
+  revealObserver();
+}
+
+/* ── TABS ── */
+function initTabs(){
+  const tabs = document.querySelectorAll('.tbtn');
+  const panels = document.querySelectorAll('.tcnt');
+  const ind = document.getElementById('tind');
+  function updateInd(btn){
+    ind.style.left = btn.offsetLeft+'px';
+    ind.style.width = btn.offsetWidth+'px';
+  }
+  tabs.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      tabs.forEach(b=>{b.classList.remove('on')});
+      panels.forEach(p=>{p.classList.remove('on')});
+      btn.classList.add('on');
+      const i = btn.dataset.tab;
+      document.querySelector('[data-tcnt="'+i+'"]').classList.add('on');
+      updateInd(btn);
+    });
+  });
+  const onBtn = document.querySelector('.tbtn.on');
+  if(onBtn) setTimeout(()=>updateInd(onBtn), 50);
+}
+
+/* ── ACCORDION ── */
+function toggleAcc(btn){
+  const acc = btn.closest('.acc');
+  const body = acc.querySelector('.acc-body');
+  const isOpen = acc.classList.contains('open');
+  acc.classList.toggle('open');
+}
+
+/* ── WISHLIST ── */
+function toggleWish(e, btn){
+  e.stopPropagation();
+  btn.classList.toggle('on');
+  showToast(btn.classList.contains('on') ? '❤ Guardado en tu lista' : 'Eliminado de tu lista');
+}
+
+/* ── REVEAL ON SCROLL ── */
+function revealObserver(){
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('vis'); obs.unobserve(en.target); }});
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+}
+
+let viajeActual = null;
+
+function shareWA(){
+  if(!viajeActual) return;
+  const v = viajeActual;
+  const msg = `*Travexa Academy* — ${v.destino}\n\n${v.duracion} días / ${v.noches} noches en ${v.pais}. Sale ${v.fechaSalida} desde ${v.ciudadSalida}.\nSeña: ${fmt(v.senaARS)} · Quedan ${v.cupoDisp} de ${v.cupoMax} lugares.\n\n${window.location.href}`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+}
+
+/* Consulta directa por WhatsApp del viaje abierto — en producción usa vivencial_whatsapp_url del curso, con fallback al número general de Travexa */
+function consultarWA(){
+  if(!viajeActual) return;
+  const v = viajeActual;
+  const msg = `Hola! Quiero consultar por el vivencial *${v.destino}* (${v.fechaSalida}). ¿Me pasás más info?`;
+  const url = v.whatsappUrl || ('https://wa.me/5491100000000?text='+encodeURIComponent(msg));
+  window.open(url, '_blank');
+}
+
+/* ── SCROLL A FILTROS (atajo del hero) ── */
+function scrollToFiltros(){
+  const el = document.getElementById('filtersWrap');
+  if(!el) return;
+  const y = el.getBoundingClientRect().top + window.scrollY - 56; // deja el header pill arriba
+  window.scrollTo({top:y, behavior:'smooth'});
+}
+
+/* ── MODAL FLOTANTE ── */
+function openInfoModal(){
+  document.getElementById('modalIcon').textContent = '✦';
+  document.getElementById('modalTitle').textContent = '¿Qué es un vivencial?';
+  document.getElementById('modalBody').innerHTML = `
+    <p>Un vivencial es un viaje grupal pensado para asesores, no para turistas. Vas con Yesica o un instructor aliado, conocés el destino con mirada comercial y volvés con el argumento de venta, las fotos y los contactos que solo da haber estado ahí.</p>
+    <p>Grupos chicos, workshops incluidos durante el viaje y certificado Travexa Academy al volver.</p>`;
+  document.getElementById('modalVeil').classList.add('show');
+}
+function openFaqModal(){
+  document.getElementById('modalIcon').textContent = '?';
+  document.getElementById('modalTitle').textContent = 'Preguntas frecuentes';
+  document.getElementById('modalBody').innerHTML = `
+    <p><strong style="color:var(--t1)">¿Cómo reservo mi lugar?</strong> Pagás la seña con el botón "Reservar con seña" y confirmás tu cupo al instante.</p>
+    <p><strong style="color:var(--t1)">¿Qué pasa si se llena el cupo?</strong> Quedás en lista de espera para la próxima salida del mismo destino.</p>
+    <p><strong style="color:var(--t1)">¿Puedo cancelar?</strong> Sí, con reembolso si cancelás hasta 30 días antes de la salida.</p>`;
+  document.getElementById('modalVeil').classList.add('show');
+}
+function closeModal(e){
+  if(e && e.target !== e.currentTarget) return; // click fue dentro de la tarjeta, no en el velo
+  document.getElementById('modalVeil').classList.remove('show');
+}
+
+/* ── COPY LINK ── */
+function copyLink(){
+  navigator.clipboard.writeText(window.location.href).catch(()=>{});
+  showToast('✓ Link copiado al portapapeles');
+}
+
+/* ── TOAST ── */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('on'), 2800);
+}
+
+/* ── INIT ── */
+function renderHeroStats(){
+  const counts = {};
+  viajes.forEach(v=>{
+    const anio = v.fechaSalida.trim().split(' ').pop(); // último token = año, ej "2026"
+    counts[anio] = (counts[anio]||0) + 1;
+  });
+  document.getElementById('statCount2026').textContent = counts['2026'] || 0;
+  document.getElementById('statCount2027').textContent = counts['2027'] || 0;
+}
+renderHeroStats();
+setTimeout(()=>{ renderCards(viajes); }, 600); // simulate async load
+</script>
+</body>
+</html>

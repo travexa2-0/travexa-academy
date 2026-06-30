@@ -11,25 +11,25 @@
   --font-body:    'Inter', sans-serif;
   --font-mono:    'IBM Plex Mono', monospace;
 
-  /* shadcn semantic mapping → brand palette */
-  --color-background:        var(--brand-navy);
-  --color-foreground:        var(--text-primary);
-  --color-card:              var(--brand-navy-2);
-  --color-card-foreground:   var(--text-primary);
-  --color-popover:           var(--brand-navy-2);
-  --color-popover-foreground: var(--text-primary);
-  --color-primary:           var(--brand-gold);
-  --color-primary-foreground: #0A1E29;
-  --color-secondary:         var(--brand-teal);
-  --color-secondary-foreground: var(--text-primary);
+  /* shadcn semantic mapping → teal as primary (marca real Travexa) */
+  --color-background:        var(--bg);
+  --color-foreground:        var(--text-1);
+  --color-card:              var(--bg-2);
+  --color-card-foreground:   var(--text-1);
+  --color-popover:           var(--bg-2);
+  --color-popover-foreground: var(--text-1);
+  --color-primary:           var(--primary);
+  --color-primary-foreground: #F5F3EC;
+  --color-secondary:         var(--gold);
+  --color-secondary-foreground: #060D14;
   --color-muted:             rgba(255,255,255,0.06);
-  --color-muted-foreground:  var(--text-muted);
-  --color-accent:            var(--brand-gold-soft);
-  --color-accent-foreground: #0A1E29;
+  --color-muted-foreground:  var(--text-3);
+  --color-accent:            var(--primary-s);
+  --color-accent-foreground: var(--text-1);
   --color-destructive:       oklch(0.704 0.191 22.216);
-  --color-border:            var(--surface-border);
-  --color-input:             var(--surface-border-strong);
-  --color-ring:              var(--brand-gold);
+  --color-border:            var(--line);
+  --color-input:             var(--line-s);
+  --color-ring:              var(--primary);
 
   --radius-sm:  calc(var(--radius) * 0.6);
   --radius-md:  calc(var(--radius) * 0.8);
@@ -40,20 +40,65 @@
 
 /* ── Brand CSS Variables ── */
 :root {
+  /* Fondos — dark cinematic de Academy */
+  --bg:              #0A1E29;
+  --bg-2:            #0F2C3B;
+  --bg-deep:         #060D14;
+
+  /* Primario — TEAL de Travexa Core */
+  --primary:         #0E6B5C;
+  --primary-h:       #0D5E50;
+  --primary-s:       rgba(14,107,92,.18);
+  --primary-l:       #4ECDB8;
+
+  /* Neon — color de acción en fondos oscuros (vivencial, CTAs sobre navy) */
+  --neon:            #00E5C8;
+  --neon-glow:       rgba(0,229,200,.22);
+  --neon-dim:        rgba(0,229,200,.08);
+
+  /* Urgente — cupo bajo / últimos lugares */
+  --urg:             #EF6B35;
+
+  /* Premium / logros — Gold */
+  --gold:            #C99A3A;
+  --gold-deep:       #A87C24;
+  --gold-soft:       rgba(201,154,58,.14);
+
+  /* Estados */
+  --pending:         #E8853A;
+  --pending-s:       rgba(232,133,58,.14);
+  --success:         #16A34A;
+  --success-s:       rgba(22,163,74,.14);
+
+  /* Texto */
+  --text-1:          #F5F3EC;
+  --text-2:          #C9D3D6;
+  --text-3:          #8FA3AB;
+
+  /* Superficies */
+  --card:            rgba(255,255,255,.06);
+  --card-h:          rgba(255,255,255,.10);
+  --line:            rgba(245,243,236,.12);
+  --line-s:          rgba(245,243,236,.22);
+  --card-solid:      #132838;
+  --card-solid-h:    #1A3548;
+
+  /* Legacy aliases — mantener compat */
   --brand-navy:             #0A1E29;
   --brand-navy-2:           #0F2C3B;
   --brand-gold:             #C99A3A;
   --brand-gold-deep:        #A87C24;
-  --brand-gold-soft:        #F2E7CB;
+  --brand-gold-soft:        rgba(201,154,58,.14);
   --brand-teal:             #0E6B5C;
-  --brand-teal-soft:        #D9ECE7;
+  --brand-teal-soft:        rgba(14,107,92,.18);
   --text-primary:           #F5F3EC;
   --text-secondary:         #C9D3D6;
   --text-muted:             #8FA3AB;
-  --surface-card:           rgba(255,255,255,0.05);
-  --surface-card-hover:     rgba(255,255,255,0.08);
-  --surface-border:         rgba(245,243,236,0.12);
-  --surface-border-strong:  rgba(245,243,236,0.22);
+  --surface-card:           rgba(255,255,255,.06);
+  --surface-card-hover:     rgba(255,255,255,.10);
+  --surface-border:         rgba(245,243,236,.12);
+  --surface-border-strong:  rgba(245,243,236,.22);
+
   --radius: 0.625rem;
 }
 
@@ -61,13 +106,15 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    box-sizing: border-box;
   }
   html {
     font-family: var(--font-body);
+    scroll-behavior: smooth;
   }
   body {
-    background-color: var(--brand-navy);
-    color: var(--text-primary);
+    background-color: var(--bg);
+    color: var(--text-1);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -86,24 +133,126 @@
   .font-body    { font-family: var(--font-body); }
   .font-mono    { font-family: var(--font-mono); }
 
-  .text-brand-navy      { color: var(--brand-navy); }
-  .text-brand-gold      { color: var(--brand-gold); }
-  .text-brand-teal      { color: var(--brand-teal); }
-  .text-text-primary    { color: var(--text-primary); }
-  .text-text-secondary  { color: var(--text-secondary); }
-  .text-text-muted      { color: var(--text-muted); }
+  /* Text */
+  .text-brand-gold     { color: var(--gold); }
+  .text-brand-teal     { color: var(--primary); }
+  .text-primary-l      { color: var(--primary-l); }
+  .text-text-primary   { color: var(--text-1); }
+  .text-text-secondary { color: var(--text-2); }
+  .text-text-muted     { color: var(--text-3); }
+  .text-pending        { color: var(--pending); }
+  .text-success        { color: var(--success); }
 
-  .bg-brand-navy        { background-color: var(--brand-navy); }
-  .bg-brand-navy-2      { background-color: var(--brand-navy-2); }
-  .bg-brand-gold        { background-color: var(--brand-gold); }
-  .bg-brand-teal        { background-color: var(--brand-teal); }
-  .bg-surface-card      { background-color: var(--surface-card); }
+  /* Bg */
+  .bg-brand-navy       { background-color: var(--bg); }
+  .bg-brand-navy-2     { background-color: var(--bg-2); }
+  .bg-brand-gold       { background-color: var(--gold); }
+  .bg-brand-gold-deep  { background-color: var(--gold-deep); }
+  .bg-brand-teal       { background-color: var(--primary); }
+  .bg-surface-card     { background-color: var(--card); }
+  .bg-card-solid       { background-color: var(--card-solid); }
 
-  .border-brand-gold    { border-color: var(--brand-gold); }
-  .border-surface       { border-color: var(--surface-border); }
+  /* Borders */
+  .border-surface      { border-color: var(--line); }
+  .border-brand-gold   { border-color: var(--gold); }
+  .border-brand-teal   { border-color: var(--primary); }
 
-  /* Gold glow hover effect para CourseCards */
-  .hover-gold-glow:hover {
-    box-shadow: 0 0 0 1px var(--brand-gold), 0 8px 32px rgba(201,154,58,0.18);
+  /* Interactive glows */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-gold-glow:hover {
+      box-shadow: 0 0 0 1px var(--gold), 0 8px 32px rgba(201,154,58,.18);
+    }
+    .hover-teal-glow:hover {
+      box-shadow: 0 0 0 1px var(--primary), 0 8px 32px rgba(14,107,92,.25);
+    }
+  }
+
+  /* Pulsante para cursos EN VIVO */
+  .live-pulse {
+    animation: live-pulse 2s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  /* Shimmer para badges premium */
+  .shimmer {
+    background: linear-gradient(90deg, var(--gold) 0%, #F0D080 40%, var(--gold) 80%);
+    background-size: 200% 100%;
+    animation: shimmer 2.4s ease-in-out infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+
+  /* Safe area bottom para mobile */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+
+  /* Skeleton shimmer sweep */
+  .sk-sweep {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
+    animation: sk-sweep 1.6s ease-in-out infinite;
+  }
+  @keyframes sk-sweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Vivencial badge shimmer sweep */
+  .badge-viv-sweep {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+    animation: badge-viv-sweep 2.4s ease-in-out infinite;
+    transform: translateX(-200%);
+  }
+  @keyframes badge-viv-sweep {
+    0%   { transform: translateX(-200%); }
+    100% { transform: translateX(200%); }
+  }
+
+  /* EN VIVO card ring pulse */
+  .live-ring {
+    animation: live-ring 2.4s 1.2s ease-out infinite;
+  }
+  @keyframes live-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,.3), 0 8px 28px rgba(0,0,0,.35); }
+    55%       { box-shadow: 0 0 0 10px rgba(239,68,68,0), 0 8px 28px rgba(0,0,0,.35); }
+  }
+
+  /* EN VIVO badge blink */
+  .badge-live-blink {
+    animation: badge-live-blink 1.8s ease-in-out infinite;
+  }
+  @keyframes badge-live-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.8; }
+  }
+
+  /* Eyebrow dot pulse */
+  .eyebrow-dot {
+    animation: eyebrow-dot 2.4s ease-in-out infinite;
+  }
+  @keyframes eyebrow-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: .5; transform: scale(.8); }
+  }
+
+  /* Live stat dot blink */
+  .live-stat-dot {
+    animation: live-stat-dot 2s ease-in-out infinite;
+  }
+  @keyframes live-stat-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
   }
 }

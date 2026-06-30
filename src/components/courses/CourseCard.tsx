@@ -154,7 +154,7 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
   return (
     <motion.article
       ref={cardRef as React.RefObject<HTMLElement>}
-      onClick={() => navigate(`/cursos/${course.slug}`)}
+      onClick={() => navigate(course.tipo === 'vivencial' ? `/vivencial/${course.slug}` : `/cursos/${course.slug}`)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       initial={{ opacity: 0, y: 18 }}

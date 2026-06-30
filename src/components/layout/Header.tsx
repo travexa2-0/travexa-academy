@@ -166,15 +166,19 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link to="/login">
-                  <Button variant="ghost" size="sm" className="text-sm h-9" style={{ color: 'var(--text-2)' }}>
-                    Ingresar
-                  </Button>
+                <Link
+                  to="/login"
+                  className="h-9 px-3 inline-flex items-center rounded-lg text-sm font-medium transition-colors"
+                  style={{ color: 'var(--text-2)' }}
+                >
+                  Ingresar
                 </Link>
-                <Link to="/registro">
-                  <Button size="sm" className="h-9 font-semibold text-sm" style={{ background: 'var(--neon)', color: '#0A1E29' }}>
-                    Empezar gratis
-                  </Button>
+                <Link
+                  to="/registro"
+                  className="h-9 px-4 inline-flex items-center rounded-lg text-sm font-semibold transition-all"
+                  style={{ background: 'var(--neon)', color: '#0A1E29' }}
+                >
+                  Empezar gratis
                 </Link>
               </>
             )}
@@ -248,10 +252,13 @@ export default function Header() {
                 <Link to="/login" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
                   Ingresar
                 </Link>
-                <Link to="/registro" onClick={() => setMenuOpen(false)} className="block">
-                  <Button className="w-full font-semibold" style={{ background: 'var(--primary)', color: 'var(--text-1)' }}>
-                    Empezar gratis
-                  </Button>
+                <Link
+                  to="/registro"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center w-full rounded-lg px-4 py-2.5 text-sm font-semibold"
+                  style={{ background: 'var(--neon)', color: '#0A1E29' }}
+                >
+                  Empezar gratis
                 </Link>
               </>
             )}

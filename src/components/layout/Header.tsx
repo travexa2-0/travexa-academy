@@ -6,23 +6,33 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
 import NotificationsDrawer from './NotificationsDrawer'
-import { EASE_DRAWER } from '@/lib/motion'
+
+// 3 states:
+// 'top'    → at page top, bar is transparent and full-width (merges with hero)
+// 'pill'   → scrolled, scrolling UP → floating frosted-glass pill
+// 'hidden' → scrolled, scrolling DOWN → slides out
+type ScrollState = 'top' | 'pill' | 'hidden'
 
 export default function Header() {
   const { user, signOut } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
-  const [menuOpen, setMenuOpen]   = useState(false)
+  const [menuOpen, setMenuOpen]     = useState(false)
   const [notifsOpen, setNotifsOpen] = useState(false)
-  const [visible, setVisible]     = useState(true)
+  const [scroll, setScroll]         = useState<ScrollState>('top')
   const lastY = useRef(0)
 
   const { unreadCount } = useNotifications(user?.id)
 
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, 'change', (y) => {
-    if (y < 80) { setVisible(true); lastY.current = y; return }
-    setVisible(y < lastY.current)
+    if (y < 20) {
+      setScroll('top')
+    } else if (y < lastY.current) {
+      setScroll('pill')
+    } else {
+      setScroll('hidden')
+    }
     lastY.current = y
   })
 
@@ -34,20 +44,46 @@ export default function Header() {
 
   const isActive = (path: string) => location.pathname.startsWith(path)
 
+  const isPill = scroll !== 'top'
+
   return (
     <>
-      <motion.header
-        className="fixed top-0 left-0 right-0 z-50 border-b"
+      {/* ── Outer wrapper: full-width, centers the pill, CSS transition ── */}
+      <div
         style={{
-          background: 'rgba(6,13,20,.92)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderColor: 'var(--line)',
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          zIndex: 50,
+          display: 'flex',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          padding: isPill ? '10px 14px' : '0px',
+          transform: scroll === 'hidden' ? 'translateY(-130%)' : 'translateY(0)',
+          transition: 'transform 220ms cubic-bezier(0.23,1,0.32,1), padding 320ms cubic-bezier(0.23,1,0.32,1)',
         }}
-        animate={{ y: visible ? 0 : '-100%' }}
-        transition={{ duration: 0.22, ease: EASE_DRAWER }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        {/* ── Inner pill / bar ── */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 1180,
+            height: 56,
+            padding: '0 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pointerEvents: 'auto',
+            borderRadius: isPill ? 14 : 0,
+            background: isPill ? 'rgba(10,22,32,.78)' : 'rgba(8,18,26,0)',
+            backdropFilter: isPill ? 'blur(44px) saturate(190%)' : 'none',
+            WebkitBackdropFilter: isPill ? 'blur(44px) saturate(190%)' : 'none',
+            border: `1px solid ${isPill ? 'rgba(255,255,255,.1)' : 'transparent'}`,
+            boxShadow: isPill
+              ? '0 0 0 1px rgba(255,255,255,.05), 0 2px 16px rgba(0,0,0,.35), 0 8px 32px rgba(0,0,0,.25)'
+              : 'none',
+            transition: 'background 280ms ease, border-color 280ms ease, box-shadow 280ms ease, border-radius 300ms cubic-bezier(0.23,1,0.32,1)',
+          }}
+        >
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
@@ -61,10 +97,10 @@ export default function Header() {
           {/* Nav desktop */}
           <nav className="hidden md:flex items-center gap-1">
             {[
-              { to: '/cursos',     label: 'Cursos',    icon: Library },
-              { to: '/vivencial',  label: 'Vivencial', icon: Globe },
+              { to: '/cursos',     label: 'Cursos',     icon: Library },
+              { to: '/vivencial',  label: 'Vivencial',  icon: Globe },
               ...(user ? [
-                { to: '/dashboard',  label: 'Mi panel',  icon: LayoutDashboard },
+                { to: '/dashboard',  label: 'Mi panel',   icon: LayoutDashboard },
                 { to: '/mis-cursos', label: 'Mis cursos', icon: BookOpen },
               ] : []),
             ].map(({ to, label, icon: Icon }) => (
@@ -87,7 +123,6 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <>
-                {/* Bell con badge */}
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setNotifsOpen(true)}
@@ -171,10 +206,10 @@ export default function Header() {
             </button>
           </div>
         </div>
-      </motion.header>
+      </div>
 
-      {/* Spacer */}
-      <div className="h-16" />
+      {/* Spacer — reserva espacio bajo el header fijo */}
+      <div className="h-14" />
 
       {/* Mobile menu */}
       <AnimatePresence>
@@ -184,7 +219,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="fixed top-16 left-0 right-0 z-40 border-b px-4 py-4 space-y-1"
+            className="fixed top-14 left-0 right-0 z-40 border-b px-4 py-4 space-y-1"
             style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}
           >
             <Link to="/cursos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>

@@ -17,7 +17,7 @@ const PagoError         = lazy(() => import('@/pages/public/PagoError'))
 const Dashboard         = lazy(() => import('@/pages/private/Dashboard'))
 const MisCursos         = lazy(() => import('@/pages/private/MisCursos'))
 const Player            = lazy(() => import('@/pages/private/Player'))
-const Perfil            = lazy(() => import('@/pages/private/Perfil'))
+const Profile           = lazy(() => import('@/pages/private/Profile'))
 const VivencialDetalle  = lazy(() => import('@/pages/private/VivencialDetalle'))
 
 function PageLoader() {
@@ -64,7 +64,7 @@ export default function App() {
               <Route path="/cursos/:slug/aprender" element={<Player />} />
               <Route path="/cursos/:slug/aprender/:lessonId" element={<Player />} />
               <Route path="/mi-cuenta" element={<Navigate to="/perfil" replace />} />
-              <Route path="/perfil" element={<Perfil />} />
+              <Route path="/perfil" element={<Profile />} />
             </Route>
 
             {/* Fallback */}

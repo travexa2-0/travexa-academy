@@ -97,7 +97,7 @@ export default function Header() {
           {/* Nav desktop */}
           <nav className="hidden md:flex items-center gap-1">
             {[
-              { to: '/cursos',     label: 'Cursos',     icon: Library },
+              { to: '/cursos',     label: 'Formación',  icon: Library },
               { to: '/vivencial',  label: 'Vivencial',  icon: Globe },
               ...(user ? [
                 { to: '/dashboard',  label: 'Mi panel',   icon: LayoutDashboard },
@@ -150,7 +150,7 @@ export default function Header() {
                 <Link to="/perfil">
                   <Button variant="ghost" size="sm" className="gap-1.5 text-sm h-9" style={{ color: 'var(--text-2)' }}>
                     <User className="h-3.5 w-3.5" />
-                    Perfil
+                    Mi perfil
                   </Button>
                 </Link>
                 <Button
@@ -227,7 +227,7 @@ export default function Header() {
             style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}
           >
             <Link to="/cursos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
-              <Library className="h-4 w-4" /> Cursos
+              <Library className="h-4 w-4" /> Formación
             </Link>
             <Link to="/vivencial" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
               <Globe className="h-4 w-4" /> Vivencial
@@ -241,7 +241,7 @@ export default function Header() {
                   <BookOpen className="h-4 w-4" /> Mis cursos
                 </Link>
                 <Link to="/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
-                  <User className="h-4 w-4" /> Perfil
+                  <User className="h-4 w-4" /> Mi perfil
                 </Link>
                 <button onClick={() => { void handleSignOut() }} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-left" style={{ color: 'var(--text-3)' }}>
                   <LogOut className="h-4 w-4" /> Cerrar sesión

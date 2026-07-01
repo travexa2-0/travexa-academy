@@ -16,6 +16,48 @@ export function nivelFromPuntos(puntos: number): NivelUsuario {
   return 'Explorador'
 }
 
+// ── Niveles de formación (fuente de verdad: proto academy_perfil) ──
+// 5 niveles con thresholds de XP. academy_profiles.nivel guarda el número (1-5).
+export interface NivelDef {
+  n: number
+  nombre: string
+  min: number       // XP mínimo para alcanzar el nivel
+  benefit: string
+}
+
+export const NIVELES: readonly NivelDef[] = [
+  { n: 1, nombre: 'Explorador',     min: 0,    benefit: 'Acceso a todos los cursos gratuitos' },
+  { n: 2, nombre: 'Aventurero',     min: 500,  benefit: '+5% de Créditos en cada compra' },
+  { n: 3, nombre: 'Viajero',        min: 1000, benefit: 'Acceso anticipado a cursos nuevos' },
+  { n: 4, nombre: 'Expedicionista', min: 2000, benefit: 'Acceso anticipado a vivenciales + badge exclusivo' },
+  { n: 5, nombre: 'Embajador',      min: 5000, benefit: 'Descuento exclusivo en vivenciales + acceso VIP' },
+] as const
+
+export interface NivelInfo {
+  actual: NivelDef
+  siguiente: NivelDef | null
+  progresoPct: number   // 0-100 dentro de la banda del nivel actual
+  xpEnBanda: number     // XP acumulado dentro del nivel actual
+  xpParaSiguiente: number // XP total del siguiente nivel (o el actual si es el último)
+}
+
+export function nivelInfo(puntos: number): NivelInfo {
+  const xp  = Math.max(0, puntos)
+  let idx = 0
+  for (let i = 0; i < NIVELES.length; i++) {
+    if (xp >= NIVELES[i].min) idx = i
+  }
+  const actual    = NIVELES[idx]
+  const siguiente = NIVELES[idx + 1] ?? null
+  if (!siguiente) {
+    return { actual, siguiente: null, progresoPct: 100, xpEnBanda: xp - actual.min, xpParaSiguiente: actual.min }
+  }
+  const banda     = siguiente.min - actual.min
+  const xpEnBanda = xp - actual.min
+  const progresoPct = banda > 0 ? Math.min(100, Math.round((xpEnBanda / banda) * 100)) : 100
+  return { actual, siguiente, progresoPct, xpEnBanda, xpParaSiguiente: siguiente.min }
+}
+
 // ── profiles (tabla hub compartida con todo Travexa) ──
 export interface Profile {
   id: string
@@ -54,6 +96,13 @@ export interface AcademyProfile {
   streak_actual: number
   streak_maximo: number
   ultimo_acceso_leccion: string | null
+  // gamificación económica + datos del asesor
+  creditos: number
+  fecha_nacimiento: string | null
+  genero: string | null
+  tipo_vendedor: string | null
+  anos_experiencia: string | null
+  destinos_principales: string[]
 }
 
 // ── academy_categories ──
@@ -131,6 +180,7 @@ export interface Course {
   vivencial_fecha_salida: string | null
   vivencial_fecha_regreso: string | null
   vivencial_ciudad_salida: string | null
+  vivencial_pais: string | null
   vivencial_punto_encuentro: string | null
   vivencial_cupo_maximo: number | null
   vivencial_cupo_disponible: number | null
@@ -226,6 +276,8 @@ export interface Subscription {
 }
 
 // ── academy_points_transactions ──
+export type PointsPool = 'xp' | 'creditos'
+
 export interface PointsTransaction {
   id: string
   user_id: string
@@ -233,7 +285,18 @@ export interface PointsTransaction {
   tipo: TipoPunto
   motivo: string
   referencia_id: string | null
+  pool: PointsPool
   created_at: string
+}
+
+// ── Ranking (RPC get_academy_ranking) ──
+export interface RankingRow {
+  user_id: string
+  nombre: string | null
+  apellido: string | null
+  puntos: number
+  nivel: number
+  posicion: number
 }
 
 // ── academy_badges ──

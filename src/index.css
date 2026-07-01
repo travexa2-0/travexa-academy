@@ -43,6 +43,8 @@
   /* Fondos — dark cinematic de Academy */
   --bg:              #0A1E29;
   --bg-2:            #0F2C3B;
+  --bg-3:            #162F3E;
+  --bg-4:            #1A3444;
   --bg-deep:         #060D14;
 
   /* Primario — TEAL de Travexa Core */
@@ -256,3 +258,32 @@
     50%       { opacity: 0.45; }
   }
 }
+
+/* ── Form input — perfil "Tus datos" (proto .td-input) ── */
+.td-input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line-s);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.85rem;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.td-input:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 3px var(--neon-dim);
+}
+select.td-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238FA3AB' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+.td-input::placeholder { color: var(--text-3); }
+/* hide horizontal scrollbar on tab strip */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

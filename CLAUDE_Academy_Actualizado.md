@@ -51,6 +51,7 @@ El usuario paga por lo que consume:
 | Días 1-3 | Setup completo: Vite + React 18 + TS + shadcn/ui + Tailwind v4 + Supabase + auth + páginas base + edge functions MP |
 | Sesión 4 | Supabase `fvrwtqhkskbaixqbxami` creada con schema completo + edge functions deployadas |
 | Sesión 5 | Schema extendido (tipos, vivencial, gamificación) + datos seed + prototipo HTML aprobado de `/cursos` y `/cursos/:slug` |
+| Sesión 8 | `/perfil` construido: `Profile.tsx` (6 tabs — Resumen, Mis Cursos, Favoritos, Vivenciales, Logros, Tus datos) replicando `academy_perfil.html`. Hooks nuevos (`useProfilePage.ts`), RPC `get_academy_ranking()`, tokens `--bg-3/--bg-4` + `.td-input`, tipos extendidos (creditos, fecha_nacimiento, genero, tipo_vendedor, anos_experiencia, destinos_principales, pool, NIVELES/nivelInfo). Header: "Cursos"→"Formación", "Perfil"→"Mi perfil". Reemplazó el `Perfil.tsx` viejo (4 secciones). |
 
 ### ✅ Infraestructura lista
 

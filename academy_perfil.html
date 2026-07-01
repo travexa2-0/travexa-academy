@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi perfil — Travexa Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A1E29;--bg2:#0F2C3B;--bg3:#162F3E;--bg4:#1A3444;
+  --pr:#0E6B5C;--ph:#0D5E50;--pl:#4ECDB8;
+  --neon:#00E5C8;--neon-glow:rgba(0,229,200,.22);--neon-dim:rgba(0,229,200,.08);
+  --gd:#C99A3A;--gd-soft:rgba(201,154,58,.15);
+  --urg:#EF6B35;--red:#EF4444;
+  --t1:#F5F3EC;--t2:#C9D3D6;--t3:#8FA3AB;
+  --cd:rgba(255,255,255,.055);--cdh:rgba(255,255,255,.09);
+  --ln:rgba(245,243,236,.11);--ls:rgba(245,243,236,.22);
+  --e:cubic-bezier(0.23,1,0.32,1);
+  --fd:'Space Grotesk',sans-serif;--fb:'Inter',sans-serif;--fm:'IBM Plex Mono',monospace;
+  /* Profile-specific */
+  --xp-a:#00E5C8;--xp-b:#0E6B5C;
+  --lvl1:#8FA3AB;--lvl2:#4ECDB8;--lvl3:#0E6B5C;--lvl4:#00E5C8;--lvl5:#C99A3A;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;min-height:100vh;padding-top:68px}
+button,a{font:inherit;cursor:pointer;background:none;border:none;color:inherit;text-decoration:none}
+
+/* ── HEADER ── */
+.ho{position:fixed;top:0;left:0;right:0;z-index:300;display:flex;justify-content:center;padding:0;transition:padding 320ms var(--e);pointer-events:none}
+.ho.pill{padding:10px 14px}
+.hp{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:1180px;height:56px;padding:0 20px;border-radius:0;background:rgba(8,18,26,.82);backdrop-filter:blur(44px) saturate(190%);-webkit-backdrop-filter:blur(44px) saturate(190%);border:1px solid rgba(255,255,255,.1);pointer-events:auto;transition:border-radius 300ms var(--e)}
+.ho.pill .hp{border-radius:14px}
+.logo{font-family:var(--fd);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;cursor:pointer}
+.logo-m{width:26px;height:26px;background:var(--gd);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-m svg{width:13px;height:13px}
+.logo-a{color:var(--t1)}.logo-b{color:var(--pl)}
+.hnav{display:flex;align-items:center;gap:2px}
+@media(max-width:680px){.hnav{display:none}}
+.hlnk{font-size:13px;font-weight:500;color:rgba(245,243,236,.6);padding:7px 12px;border-radius:8px;cursor:pointer;transition:color 160ms,background 160ms}
+.hlnk:hover{color:var(--t1);background:rgba(255,255,255,.07)}
+.hlnk.on{color:var(--neon);background:var(--neon-dim)}
+.hlnk.dim{opacity:.35;cursor:default;font-size:12px}
+.hacts{display:flex;align-items:center;gap:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;min-height:38px;cursor:pointer;border:none;white-space:nowrap;transition:transform 130ms var(--e),box-shadow 130ms,background 150ms}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--pr);color:#fff}
+.btn-p:hover{background:var(--ph);box-shadow:0 4px 16px rgba(14,107,92,.4)}
+.btn-neon{background:var(--neon);color:#0A1E29;font-weight:700}
+.btn-neon:hover{box-shadow:0 0 24px var(--neon-glow)}
+.btn-g{color:rgba(245,243,236,.7)}
+.btn-g:hover{background:rgba(255,255,255,.08);color:var(--t1)}
+.btn-out{background:transparent;border:1px solid var(--ls);color:var(--t2)}
+.btn-out:hover{background:var(--cd);color:var(--t1)}
+.wrap{width:100%;max-width:960px;margin:0 auto;padding:0 22px}
+@keyframes fuA{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PROFILE HERO ── */
+.phero{
+  padding:36px 0 0;
+  background:linear-gradient(180deg,#0D2A38 0%,var(--bg) 100%);
+  border-bottom:1px solid var(--ln);
+  position:relative;overflow:hidden;
+}
+.phero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(var(--ln) 1px,transparent 1px),linear-gradient(90deg,var(--ln) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 700px 300px at 80% 0%,black,transparent 70%);
+  opacity:.4;
+}
+.phero-inner{display:flex;align-items:flex-start;gap:28px;padding-bottom:28px;position:relative;z-index:1}
+@media(max-width:680px){.phero-inner{flex-direction:column;align-items:center;text-align:center}}
+
+/* Avatar with level ring */
+.av-wrap{position:relative;flex-shrink:0;width:96px;height:96px}
+.av-ring{position:absolute;inset:-6px;width:108px;height:108px}
+.av-bg{fill:none;stroke:rgba(245,243,236,.1);stroke-width:3}
+.av-prog{fill:none;stroke:var(--neon);stroke-width:3;stroke-linecap:round;stroke-dasharray:301;stroke-dashoffset:226;transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset 900ms var(--e)}
+.av-inner{
+  width:96px;height:96px;border-radius:50%;
+  background:linear-gradient(135deg,var(--bg3) 0%,var(--bg4) 100%);
+  border:2px solid var(--ls);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:1.8rem;font-weight:700;color:var(--t1);
+  letter-spacing:-.02em;
+  position:relative;z-index:1;
+}
+.av-lvl{
+  position:absolute;bottom:-2px;right:-2px;z-index:2;
+  width:26px;height:26px;border-radius:50%;
+  background:var(--neon);color:#0A1E29;
+  font-family:var(--fd);font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--bg);box-shadow:0 0 12px var(--neon-glow);
+}
+
+/* Profile info */
+.pinfo{flex:1;min-width:0}
+.pname{font-family:var(--fd);font-size:1.5rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.plvlname{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--neon);margin-top:5px;
+}
+.plvlname::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--neon);box-shadow:0 0 0 3px var(--neon-dim)}
+.pusername{font-size:.85rem;color:var(--t3);margin-top:4px}
+.pmeta{display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap}
+.pmi{display:flex;align-items:center;gap:4px;font-family:var(--fm);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+.pmi svg{width:12px;height:12px}
+@media(max-width:680px){.pmeta{justify-content:center}}
+
+/* Stats row */
+.pstats{display:flex;gap:0;margin-top:20px;border:1px solid var(--ln);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.03)}
+@media(max-width:680px){.pstats{width:100%;max-width:340px;margin:20px auto 0}}
+.pst{flex:1;padding:13px 0;text-align:center;position:relative;cursor:default}
+.pst+.pst::before{content:'';position:absolute;left:0;top:20%;height:60%;width:1px;background:var(--ln)}
+.pst-num{font-family:var(--fd);font-size:1.15rem;font-weight:700;color:var(--t1);letter-spacing:-.02em}
+.pst-lbl{font-family:var(--fm);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-top:2px}
+
+/* XP bar */
+.pxp{margin-top:16px}
+.pxp-head{display:flex;align-items:center;justify-content:space-between;font-family:var(--fm);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.pxp-bar-wrap{height:5px;background:rgba(245,243,236,.1);border-radius:99px;overflow:hidden}
+.pxp-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--xp-b),var(--xp-a));width:48%;transition:width 1s var(--e);box-shadow:0 0 8px var(--neon-glow)}
+.pedit{margin-top:16px}
+@media(max-width:680px){.pedit{display:flex;justify-content:center}}
+
+/* ── TABS ── */
+.tabs-wrap{border-bottom:1px solid var(--ln);background:var(--bg);position:sticky;top:56px;z-index:100}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none;max-width:960px;margin:0 auto;padding:0 22px;position:relative}
+.tabs::-webkit-scrollbar{display:none}
+.tind{position:absolute;bottom:-1px;left:0;height:2px;background:var(--neon);border-radius:2px;transition:left 220ms var(--e),width 220ms var(--e);pointer-events:none}
+.tbtn{font-size:13px;font-weight:500;color:var(--t3);padding:14px 16px;white-space:nowrap;border:none;background:none;cursor:pointer;transition:color 140ms;min-height:48px;display:flex;align-items:center;gap:7px}
+.tbtn:hover{color:var(--t2)}
+.tbtn.on{color:var(--t1)}
+.tab-badge{background:var(--neon-dim);color:var(--neon);border:1px solid rgba(0,229,200,.25);font-family:var(--fm);font-size:9px;font-weight:600;padding:1px 6px;border-radius:99px;min-width:18px;text-align:center}
+.tcnt{display:none;padding:28px 0 72px;animation:fuA 280ms var(--e) both}
+.tcnt.on{display:block}
+
+/* ── SECTION HEADERS inside tabs ── */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sh-title{font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--t1)}
+.sh-action{font-family:var(--fm);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--neon);cursor:pointer;padding:5px 0}
+
+/* ── RESUMEN TAB ── */
+.greeting{font-family:var(--fd);font-size:1.3rem;font-weight:700;margin-bottom:18px;letter-spacing:-.01em}
+.greeting span{color:var(--neon)}
+
+/* (streak removed — courses are sporadic, not daily habits) */
+
+
+
+/* Overview 2-col grid */
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+@media(max-width:640px){.ov-grid{grid-template-columns:1fr}}
+
+/* Compact course card (overview) */
+.cc-compact{
+  background:var(--bg2);border:1px solid var(--ln);border-radius:14px;overflow:hidden;
+  display:flex;flex-direction:column;cursor:pointer;
+  transition:transform 220ms var(--e),border-color 220ms,box-shadow 220ms;
+}
+.cc-compact:hover{transform:translateY(-3px);border-color:var(--ls);box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.cc-compact:active{transform:scale(.98)}
+.cc-thumb{position:relative;height:186px;background:var(--bg3);overflow:hidden}
+.cc-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 400ms var(--e)}
+.cc-compact:hover .cc-thumb img{transform:scale(1.06)}
+.cc-thumb-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(6,13,20,.9))}
+.cc-prog-ring{position:absolute;bottom:8px;right:8px;width:36px;height:36px;background:rgba(10,30,41,.75);border-radius:50%;padding:4px;backdrop-filter:blur(8px)}
+.cc-inner{padding:12px 14px 14px}
+.cc-cat{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--pl);margin-bottom:5px}
+.cc-title{font-family:var(--fd);font-size:.88rem;font-weight:700;color:var(--t1);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cc-meta{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.cc-prog-txt{font-family:var(--fm);font-size:9px;letter-spacing:.06em;color:var(--t3);text-transform:uppercase}
+.cc-cta{font-family:var(--fd);font-size:11px;font-weight:700;color:var(--neon);display:flex;align-items:center;gap:3px}
+.cc-cta svg{width:11px;height:11px}
+.cc-bar-wrap{height:2px;background:rgba(245,243,236,.1);margin:10px 0 0;border-radius:1px;overflow:hidden}
+.cc-bar{height:100%;background:var(--neon);border-radius:1px;box-shadow:0 0 4px var(--neon-glow)}
+
+/* Next vivencial overview card */
+.vov-card{
+  background:var(--bg2);border:1px solid rgba(201,154,58,.35);border-radius:14px;
+  overflow:hidden;cursor:pointer;
+  transition:transform 220ms var(--e),border-color 220ms;
+}
+.vov-card:hover{transform:translateY(-3px);border-color:rgba(201,154,58,.7)}
+.vov-thumb{position:relative;height:90px;overflow:hidden}
+.vov-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.vov-thumb-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(6,13,20,.85))}
+.vov-thumb span{position:absolute;bottom:7px;left:10px;font-family:var(--fd);font-size:.82rem;font-weight:700;color:#fff}
+.vov-inner{padding:10px 12px 12px}
+.vov-country{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gd);margin-bottom:4px}
+.vov-count{font-family:var(--fd);font-size:.8rem;color:var(--t2)}
+.vov-count strong{color:var(--neon)}
+
+/* Badge preview (overview) */
+.badge-preview{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--ln);border-radius:14px;padding:14px 16px;margin-bottom:24px}
+.bpv-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;position:relative;overflow:hidden}
+.bpv-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:bs 2.8s ease-in-out infinite}
+@keyframes bs{0%{transform:translateX(-200%)}100%{transform:translateX(200%)}}
+.bpv-info{flex:1;min-width:0}
+.bpv-title{font-family:var(--fd);font-size:.88rem;font-weight:700;color:var(--t1)}
+.bpv-sub{font-size:.78rem;color:var(--t3);margin-top:2px}
+.bpv-new{font-family:var(--fm);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--neon);background:var(--neon-dim);border:1px solid rgba(0,229,200,.25);border-radius:4px;padding:2px 7px;white-space:nowrap}
+
+/* ── MIS CURSOS TAB ── */
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.fp{font-family:var(--fm);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);padding:5px 13px;border-radius:99px;border:1px solid var(--ln);cursor:pointer;white-space:nowrap;min-height:30px;display:inline-flex;align-items:center;transition:color 140ms,background 140ms,border-color 140ms}
+.fp.on{background:var(--neon-dim);color:var(--neon);border-color:rgba(0,229,200,.35);font-weight:600}
+.fp:hover:not(.on){color:var(--t1);border-color:var(--ls)}
+
+/* Full course cards */
+.courses-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:640px){.courses-grid{grid-template-columns:1fr}}
+
+.course-card{
+  background:var(--bg2);border:1px solid var(--ln);border-radius:16px;overflow:hidden;
+  cursor:pointer;transition:transform 220ms var(--e),border-color 220ms,box-shadow 220ms;
+}
+.course-card:hover{transform:translateY(-4px);border-color:var(--ls);box-shadow:0 10px 32px rgba(0,0,0,.4)}
+.course-card:active{transform:scale(.98)}
+.course-thumb{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--bg3)}
+.course-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 400ms var(--e)}
+.course-card:hover .course-thumb img{transform:scale(1.05)}
+.ct-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(6,13,20,.9))}
+.ct-ring{position:absolute;bottom:10px;right:10px;backdrop-filter:blur(8px);background:rgba(10,30,41,.75);border-radius:50%;padding:5px}
+.c-body{padding:14px 16px 16px}
+.c-cat{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--pl);margin-bottom:6px}
+.c-title{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--t1);line-height:1.3}
+.c-instructor{font-size:.78rem;color:var(--t3);margin-top:4px}
+.c-progress{margin-top:12px}
+.c-prog-head{display:flex;align-items:center;justify-content:space-between;font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.c-prog-pct{color:var(--neon);font-weight:600}
+.c-prog-bar-wrap{height:3px;background:rgba(245,243,236,.1);border-radius:2px;overflow:hidden}
+.c-prog-bar{height:100%;background:linear-gradient(90deg,var(--xp-b),var(--xp-a));border-radius:2px}
+.c-action{margin-top:12px}
+.c-btn{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:9px;border-radius:9px;background:var(--neon-dim);color:var(--neon);font-size:12.5px;font-weight:700;border:1px solid rgba(0,229,200,.25);cursor:pointer;transition:background 140ms,border-color 140ms}
+.c-btn:hover{background:rgba(0,229,200,.15);border-color:rgba(0,229,200,.45)}
+.c-btn.cert{background:var(--gd-soft);color:var(--gd);border-color:rgba(201,154,58,.35)}
+.c-btn.cert:hover{background:rgba(201,154,58,.25)}
+.c-btn svg{width:13px;height:13px}
+
+/* empty state */
+.empty{text-align:center;padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty-icon{width:52px;height:52px;border-radius:14px;background:var(--bg2);border:1px solid var(--ln);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:6px}
+.empty h3{font-family:var(--fd);font-size:1rem;font-weight:700;color:var(--t2)}
+.empty p{font-size:.83rem;color:var(--t3);max-width:280px}
+
+/* ── FAVORITOS TAB ── */
+.fav-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:680px){.fav-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:400px){.fav-grid{grid-template-columns:1fr}}
+.fav-card{background:var(--bg2);border:1px solid var(--ln);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform 200ms var(--e),border-color 200ms}
+.fav-card:hover{transform:translateY(-3px);border-color:var(--ls)}
+.fav-thumb{aspect-ratio:16/10;overflow:hidden;background:var(--bg3);position:relative}
+.fav-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 360ms var(--e)}
+.fav-card:hover .fav-thumb img{transform:scale(1.06)}
+.fav-thumb-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(6,13,20,.8))}
+.fav-title-ov{position:absolute;bottom:7px;left:9px;right:9px;font-family:var(--fd);font-size:.78rem;font-weight:700;color:#fff;line-height:1.25}
+.fav-inner{padding:9px 10px 11px}
+.fav-cat{font-family:var(--fm);font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--pl)}
+.fav-price{font-family:var(--fd);font-size:.82rem;font-weight:700;color:var(--t1);margin-top:2px}
+.fav-unbtn{display:flex;align-items:center;gap:4px;font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);cursor:pointer;transition:color 140ms;padding:6px 0 0}
+.fav-unbtn:hover{color:#EF4444}
+.fav-unbtn svg{width:11px;height:11px}
+
+/* ── VIVENCIALES TAB ── */
+.v-section-label{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--neon);display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.v-section-label::after{content:'';flex:1;height:1px;background:var(--ln)}
+
+/* Upcoming vivencial */
+.uv-card{
+  background:var(--bg2);border:1px solid rgba(201,154,58,.35);border-radius:16px;
+  overflow:hidden;margin-bottom:14px;
+}
+.uv-hero{position:relative;height:160px;overflow:hidden}
+.uv-hero img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 400ms var(--e)}
+.uv-card:hover .uv-hero img{transform:scale(1.04)}
+.uv-hero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,20,.1) 0%,rgba(6,13,20,.8) 100%)}
+.uv-hero-cnt{position:absolute;bottom:12px;left:16px;right:16px;display:flex;align-items:flex-end;justify-content:space-between}
+.uv-title{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:#fff}
+.uv-country{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gd);margin-top:2px}
+.uv-countdown{text-align:right}
+.uv-days-num{font-family:var(--fd);font-size:1.8rem;font-weight:700;color:var(--neon);letter-spacing:-.03em;line-height:1}
+.uv-days-lbl{font-family:var(--fm);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,243,236,.5)}
+.uv-body{padding:14px 16px 16px}
+.uv-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.uv-info{display:flex;flex-direction:column;gap:5px}
+.uv-info-item{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--t2)}
+.uv-info-item svg{width:12px;height:12px;color:var(--t3)}
+.uv-pay{text-align:right}
+.uv-pay-status{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:#22c55e;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:5px;padding:3px 8px;margin-bottom:5px}
+.uv-pay-saldo{font-size:.78rem;color:var(--t3)}
+.uv-pay-saldo strong{color:var(--urg)}
+.uv-actions{display:flex;gap:8px;margin-top:12px}
+.uv-btn-main{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;border-radius:9px;background:var(--neon);color:#0A1E29;font-size:12.5px;font-weight:700;cursor:pointer;transition:box-shadow 150ms}
+.uv-btn-main:hover{box-shadow:0 0 24px var(--neon-glow)}
+.uv-btn-sec{display:flex;align-items:center;justify-content:center;padding:9px 14px;border-radius:9px;background:var(--cd);border:1px solid var(--ln);font-size:12.5px;font-weight:600;color:var(--t2);cursor:pointer;transition:background 140ms}
+.uv-btn-sec:hover{background:var(--cdh)}
+
+/* Past vivencial (timeline) */
+.pv-timeline{position:relative;padding-left:28px;margin-top:8px}
+.pv-timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--ln),transparent);border-radius:2px}
+.pv-item{position:relative;margin-bottom:18px}
+.pv-dot{position:absolute;left:-24px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--bg3);border:2px solid var(--ls)}
+.pv-card{background:var(--bg2);border:1px solid var(--ln);border-radius:12px;overflow:hidden;display:flex;gap:0;cursor:pointer;transition:border-color 200ms}
+.pv-card:hover{border-color:var(--ls)}
+.pv-thumb{width:80px;flex-shrink:0;overflow:hidden}
+.pv-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pv-inner{padding:12px 14px;flex:1;min-width:0}
+.pv-date{font-family:var(--fm);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px}
+.pv-title{font-family:var(--fd);font-size:.88rem;font-weight:700;color:var(--t1);line-height:1.25}
+.pv-country{font-size:.75rem;color:var(--t3);margin-top:2px}
+.pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
+
+/* Review mini (below completed course/vivencial) */
+.review-mini{margin-top:10px;padding-top:10px;border-top:1px solid var(--ln)}
+.review-mini-lbl{font-family:var(--fm);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.review-mini-stars{display:flex;gap:3px;margin-bottom:7px;cursor:pointer}
+.review-mini-stars span{font-size:1.1rem;color:rgba(201,154,58,.25);transition:color 100ms}
+.review-mini-stars span.on,.review-mini-stars:hover span{color:var(--gd)}
+.review-mini-stars span:hover ~ span{color:rgba(201,154,58,.25)!important}
+.review-mini-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--ln);border-radius:7px;padding:7px 9px;font-size:.79rem;color:var(--t1);resize:none;height:52px;outline:none;transition:border-color 160ms;font-family:var(--fb)}
+.review-mini-input:focus{border-color:var(--neon)}
+.review-mini-btn{display:flex;align-items:center;justify-content:center;width:100%;padding:6px;border-radius:7px;background:transparent;border:1px solid var(--ln);font-size:11px;font-weight:600;color:var(--t3);cursor:pointer;margin-top:6px;transition:background 140ms,border-color 140ms,color 140ms}
+.review-mini-btn:hover{background:var(--neon-dim);border-color:rgba(0,229,200,.35);color:var(--neon)}
+.pv-abtn{font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:5px;cursor:pointer;transition:background 140ms}
+.pv-abtn.cert{color:var(--gd);background:var(--gd-soft);border:1px solid rgba(201,154,58,.3)}
+.pv-abtn.cert:hover{background:rgba(201,154,58,.25)}
+.pv-stars{display:flex;align-items:center;gap:3px;color:var(--gd);font-size:11px}
+
+/* ── LOGROS TAB ── */
+.logros-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+@media(max-width:560px){.logros-grid{grid-template-columns:1fr}}
+
+/* Level card */
+.lvl-card{background:var(--bg2);border:1px solid var(--ln);border-radius:16px;padding:20px 22px}
+.lvl-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.lvl-num-wrap{
+  width:56px;height:56px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--xp-b),var(--xp-a));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:1.5rem;font-weight:700;color:#0A1E29;
+}
+.lvl-name{font-family:var(--fd);font-size:.95rem;font-weight:700;color:var(--t1)}
+.lvl-sub{font-size:.75rem;color:var(--t3);margin-top:2px}
+.lvl-bar-wrap{height:6px;background:rgba(245,243,236,.1);border-radius:99px;overflow:hidden;margin-bottom:5px}
+.lvl-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--xp-b),var(--xp-a));width:48%;box-shadow:0 0 10px var(--neon-glow);transition:width 1s var(--e)}
+.lvl-bar-meta{display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+
+
+/* Badge grid */
+.badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+@media(max-width:560px){.badge-grid{grid-template-columns:repeat(3,1fr)}}
+.badge-item{
+  background:var(--bg2);border:1px solid var(--ln);border-radius:12px;
+  padding:14px 10px;text-align:center;cursor:pointer;
+  transition:transform 200ms var(--e),border-color 200ms,box-shadow 200ms;
+}
+.badge-item:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.badge-item.earned{border-color:rgba(201,154,58,.5)}
+.badge-item.earned:hover{border-color:rgba(201,154,58,.85);box-shadow:0 6px 20px rgba(201,154,58,.15)}
+.badge-item.locked{opacity:.45;filter:saturate(0.2)}
+.badge-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;margin:0 auto 8px;
+  position:relative;overflow:hidden;
+}
+.badge-item.earned .badge-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:bs 2.8s ease-in-out infinite}
+.badge-name{font-family:var(--fd);font-size:.7rem;font-weight:700;color:var(--t1);line-height:1.25;margin-bottom:2px}
+.badge-cond{font-family:var(--fm);font-size:7px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+
+/* Certificates */
+.cert-list{display:flex;flex-direction:column;gap:10px}
+.cert-item{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--ln);border-radius:12px;padding:13px 16px;cursor:pointer;transition:border-color 180ms}
+.cert-item:hover{border-color:var(--ls)}
+.cert-icon{width:38px;height:38px;border-radius:9px;background:var(--gd-soft);border:1px solid rgba(201,154,58,.3);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.cert-info{flex:1;min-width:0}
+.cert-name{font-family:var(--fd);font-size:.85rem;font-weight:700;color:var(--t1)}
+.cert-date{font-size:.75rem;color:var(--t3);margin-top:2px}
+.cert-dl{font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--neon);white-space:nowrap}
+
+/* SVG ring helper */
+.ring{transform:rotate(-90deg);transform-origin:center}
+
+/* ── CRÉDITOS MINI (Resumen) ── */
+.cred-mini{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--bg2);border:1px solid rgba(201,154,58,.3);border-radius:14px;padding:14px 18px;margin-bottom:20px;cursor:pointer;transition:border-color 180ms,background 180ms}
+.cred-mini:hover{background:var(--bg3);border-color:rgba(201,154,58,.6)}
+
+/* ── VOV CARD V2 (vivencial en overview — con neon border) ── */
+.vov-card-v2{background:var(--bg2);border:1.5px solid var(--neon);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:0 0 0 0 var(--neon-glow);transition:transform 220ms var(--e),box-shadow 220ms}
+.vov-card-v2:hover{transform:translateY(-3px);box-shadow:0 0 20px var(--neon-glow)}
+.vov2-thumb{position:relative;height:186px;overflow:hidden;background:var(--bg3)}
+.vov2-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 400ms var(--e)}
+.vov-card-v2:hover .vov2-thumb img{transform:scale(1.06)}
+.vov2-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,20,.05) 0%,rgba(6,13,20,.85) 100%)}
+.vov2-countdown{position:absolute;top:8px;right:8px;z-index:4;text-align:right;background:rgba(6,13,20,.65);backdrop-filter:blur(8px);border-radius:8px;padding:4px 9px;border:1px solid var(--neon)}
+.vov2-days{display:block;font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--neon);line-height:1}
+.vov2-days-lbl{font-family:var(--fm);font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,243,236,.5)}
+.vov2-title-area{position:absolute;bottom:8px;left:10px;z-index:4}
+.vov2-name{font-family:var(--fd);font-size:.92rem;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.vov2-country{font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:rgba(245,243,236,.6);margin-top:2px}
+.vov2-body{padding:10px 12px 12px;background:var(--bg2)}
+.vov2-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vov2-item{font-size:.75rem;color:var(--t2)}
+.vov2-pay{font-size:.75rem;font-weight:600;color:var(--t2)}
+
+/* ── CRÉDITOS CARD (Logros tab) ── */
+.cred-card{background:var(--bg2);border:1px solid rgba(201,154,58,.35);border-radius:16px;padding:20px 22px}
+.cred-earn-list{display:flex;flex-direction:column;gap:6px}
+.cred-earn{display:flex;align-items:center;justify-content:space-between;font-size:.8rem;color:var(--t2);padding:5px 0;border-bottom:1px solid rgba(245,243,236,.06)}
+.cred-earn:last-child{border-bottom:none}
+
+/* ── RANKING ── */
+.ranking-wrap{margin-top:14px;padding:12px;border-top:1px solid var(--ln);cursor:pointer;border-radius:8px;transition:background 150ms}
+.ranking-wrap:hover{background:rgba(255,255,255,.03)}
+.ranking-label{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ranking-info-icon{display:inline-flex;width:14px;height:14px;border-radius:50%;background:var(--neon-dim);color:var(--neon);font-size:8px;align-items:center;justify-content:center;font-style:normal}
+.ranking-list{display:flex;flex-direction:column;gap:3px}
+.rank-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px}
+.rank-me{background:rgba(0,229,200,.08);border:1px solid rgba(0,229,200,.2)}
+.rank-pos{font-family:var(--fm);font-size:9px;color:var(--t3);min-width:20px;text-align:right}
+.rank-pos-me{color:var(--neon);font-weight:700}
+.rank-name{flex:1;font-size:.78rem;color:var(--t2)}
+.rank-xp{font-family:var(--fm);font-size:9px;color:var(--t3);white-space:nowrap}
+.cred-mov-btn{font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--neon);background:var(--neon-dim);border:1px solid rgba(0,229,200,.25);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:background 140ms}
+.cred-mov-btn:hover{background:rgba(0,229,200,.15)}
+.cert-upload-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--t2);background:var(--cd);border:1px solid var(--ln);border-radius:6px;padding:5px 10px;cursor:pointer;transition:background 140ms,color 140ms}
+.cert-upload-btn:hover{background:var(--cdh);color:var(--t1)}
+
+/* ── CERTIFICATE MODAL ── */
+.cert-doc{background:linear-gradient(145deg,#0D2A38 0%,#0A1E29 60%,#0E2D1F 100%);border:1px solid rgba(201,154,58,.4);border-radius:16px;padding:36px 40px;text-align:center;position:relative;overflow:hidden;margin-bottom:16px}
+.cert-doc::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 20% 80%,rgba(0,229,200,.06) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(201,154,58,.08) 0%,transparent 50%);pointer-events:none}
+.cert-doc::after{content:'';position:absolute;inset:8px;border:1px solid rgba(201,154,58,.2);border-radius:10px;pointer-events:none}
+.cert-logo{font-family:var(--fd);font-size:.82rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,154,58,.7);margin-bottom:20px;position:relative;z-index:1}
+.cert-seal{width:56px;height:56px;margin:0 auto 16px;border-radius:50%;background:linear-gradient(135deg,rgba(201,154,58,.3),rgba(201,154,58,.1));border:2px solid rgba(201,154,58,.5);display:flex;align-items:center;justify-content:center;font-size:1.5rem;position:relative;z-index:1}
+.cert-headline{font-family:var(--fm);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;position:relative;z-index:1}
+.cert-user{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:var(--t1);letter-spacing:-.02em;margin-bottom:4px;position:relative;z-index:1}
+.cert-course{font-size:.88rem;color:var(--t2);margin-bottom:16px;font-style:italic;position:relative;z-index:1}
+.cert-divider{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--gd),transparent);margin:0 auto 14px;position:relative;z-index:1}
+.cert-meta{font-family:var(--fm);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);position:relative;z-index:1}
+
+/* ── VIVENCIAL DETAIL MODAL ── */
+.viv-modal-inner{max-width:700px;padding:0!important;max-height:88vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--ls) transparent}
+.viv-mod-hero{position:relative;height:200px;overflow:hidden;border-radius:20px 20px 0 0}
+.viv-mod-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.viv-mod-hero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,20,.1) 0%,rgba(6,13,20,.78) 100%)}
+.viv-mod-hero-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;background:rgba(6,13,20,.7);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t1);z-index:10}
+.viv-mod-hero-x svg{width:13px;height:13px}
+.viv-mod-hero-cnt{position:absolute;bottom:14px;left:18px;right:18px}
+.viv-mod-title{font-family:var(--fd);font-size:1.35rem;font-weight:700;color:#fff;letter-spacing:-.02em}
+.viv-mod-country{font-family:var(--fm);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--neon);margin-top:4px;display:flex;align-items:center;gap:6px}
+.viv-mod-country::before{content:'';width:12px;height:1px;background:var(--neon)}
+.viv-mod-body{padding:18px 22px 26px;background:#F2F5F4}
+.viv-mod-tabs{display:flex;border-bottom:1px solid rgba(0,0,0,.1);margin-bottom:18px;overflow-x:auto;scrollbar-width:none;position:relative}
+.viv-mod-tabs::-webkit-scrollbar{display:none}
+.viv-mod-tind{position:absolute;bottom:-1px;left:0;height:2px;background:var(--pr);transition:left 200ms var(--e),width 200ms var(--e);pointer-events:none}
+.viv-mod-tbtn{font-size:12px;font-weight:500;color:#6A8590;padding:9px 13px;white-space:nowrap;border:none;background:none;cursor:pointer;transition:color 140ms;min-height:40px}
+.viv-mod-tbtn.on{color:var(--pr)}
+.viv-mod-tcnt{display:none}.viv-mod-tcnt.on{display:block;animation:fu 200ms var(--e) both}
+.viv-mod-pay{display:flex;align-items:center;gap:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:.8rem;color:#22c55e;font-weight:600}
+.viv-mod-acc{border:1px solid rgba(0,0,0,.1);border-radius:8px;margin-bottom:5px;overflow:hidden}
+.viv-mod-acc-tr{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:rgba(0,0,0,.025);cursor:pointer;min-height:42px;border:none;text-align:left}
+.viv-mod-acc-tr:hover{background:rgba(0,0,0,.04)}
+.viv-mod-acc-left{display:flex;align-items:center;gap:8px}
+.viv-mod-day{font-family:var(--fm);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--pr);background:rgba(14,107,92,.1);border-radius:4px;padding:2px 6px}
+.viv-mod-acc-ttl{font-family:var(--fd);font-size:.84rem;font-weight:600;color:#0A1E29}
+.viv-mod-acc-ch{width:13px;height:13px;color:#6A8590;flex-shrink:0;transition:transform 200ms}
+.viv-mod-acc.open .viv-mod-acc-ch{transform:rotate(180deg)}
+.viv-mod-acc-body{max-height:0;overflow:hidden;transition:max-height 280ms var(--e)}
+.viv-mod-acc.open .viv-mod-acc-body{max-height:260px}
+.viv-mod-acc-content{padding:10px 13px 12px;font-size:.82rem;color:#4A6070;line-height:1.65}
+.viv-mod-acc-content strong{color:#0A1E29;font-weight:600}
+.viv-mod-meta{display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:14px}
+.viv-mod-mi{display:flex;align-items:center;gap:5px;font-size:.78rem;color:#4A6070}
+.viv-mod-mi svg{width:12px;height:12px;color:#8FA3AB;flex-shrink:0}
+
+/* ── MOVIMIENTOS MODAL ── */
+.mov-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--ln)}
+.mov-item:last-child{border-bottom:none}
+.mov-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.mov-info{flex:1;min-width:0}
+.mov-type{font-size:.82rem;font-weight:600;color:var(--t1)}
+.mov-date{font-family:var(--fm);font-size:8.5px;color:var(--t3);margin-top:1px}
+.mov-amount{font-family:var(--fd);font-size:.86rem;font-weight:700;white-space:nowrap}
+.mov-plus{color:var(--neon)}.mov-minus{color:#EF4444}
+
+/* ── UPLOAD CERT MODAL ── */
+.upload-drop{border:2px dashed var(--ls);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:border-color 160ms,background 160ms;margin:10px 0}
+.upload-drop:hover{border-color:var(--neon);background:var(--neon-dim)}
+.upload-drop svg{width:26px;height:26px;color:var(--t3);margin:0 auto 6px;display:block}
+.upload-drop p{font-size:.8rem;color:var(--t3)}
+
+/* ── TUS DATOS TAB ── */
+.td-section{margin-bottom:24px}
+.td-label{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--neon);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.td-label::after{content:'';flex:1;height:1px;background:var(--ln)}
+.td-row-locked{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.td-field-locked{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 13px;display:flex;flex-direction:column;gap:2px}
+.td-val{font-size:.85rem;color:var(--t2);font-weight:500}
+.td-lock-note{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--t3);margin-top:8px}
+.td-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.td-grid{grid-template-columns:1fr}}
+.td-group{display:flex;flex-direction:column;gap:5px}
+.td-lbl{font-family:var(--fm);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+.td-lbl-form{font-size:.78rem;color:var(--t3);font-weight:500}
+.td-input{background:var(--bg3);border:1px solid var(--ls);border-radius:8px;padding:9px 12px;font-size:.85rem;color:var(--t1);outline:none;transition:border-color 160ms,box-shadow 160ms;width:100%}
+.td-input:focus{border-color:var(--neon);box-shadow:0 0 0 3px var(--neon-dim)}
+select.td-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238FA3AB' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.td-input-prefix{display:flex;align-items:center;background:var(--bg3);border:1px solid var(--ls);border-radius:8px;overflow:hidden;transition:border-color 160ms,box-shadow 160ms}
+.td-input-prefix:focus-within{border-color:var(--neon);box-shadow:0 0 0 3px var(--neon-dim)}
+.td-input-prefix span{font-family:var(--fm);font-size:9px;color:var(--t3);padding:9px 0 9px 12px;white-space:nowrap;border-right:1px solid var(--ln);margin-right:8px}
+.td-input-prefix input{flex:1;background:none;border:none;padding:9px 12px 9px 0;font-size:.82rem;color:var(--t1);outline:none}
+
+/* ── LEVELS MODAL ── */
+.modal-veil{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(6,13,20,.65);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity 250ms ease}
+.modal-veil.show{opacity:1;pointer-events:auto}
+.modal-card{position:relative;width:100%;max-width:480px;background:var(--bg2);border:1px solid var(--ls);border-radius:20px;padding:28px 28px 24px;box-shadow:0 0 0 1px rgba(245,243,236,.04),0 32px 72px rgba(0,0,0,.6);transform:translateY(14px) scale(.97);opacity:0;transition:transform 300ms var(--e),opacity 260ms var(--e)}
+.modal-veil.show .modal-card{transform:translateY(0) scale(1);opacity:1}
+.modal-x{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--cd);border:1px solid var(--ln);color:var(--t3);cursor:pointer;transition:background 140ms,color 140ms}
+.modal-x:hover{background:var(--cdh);color:var(--t1)}
+.modal-x svg{width:13px;height:13px}
+.modal-title{font-family:var(--fd);font-size:1.2rem;font-weight:700;letter-spacing:-.01em;margin-bottom:18px}
+
+/* Level rows inside modal */
+.lvl-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--ln);position:relative}
+.lvl-row:last-child{border-bottom:none}
+.lvl-row.current::before{content:'';position:absolute;left:-28px;top:0;bottom:0;width:3px;background:var(--neon);border-radius:0 2px 2px 0}
+.lvl-num-badge{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.9rem;font-weight:700;flex-shrink:0}
+.lvl-row-info{flex:1;min-width:0}
+.lvl-row-name{font-family:var(--fd);font-size:.88rem;font-weight:700;line-height:1.2}
+.lvl-row-req{font-size:.75rem;color:var(--t3);margin-top:1px}
+.lvl-row-benefit{font-size:.72rem;color:var(--pl);margin-top:2px}
+.lvl-row.current .lvl-row-name{color:var(--neon)}
+.lvl-xp-tag{font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap;font-weight:600}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg2);border:1px solid var(--ls);border-radius:10px;padding:9px 16px;font-size:13px;font-weight:500;color:var(--t1);box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity 170ms,transform 170ms var(--e);z-index:600;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="ho pill" id="ho">
+  <div class="hp">
+    <div class="logo">
+      <div class="logo-m"><svg viewBox="0 0 14 14" fill="none"><path d="M7 1L13 4V10L7 13L1 10V4L7 1Z" fill="#0A1E29"/></svg></div>
+      <span class="logo-a">TRAVEXA</span><span class="logo-b">&nbsp;ACADEMY</span>
+    </div>
+    <nav class="hnav">
+      <span class="hlnk">Formación</span>
+      <span class="hlnk">Vivencial</span>
+      <span class="hlnk dim">Eventos</span>
+    </nav>
+    <div class="hacts">
+      <button class="btn btn-g">Mi perfil ▾</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE HERO -->
+<div class="phero">
+  <div class="wrap phero-inner">
+
+    <!-- Avatar con ring de nivel -->
+    <div class="av-wrap">
+      <svg class="av-ring" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle class="av-bg" cx="54" cy="54" r="48"/>
+        <circle class="av-prog" id="avProg" cx="54" cy="54" r="48"/>
+      </svg>
+      <div class="av-inner">MF</div>
+      <div class="av-lvl">4</div>
+    </div>
+
+    <!-- Info -->
+    <div class="pinfo">
+      <div class="pname">Mariana Fuentes</div>
+      <div class="plvlname" onclick="openLevelsModal()" style="cursor:pointer" title="Ver todos los niveles">
+        Nivel 4 · Expedicionista
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:2px;opacity:.7"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="pmeta">
+        <div class="pmi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Buenos Aires
+        </div>
+        <div class="pmi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Desde junio 2026
+        </div>
+        <div class="pmi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          2 referidos
+        </div>
+      </div>
+
+      <div class="pstats">
+        <div class="pst" title="Puntos de experiencia — suben tu nivel y ranking. No se gastan.">
+          <div class="pst-num">1.240</div>
+          <div class="pst-lbl">XP <span style="font-size:1rem;vertical-align:middle">★</span></div>
+        </div>
+        <div class="pst" title="Créditos canjeables por descuentos, cursos o sorteos.">
+          <div class="pst-num" style="color:var(--gd)">320</div>
+          <div class="pst-lbl">Créditos 🪙</div>
+        </div>
+        <div class="pst"><div class="pst-num">3</div><div class="pst-lbl">Cursos</div></div>
+        <div class="pst"><div class="pst-num">1</div><div class="pst-lbl">Vivenciales</div></div>
+      </div>
+
+      <div class="pxp">
+        <div class="pxp-head">
+          <span>Progreso al Nivel 5 · Embajador</span>
+          <span style="color:var(--neon)">1.240 / 2.500 XP</span>
+        </div>
+        <div class="pxp-bar-wrap"><div class="pxp-bar" id="xpBar"></div></div>
+      </div>
+
+      <div class="pedit">
+        <button class="btn btn-g" style="font-size:12px;min-height:34px;padding:6px 14px" onclick="copyRef()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Copiar link de referido
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs">
+    <div class="tind" id="tind"></div>
+    <button class="tbtn on" data-tab="0">Resumen</button>
+    <button class="tbtn" data-tab="1">Mis Cursos <span class="tab-badge">3</span></button>
+    <button class="tbtn" data-tab="2">Favoritos <span class="tab-badge" id="favBadge">2</span></button>
+    <button class="tbtn" data-tab="3">Vivenciales <span class="tab-badge">2</span></button>
+    <button class="tbtn" data-tab="4">Logros</button>
+    <button class="tbtn" data-tab="5">Tus datos</button>
+  </div>
+</div>
+
+<!-- TAB CONTENT WRAPPER -->
+<div class="wrap">
+
+  <!-- TAB 0: RESUMEN -->
+  <div class="tcnt on" data-tcnt="0">
+    <div class="greeting" id="greeting">Buenas noches, <span>Mariana</span> 👋</div>
+
+    <!-- Mini créditos card (reemplaza streak) -->
+    <div class="cred-mini" onclick="switchTab(4)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,rgba(201,154,58,.25),rgba(201,154,58,.08));border:1px solid rgba(201,154,58,.3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🪙</div>
+        <div>
+          <div style="font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--gd)">320 Créditos disponibles</div>
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-top:2px">Canjeables por cursos, descuentos y sorteos</div>
+        </div>
+      </div>
+      <span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--neon);white-space:nowrap">Canjear →</span>
+    </div>
+
+    <div class="sh"><span class="sh-title">Seguí estudiando</span><span class="sh-action" onclick="switchTab(1)">Ver todos →</span></div>
+    <div class="ov-grid">
+      <!-- Último curso -->
+      <div class="cc-compact" onclick="switchTab(1)">
+        <div class="cc-thumb">
+          <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=72" alt="">
+          <div class="cc-thumb-ov"></div>
+          <div class="cc-prog-ring">
+            <svg width="28" height="28" viewBox="0 0 28 28">
+              <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(245,243,236,.15)" stroke-width="2.5"/>
+              <circle cx="14" cy="14" r="10" fill="none" stroke="#00E5C8" stroke-width="2.5" stroke-dasharray="62.8" stroke-dashoffset="21.98" stroke-linecap="round" class="ring"/>
+            </svg>
+          </div>
+        </div>
+        <div class="cc-inner">
+          <div class="cc-cat">Destinos</div>
+          <div class="cc-title">Europa Central para asesores</div>
+          <div class="cc-meta">
+            <span class="cc-prog-txt">65% completado</span>
+            <span class="cc-cta">Continuar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+          </div>
+          <div class="cc-bar-wrap"><div class="cc-bar" style="width:65%"></div></div>
+        </div>
+      </div>
+
+      <!-- Próximo vivencial — rediseñado con neon border y más datos -->
+      <div class="vov-card-v2" onclick="switchTab(3)">
+        <div class="vov2-thumb">
+          <img src="https://images.unsplash.com/photo-1526392060635-9d6019884377?w=700&q=80" alt="Machu Picchu">
+          <div class="vov2-ov"></div>
+          <span class="badge bv" style="position:absolute;top:8px;left:8px;z-index:3">✦ Vivencial</span>
+          <div class="vov2-countdown">
+            <span class="vov2-days">33</span>
+            <span class="vov2-days-lbl">días</span>
+          </div>
+          <div class="vov2-title-area">
+            <div class="vov2-name">Machu Picchu & Cusco</div>
+            <div class="vov2-country">🇵🇪 Perú</div>
+          </div>
+        </div>
+        <div class="vov2-body">
+          <div class="vov2-row">
+            <span class="vov2-item">📅 2 — 9 ago 2026</span>
+            <span class="vov2-item">⏱ 8 días</span>
+          </div>
+          <div class="vov2-row" style="margin-top:5px">
+            <span class="vov2-item">✈️ Sale desde EZE</span>
+            <div class="vov2-pay">✓ <span style="color:#22c55e">Seña pagada</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Último logro (cualquier curso completado, vivencial realizado o badge ganado) -->
+    <div class="sh"><span class="sh-title">Último logro</span><span class="sh-action" onclick="switchTab(4)">Ver todos →</span></div>
+    <div class="badge-preview">
+      <div class="bpv-icon" style="background:linear-gradient(135deg,rgba(201,154,58,.3),rgba(201,154,58,.1));color:var(--gd)">🌍</div>
+      <div class="bpv-info">
+        <div class="bpv-title">Primer Destino</div>
+        <div class="bpv-sub">Completaste tu primer curso de destino · Ganaste +50 Créditos</div>
+      </div>
+      <div class="bpv-new">Nuevo</div>
+    </div>
+  </div>
+
+  <!-- TAB 1: MIS CURSOS -->
+  <div class="tcnt" data-tcnt="1">
+    <div class="filter-pills">
+      <button class="fp on" data-cf="all">Todos</button>
+      <button class="fp" data-cf="prog">En progreso</button>
+      <button class="fp" data-cf="done">Completados</button>
+    </div>
+    <div class="courses-grid" id="coursesGrid">
+      <!-- Card 1: en progreso -->
+      <div class="course-card" data-state="prog">
+        <div class="course-thumb">
+          <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=72" alt="">
+          <div class="ct-ov"></div>
+          <div class="ct-ring">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="13" fill="none" stroke="rgba(245,243,236,.15)" stroke-width="2.5"/>
+              <circle cx="18" cy="18" r="13" fill="none" stroke="#00E5C8" stroke-width="2.5" stroke-dasharray="81.7" stroke-dashoffset="28.6" stroke-linecap="round" class="ring"/>
+            </svg>
+          </div>
+        </div>
+        <div class="c-body">
+          <div class="c-cat">Destinos</div>
+          <div class="c-title">Europa Central para asesores</div>
+          <div class="c-instructor">Yesica Robles</div>
+          <div class="c-progress">
+            <div class="c-prog-head"><span>Progreso</span><span class="c-prog-pct">65%</span></div>
+            <div class="c-prog-bar-wrap"><div class="c-prog-bar" style="width:65%"></div></div>
+          </div>
+          <div class="c-action"><button class="c-btn">▶ Continuar donde lo dejé</button></div>
+        </div>
+      </div>
+      <!-- Card 2: en progreso -->
+      <div class="course-card" data-state="prog">
+        <div class="course-thumb">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=72" alt="">
+          <div class="ct-ov"></div>
+          <div class="ct-ring">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="13" fill="none" stroke="rgba(245,243,236,.15)" stroke-width="2.5"/>
+              <circle cx="18" cy="18" r="13" fill="none" stroke="#00E5C8" stroke-width="2.5" stroke-dasharray="81.7" stroke-dashoffset="57.2" stroke-linecap="round" class="ring"/>
+            </svg>
+          </div>
+        </div>
+        <div class="c-body">
+          <div class="c-cat">Ventas</div>
+          <div class="c-title">Cómo cerrar ventas de viajes en WhatsApp</div>
+          <div class="c-instructor">Yesica Robles</div>
+          <div class="c-progress">
+            <div class="c-prog-head"><span>Progreso</span><span class="c-prog-pct">30%</span></div>
+            <div class="c-prog-bar-wrap"><div class="c-prog-bar" style="width:30%"></div></div>
+          </div>
+          <div class="c-action"><button class="c-btn">▶ Continuar donde lo dejé</button></div>
+        </div>
+      </div>
+      <!-- Card 3: completado -->
+      <div class="course-card" data-state="done">
+        <div class="course-thumb">
+          <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&q=72" alt="">
+          <div class="ct-ov"></div>
+          <div class="ct-ring">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="13" fill="none" stroke="rgba(201,154,58,.3)" stroke-width="2.5"/>
+              <circle cx="18" cy="18" r="13" fill="none" stroke="#C99A3A" stroke-width="2.5" stroke-dasharray="81.7" stroke-dashoffset="0" stroke-linecap="round" class="ring"/>
+            </svg>
+          </div>
+        </div>
+        <div class="c-body">
+          <div class="c-cat">Operatoria</div>
+          <div class="c-title">Operatoria turística argentina</div>
+          <div class="c-instructor">Yesica Robles</div>
+          <div class="c-progress">
+            <div class="c-prog-head"><span>Progreso</span><span style="color:var(--gd);font-weight:600;font-size:9px">✓ Completado</span></div>
+            <div class="c-prog-bar-wrap"><div class="c-prog-bar" style="width:100%;background:linear-gradient(90deg,var(--gd),#E5B84A)"></div></div>
+          </div>
+          <div class="c-action"><button class="c-btn cert" onclick="openCertModal('Operatoria turística argentina','15 jun 2026','ACAD-0043')">🏅 Ver certificado</button></div>
+          <!-- Reseña — solo si el usuario no la publicó aún (verificar academy_reviews en backend) -->
+          <div class="review-mini">
+            <div class="review-mini-lbl">Dejá tu reseña</div>
+            <div class="review-mini-stars" id="crsStars" onclick="handleCourseStarClick(event)" onmouseover="handleCourseStarHover(event)" onmouseout="resetCourseStarHover()">
+              <span data-s="1">★</span><span data-s="2">★</span><span data-s="3">★</span><span data-s="4">★</span><span data-s="5">★</span>
+            </div>
+            <textarea class="review-mini-input" id="crsText" placeholder="Contanos tu experiencia con este curso..."></textarea>
+            <button class="review-mini-btn" onclick="submitReview('crs',this.closest('.review-mini'))">Publicar reseña</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: FAVORITOS -->
+  <div class="tcnt" data-tcnt="2">
+    <div class="sh" style="margin-bottom:20px"><span class="sh-title">Guardados</span><span class="sh-action" onclick="alert('Ver catálogo')">Explorar más →</span></div>
+    <div class="fav-grid" id="favGrid">
+      <div class="fav-card" id="fav1" onclick="goToDetail('course')">
+        <div class="fav-thumb">
+          <img src="https://images.unsplash.com/photo-1503917988258-f87a78e3c995?w=400&q=72" alt="">
+          <div class="fav-thumb-ov"></div>
+          <div class="fav-title-ov">Tailandia & Indochina</div>
+        </div>
+        <div class="fav-inner">
+          <div class="fav-cat">Destinos</div>
+          <div class="fav-price">$ 32.000 ARS</div>
+          <div class="fav-unbtn" onclick="removeFav(event,'fav1')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Quitar</div>
+        </div>
+      </div>
+      <div class="fav-card" id="fav2" onclick="goToDetail('course')">
+        <div class="fav-thumb">
+          <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=72" alt="">
+          <div class="fav-thumb-ov"></div>
+          <div class="fav-title-ov">Fotografía de viajes para redes</div>
+        </div>
+        <div class="fav-inner">
+          <div class="fav-cat">Marketing</div>
+          <div class="fav-price">Gratis · Miembro</div>
+          <div class="fav-unbtn" onclick="removeFav(event,'fav2')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Quitar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: VIVENCIALES -->
+  <div class="tcnt" data-tcnt="3">
+
+    <div class="v-section-label">Próximos</div>
+
+    <div class="uv-card">
+      <div class="uv-hero">
+        <img src="https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800&q=72" alt="">
+        <div class="uv-hero-ov"></div>
+        <div class="uv-hero-cnt">
+          <div>
+            <div class="uv-title">Machu Picchu & Cusco</div>
+            <div class="uv-country">Perú</div>
+          </div>
+          <div class="uv-countdown">
+            <div class="uv-days-num">33</div>
+            <div class="uv-days-lbl">días</div>
+          </div>
+        </div>
+      </div>
+      <div class="uv-body">
+        <div class="uv-row">
+          <div class="uv-info">
+            <div class="uv-info-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>2 ago — 9 ago 2026 · 8 días</div>
+            <div class="uv-info-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sale desde Buenos Aires (EZE)</div>
+            <div class="uv-info-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Grupo de 18 asesores</div>
+          </div>
+          <div class="uv-pay">
+            <div class="uv-pay-status"><svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>Seña pagada</div>
+            <div class="uv-pay-saldo">Saldo pendiente: <strong>$ 2.750.000 ARS</strong></div>
+            <div style="font-size:.71rem;color:var(--t3);margin-top:2px">Vence 2 jul 2026</div>
+          </div>
+        </div>
+        <div class="uv-actions">
+          <button class="uv-btn-main" onclick="openVivModal()">Ver detalles del viaje</button>
+          <button class="uv-btn-sec" onclick="showToast('💬 Link de grupo desde backoffice (vivencial_whatsapp_url)')">💬 Grupo WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="v-section-label" style="margin-top:28px">Realizados</div>
+    <div class="pv-timeline">
+      <div class="pv-item">
+        <div class="pv-dot" style="background:var(--gd);border-color:rgba(201,154,58,.5)"></div>
+        <div class="pv-card">
+          <div class="pv-thumb">
+            <img src="https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=200&q=72" alt="">
+          </div>
+          <div class="pv-inner">
+            <div class="pv-date">Enero 2026</div>
+            <div class="pv-title">Río de Janeiro & Iguazú</div>
+            <div class="pv-country">Brasil</div>
+            <div class="pv-actions">
+              <div class="pv-abtn cert" onclick="openCertModal('Río de Janeiro & Iguazú — Vivencial','Enero 2026','ACAD-VIV-001')">🏅 Certificado</div>
+              <div class="pv-stars">★★★★★</div>
+            </div>
+            <!-- Reseña — solo si no hay reseña del usuario para este vivencial -->
+            <div class="review-mini">
+              <div class="review-mini-lbl">¿Cómo fue el vivencial?</div>
+              <div class="review-mini-stars" id="vivStars" onclick="handleVivStarClick(event)" onmouseover="handleVivStarHover(event)" onmouseout="resetVivStarHover()">
+                <span data-s="1">★</span><span data-s="2">★</span><span data-s="3">★</span><span data-s="4">★</span><span data-s="5">★</span>
+              </div>
+              <textarea class="review-mini-input" id="vivText" placeholder="Contanos tu experiencia en este destino..."></textarea>
+              <button class="review-mini-btn" onclick="submitReview('viv',this.closest('.review-mini'))">Publicar reseña</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB 4: LOGROS -->
+  <div class="tcnt" data-tcnt="4">
+    <div class="logros-grid">
+      <!-- Nivel + Ranking -->
+      <div class="lvl-card">
+        <div class="lvl-head">
+          <div class="lvl-num-wrap">4</div>
+          <div>
+            <div class="lvl-name">Expedicionista</div>
+            <div class="lvl-sub">Próximo: Nivel 5 · Embajador</div>
+          </div>
+        </div>
+        <div class="lvl-bar-wrap"><div class="lvl-bar" id="lvlBar"></div></div>
+        <div class="lvl-bar-meta"><span>1.240 XP</span><span>2.500 XP</span></div>
+
+        <!-- Ranking section -->
+        <div class="ranking-wrap" onclick="openRankingModal()">
+          <div class="ranking-label">Tu posición en el ranking <span class="ranking-info-icon">ℹ</span></div>
+          <div class="ranking-list">
+            <div class="rank-row"><span class="rank-pos">44</span><span class="rank-name">Ana García</span><span class="rank-xp">1.890 XP</span></div>
+            <div class="rank-row"><span class="rank-pos">45</span><span class="rank-name">Juan López</span><span class="rank-xp">1.650 XP</span></div>
+            <div class="rank-row"><span class="rank-pos">46</span><span class="rank-name">Pedro Díaz</span><span class="rank-xp">1.410 XP</span></div>
+            <div class="rank-row rank-me"><span class="rank-pos rank-pos-me">47</span><span class="rank-name">Mariana Fuentes <span style="color:var(--neon);font-size:.7rem">(vos)</span></span><span class="rank-xp" style="color:var(--neon)">1.240 XP</span></div>
+            <div class="rank-row"><span class="rank-pos">48</span><span class="rank-name">Carlos Ruiz</span><span class="rank-xp">1.180 XP</span></div>
+            <div class="rank-row"><span class="rank-pos">49</span><span class="rank-name">Luis Martínez</span><span class="rank-xp">1.050 XP</span></div>
+            <div class="rank-row"><span class="rank-pos">50</span><span class="rank-name">María González</span><span class="rank-xp">980 XP</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Créditos canjeables -->
+      <div class="cred-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(201,154,58,.3),rgba(201,154,58,.1));border:1px solid rgba(201,154,58,.3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🪙</div>
+            <div>
+              <div style="font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--gd)">320 Créditos</div>
+            </div>
+          </div>
+          <button class="cred-mov-btn" onclick="openMovModal()">Movimientos</button>
+        </div>
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Cómo ganar más · de menor a mayor</div>
+        <div class="cred-earn-list">
+          <div class="cred-earn"><span>Escribir una reseña</span><span style="color:var(--gd)">+10 🪙</span></div>
+          <div class="cred-earn"><span>Referir un asesor</span><span style="color:var(--gd)">+20 🪙</span></div>
+          <div class="cred-earn"><span>Completar un curso</span><span style="color:var(--gd)">+40 🪙</span></div>
+          <div class="cred-earn"><span>Completar vivencial</span><span style="color:var(--gd)">+300 🪙</span></div>
+        </div>
+        <button class="c-btn" style="margin-top:12px;width:100%" onclick="openCanjearModal()">Ver cómo canjear →</button>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="sh"><span class="sh-title">Insignias</span><span style="font-family:var(--fm);font-size:9.5px;color:var(--t3)">3 de 8 obtenidas</span></div>
+    <div class="badge-grid">
+      <div class="badge-item earned">
+        <div class="badge-icon" style="background:linear-gradient(135deg,rgba(201,154,58,.3),rgba(201,154,58,.1))">🌍</div>
+        <div class="badge-name">Primer Destino</div>
+        <div class="badge-cond">Curso completado</div>
+      </div>
+      <div class="badge-item earned">
+        <div class="badge-icon" style="background:linear-gradient(135deg,rgba(14,107,92,.35),rgba(14,107,92,.1))">📚</div>
+        <div class="badge-name">Estudiante</div>
+        <div class="badge-cond">3 cursos activos</div>
+      </div>
+      <div class="badge-item earned">
+        <div class="badge-icon" style="background:linear-gradient(135deg,rgba(0,229,200,.25),rgba(0,229,200,.05))">✈️</div>
+        <div class="badge-name">Viajero</div>
+        <div class="badge-cond">1er vivencial realizado</div>
+      </div>
+      <div class="badge-item locked">
+        <div class="badge-icon" style="background:rgba(255,255,255,.05)">🏅</div>
+        <div class="badge-name">Certificado</div>
+        <div class="badge-cond">Certificado compartido</div>
+      </div>
+      <div class="badge-item locked">
+        <div class="badge-icon" style="background:rgba(255,255,255,.05)">👥</div>
+        <div class="badge-name">Embajador</div>
+        <div class="badge-cond">5 referidos</div>
+      </div>
+      <div class="badge-item locked">
+        <div class="badge-icon" style="background:rgba(255,255,255,.05)">⭐</div>
+        <div class="badge-name">Top Vendedor</div>
+        <div class="badge-cond">Top 10 ranking</div>
+      </div>
+      <div class="badge-item locked">
+        <div class="badge-icon" style="background:rgba(255,255,255,.05)">🗺️</div>
+        <div class="badge-name">Cartógrafo</div>
+        <div class="badge-cond">5 destinos completados</div>
+      </div>
+      <div class="badge-item locked">
+        <div class="badge-icon" style="background:rgba(255,255,255,.05)">🌟</div>
+        <div class="badge-name">Reseñador</div>
+        <div class="badge-cond">3 reseñas escritas</div>
+      </div>
+    </div>
+
+    <!-- Certificados -->
+    <div class="sh">
+      <span class="sh-title">Certificados</span>
+      <button class="cert-upload-btn" onclick="openUploadCertModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir documento
+      </button>
+    </div>
+    <div class="cert-list">
+      <div class="cert-item">
+        <div class="cert-icon">🏅</div>
+        <div class="cert-info">
+          <div class="cert-name">Operatoria turística argentina</div>
+          <div class="cert-date">Emitido el 15 jun 2026 · N° ACAD-0043</div>
+        </div>
+        <span class="cert-dl" onclick="openCertModal('Operatoria turística argentina','15 jun 2026','ACAD-0043')">Descargar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: TUS DATOS -->
+  <div class="tcnt" data-tcnt="5">
+    <!-- Campos no editables (de auth) -->
+    <div class="td-section">
+      <div class="td-label">Datos de cuenta — no editables</div>
+      <div class="td-row-locked">
+        <div class="td-field-locked"><span class="td-lbl">Nombre</span><span class="td-val">Mariana</span></div>
+        <div class="td-field-locked"><span class="td-lbl">Apellido</span><span class="td-val">Fuentes</span></div>
+      </div>
+      <div class="td-field-locked" style="margin-top:8px"><span class="td-lbl">Email</span><span class="td-val">mariana@email.com</span></div>
+      <div class="td-lock-note">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Para cambiar tu email o nombre, contactá a soporte.
+      </div>
+    </div>
+
+    <!-- Campos editables -->
+    <div class="td-section">
+      <div class="td-label">Información personal</div>
+      <!-- Fila 1: Teléfono | Fecha nac (compacto) | Género -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="td-group">
+          <label class="td-lbl-form">Teléfono / WhatsApp</label>
+          <input class="td-input" type="tel" value="+54 9 11 5555-1234" placeholder="+54 9 11...">
+        </div>
+        <div class="td-group">
+          <label class="td-lbl-form">Fecha de nacimiento</label>
+          <input class="td-input" type="date" value="1990-03-15">
+        </div>
+        <div class="td-group">
+          <label class="td-lbl-form">Género</label>
+          <select class="td-input">
+            <option value="">Preferir no decir</option>
+            <option selected>Femenino</option>
+            <option>Masculino</option>
+            <option>No binario</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <!-- Fila 2: Ciudad | País -->
+      <div class="td-grid">
+        <div class="td-group">
+          <label class="td-lbl-form">Ciudad</label>
+          <input class="td-input" type="text" value="Buenos Aires">
+        </div>
+        <div class="td-group">
+          <label class="td-lbl-form">País</label>
+          <input class="td-input" type="text" value="Argentina">
+        </div>
+      </div>
+    </div>
+
+    <div class="td-section">
+      <div class="td-label">Tu actividad como asesor</div>
+      <div class="td-grid">
+        <div class="td-group">
+          <label class="td-lbl-form">Tipo de vendedor</label>
+          <select class="td-input">
+            <option>Freelance independiente</option>
+            <option selected>Agencia pequeña (1-5 personas)</option>
+            <option>Agencia mediana / grande</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="td-group">
+          <label class="td-lbl-form">Años de experiencia en turismo</label>
+          <select class="td-input">
+            <option>Menos de 1 año</option>
+            <option>1 a 3 años</option>
+            <option selected>3 a 5 años</option>
+            <option>5 a 10 años</option>
+            <option>Más de 10 años</option>
+          </select>
+        </div>
+      </div>
+      <div class="td-group" style="margin-top:12px">
+        <label class="td-lbl-form">Destinos que más vendés <span style="color:var(--t3);font-weight:400">(separados por coma)</span></label>
+        <input class="td-input" type="text" value="Caribe, Europa, Brasil, Perú" placeholder="Ej: Caribe, Europa, Perú">
+      </div>
+    </div>
+
+    <div class="td-section">
+      <div class="td-label">Código de referido</div>
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(0,229,200,.06);border:1px solid rgba(0,229,200,.2);border-radius:10px;padding:12px 16px">
+        <div style="flex:1">
+          <div style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--neon);margin-bottom:3px">Tu código único</div>
+          <div style="font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--t1)">TRAVEXA-MF2026</div>
+          <div style="font-size:.72rem;color:var(--t3);margin-top:2px">Cada asesor que se registre con tu código te suma +20 Créditos</div>
+        </div>
+        <button class="btn btn-g" style="font-size:11.5px;min-height:34px;padding:6px 12px" onclick="shareRefWA()">
+          <svg width="14" height="14" viewBox="0 0 32 32" fill="#25D366"><path d="M16 .5C7.4.5.5 7.4.5 16c0 2.8.7 5.5 2.1 7.9L.5 31.5l7.9-2.1c2.3 1.3 4.9 2 7.6 2 8.6 0 15.5-6.9 15.5-15.4S24.6.5 16 .5zm0 28c-2.5 0-4.9-.7-7-2l-.5-.3-5.1 1.3 1.4-4.9-.3-.5C3.2 20.8 2.5 18.5 2.5 16 2.5 8.6 8.6 2.5 16 2.5S29.5 8.6 29.5 16 23.4 28.5 16 28.5z"/></svg>
+          Compartir
+        </button>
+        <button class="btn btn-g" style="font-size:11.5px;min-height:34px;padding:6px 12px" onclick="copyRef()">Copiar</button>
+      </div>
+    </div>
+
+    <div id="tdSaveWrap" style="display:flex;align-items:center;gap:12px;margin-top:4px">
+      <button class="btn" id="tdSaveBtn" style="min-width:140px;background:rgba(255,255,255,.1);color:var(--t3);cursor:not-allowed;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;min-height:38px" disabled>Guardar cambios</button>
+      <button class="btn btn-g" onclick="resetTdForm()">Cancelar</button>
+      <span id="tdSavedMsg" style="display:none;font-size:.8rem;color:var(--neon)">✓ Datos guardados</span>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- CERTIFICATE MODAL -->
+<div class="modal-veil" id="certModal" onclick="closeIfVeil(event,'certModal')">
+  <div class="modal-card" style="max-width:500px">
+    <button class="modal-x" onclick="closeModal('certModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="cert-doc">
+      <div class="cert-logo">✦ TRAVEXA ACADEMY</div>
+      <div class="cert-seal">🏅</div>
+      <div class="cert-headline">Certifica que</div>
+      <div class="cert-user" id="certUserName">Mariana Fuentes</div>
+      <div class="cert-course" id="certCourseName">Operatoria turística argentina</div>
+      <div class="cert-divider"></div>
+      <div class="cert-meta" id="certMeta">Emitido el 15 jun 2026 · N° ACAD-0043</div>
+    </div>
+    <!-- BACKLOG: Descargar PDF + Copiar link — requiere PDF gen en backend -->
+    <button class="btn btn-out" style="width:100%" onclick="closeModal('certModal')">Cerrar</button>
+  </div>
+</div>
+
+<!-- VIVENCIAL DETAIL MODAL -->
+<div class="modal-veil" id="vivModal" onclick="closeIfVeil(event,'vivModal')">
+  <div class="modal-card viv-modal-inner">
+    <div class="viv-mod-hero">
+      <img src="https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800&q=80" alt="Machu Picchu">
+      <div class="viv-mod-hero-ov"></div>
+      <button class="viv-mod-hero-x" onclick="closeModal('vivModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="viv-mod-hero-cnt">
+        <div class="badge bv" style="margin-bottom:8px">✦ Vivencial</div>
+        <div class="viv-mod-title">Machu Picchu & Cusco</div>
+        <div class="viv-mod-country">Perú</div>
+      </div>
+    </div>
+    <div class="viv-mod-body">
+      <div class="viv-mod-pay">✓ Seña pagada · Saldo pendiente: <strong style="margin-left:4px">$ 2.750.000 ARS</strong> — vence 2 jul 2026</div>
+      <div class="viv-mod-meta">
+        <div class="viv-mod-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>2 — 9 ago 2026</div>
+        <div class="viv-mod-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>8 días / 7 noches</div>
+        <div class="viv-mod-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sale desde Buenos Aires (EZE)</div>
+      </div>
+      <div class="viv-mod-tabs" id="vivModTabs">
+        <div class="viv-mod-tind" id="vivModTind"></div>
+        <button class="viv-mod-tbtn on" data-vmtab="0">Descripción</button>
+        <button class="viv-mod-tbtn" data-vmtab="1">Itinerario</button>
+        <button class="viv-mod-tbtn" data-vmtab="2">Qué incluye</button>
+        <button class="viv-mod-tbtn" data-vmtab="3">Instructor</button>
+      </div>
+      <div class="viv-mod-tcnt on" data-vmcnt="0">
+        <p style="font-size:.85rem;line-height:1.7;color:#4A6070">Esta experiencia es para asesores que quieren vender Perú con convicción. Vamos a recorrer Cusco, el Valle Sagrado y Machu Picchu en un grupo de no más de 18 personas, con Yesica como guía y con una mirada pensada para el asesor.</p>
+      </div>
+      <div class="viv-mod-tcnt" data-vmcnt="1">
+        <div class="viv-mod-acc open">
+          <button class="viv-mod-acc-tr" onclick="this.closest('.viv-mod-acc').classList.toggle('open')">
+            <div class="viv-mod-acc-left"><span class="viv-mod-day">Día 1</span><span class="viv-mod-acc-ttl">Buenos Aires → Lima → Cusco</span></div>
+            <svg class="viv-mod-acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="viv-mod-acc-body"><div class="viv-mod-acc-content"><strong>Vuelo</strong> desde EZE a Lima y conexión a Cusco. Traslado al hotel. Tarde libre para aclimatarse. Cena grupal de bienvenida.</div></div>
+        </div>
+        <div class="viv-mod-acc">
+          <button class="viv-mod-acc-tr" onclick="this.closest('.viv-mod-acc').classList.toggle('open')">
+            <div class="viv-mod-acc-left"><span class="viv-mod-day">Día 2</span><span class="viv-mod-acc-ttl">Cusco ciudad — visita como asesor</span></div>
+            <svg class="viv-mod-acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="viv-mod-acc-body"><div class="viv-mod-acc-content">Plaza de Armas, Qorikancha, mercado San Pedro. <strong>Workshop:</strong> cómo armar un paquete Cusco competitivo.</div></div>
+        </div>
+        <div class="viv-mod-acc">
+          <button class="viv-mod-acc-tr" onclick="this.closest('.viv-mod-acc').classList.toggle('open')">
+            <div class="viv-mod-acc-left"><span class="viv-mod-day">Día 5</span><span class="viv-mod-acc-ttl">Machu Picchu — la visita que cambia todo</span></div>
+            <svg class="viv-mod-acc-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="viv-mod-acc-body"><div class="viv-mod-acc-content">Bus 5:30am. Entrada a la ciudadela + workshop fotográfico. Regreso en tren.</div></div>
+        </div>
+      </div>
+      <div class="viv-mod-tcnt" data-vmcnt="2">
+        <p style="font-size:.84rem;font-weight:600;color:#0A1E29;margin-bottom:10px">✅ Incluye</p>
+        <ul style="font-size:.82rem;color:#4A6070;line-height:1.8;padding-left:16px">
+          <li>Vuelos ida y vuelta desde Buenos Aires</li>
+          <li>7 noches en hoteles 4★ seleccionados</li>
+          <li>Desayunos todos los días</li>
+          <li>Entrada a Machu Picchu + bus</li>
+          <li>4 workshops con Yesica Robles</li>
+          <li>Certificado Travexa Academy</li>
+        </ul>
+        <p style="font-size:.84rem;font-weight:600;color:#8FA3AB;margin:14px 0 8px">✗ No incluye</p>
+        <ul style="font-size:.82rem;color:#8FA3AB;line-height:1.8;padding-left:16px">
+          <li>Seguro de viaje (obligatorio)</li>
+          <li>Almuerzos y cenas libres</li>
+          <li>Gastos personales</li>
+        </ul>
+      </div>
+      <div class="viv-mod-tcnt" data-vmcnt="3">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--neon));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:1.1rem;color:#0A1E29;flex-shrink:0">YR</div>
+          <div>
+            <div style="font-family:var(--fd);font-weight:700;color:#0A1E29">Yesica Robles</div>
+            <div style="font-size:.78rem;color:var(--pr);margin-top:2px">CEO Travexa · 15 años en el trade turístico</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOVIMIENTOS MODAL -->
+<div class="modal-veil" id="movModal" onclick="closeIfVeil(event,'movModal')">
+  <div class="modal-card" style="max-width:440px">
+    <button class="modal-x" onclick="closeModal('movModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Movimientos 🪙</div>
+    <div class="mov-item"><div class="mov-icon" style="background:rgba(0,229,200,.1)">📚</div><div class="mov-info"><div class="mov-type">Curso completado</div><div class="mov-date">28 jun 2026</div></div><span class="mov-amount mov-plus">+40 🪙</span></div>
+    <div class="mov-item"><div class="mov-icon" style="background:rgba(0,229,200,.1)">🌍</div><div class="mov-info"><div class="mov-type">Insignia Primer Destino</div><div class="mov-date">28 jun 2026</div></div><span class="mov-amount mov-plus">+50 🪙</span></div>
+    <div class="mov-item"><div class="mov-icon" style="background:rgba(0,229,200,.1)">✍️</div><div class="mov-info"><div class="mov-type">Reseña escrita</div><div class="mov-date">25 jun 2026</div></div><span class="mov-amount mov-plus">+10 🪙</span></div>
+    <div class="mov-item"><div class="mov-icon" style="background:rgba(239,68,68,.1)">🛒</div><div class="mov-info"><div class="mov-type">Canje — descuento en curso</div><div class="mov-date">20 jun 2026</div></div><span class="mov-amount mov-minus">−80 🪙</span></div>
+    <div class="mov-item"><div class="mov-icon" style="background:rgba(0,229,200,.1)">👥</div><div class="mov-info"><div class="mov-type">Referido registrado</div><div class="mov-date">15 jun 2026</div></div><span class="mov-amount mov-plus">+20 🪙</span></div>
+    <div class="mov-item"><div class="mov-icon" style="background:rgba(201,154,58,.1)">🎊</div><div class="mov-info"><div class="mov-type">Bono bienvenida</div><div class="mov-date">10 jun 2026</div></div><span class="mov-amount mov-plus">+280 🪙</span></div>
+  </div>
+</div>
+
+<!-- CANJEAR MODAL -->
+<div class="modal-veil" id="canjearModal" onclick="closeIfVeil(event,'canjearModal')">
+  <div class="modal-card" style="max-width:440px">
+    <button class="modal-x" onclick="closeModal('canjearModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Cómo canjear tus Créditos 🪙</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:var(--bg3);border:1px solid var(--ln);border-radius:12px;padding:14px 16px"><div style="font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--t1);margin-bottom:4px">🎓 Curso gratis</div><div style="font-size:.8rem;color:var(--t2);line-height:1.55">Canjeá tus Créditos equivalentes al precio de cualquier curso para acceder sin abonar nada.</div></div>
+      <div style="background:var(--bg3);border:1px solid var(--ln);border-radius:12px;padding:14px 16px"><div style="font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--t1);margin-bottom:4px">💸 Descuento en cursos</div><div style="font-size:.8rem;color:var(--t2);line-height:1.55">Aplicá tus Créditos como descuento directo sobre el precio de cualquier curso al momento de la compra.</div></div>
+      <div style="background:var(--bg3);border:1px solid var(--ln);border-radius:12px;padding:14px 16px"><div style="font-family:var(--fd);font-size:.9rem;font-weight:700;color:var(--t1);margin-bottom:4px">🎯 Sorteo de vivencial</div><div style="font-size:.8rem;color:var(--t2);line-height:1.55">Comprá entradas al sorteo con tus Créditos. Cada sorteo se realiza 30 días antes de cada salida vivencial.</div></div>
+    </div>
+    <!-- BACKLOG: /beneficios — página de canje con catálogo y saldo actual -->
+    <button class="btn btn-neon" style="width:100%;margin-top:14px" onclick="showToast('→ Redirige a /beneficios');closeModal('canjearModal')">Ir a Canjear</button>
+  </div>
+</div>
+
+<!-- RANKING INFO MODAL -->
+<div class="modal-veil" id="rankingModal" onclick="closeIfVeil(event,'rankingModal')">
+  <div class="modal-card" style="max-width:440px">
+    <button class="modal-x" onclick="closeModal('rankingModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div style="text-align:center;margin-bottom:18px"><div style="font-size:2rem;margin-bottom:10px">🏆</div><div class="modal-title" style="margin-bottom:8px">Tu reputación importa</div></div>
+    <p style="font-size:.88rem;color:var(--t2);line-height:1.7;margin-bottom:14px">Tu posición en el ranking de Academy no es solo un número. Travexa — la plataforma donde podés vender paquetes y viajes increíbles — muestra a los viajeros el perfil de los asesores con mayor formación.</p>
+    <p style="font-size:.88rem;color:var(--t2);line-height:1.7;margin-bottom:14px">Un asesor con alto XP en Academy aparece primero en los resultados del viajero, genera más confianza y cierra más ventas.</p>
+    <div style="background:var(--neon-dim);border:1px solid rgba(0,229,200,.2);border-radius:10px;padding:13px 16px">
+      <p style="font-size:.82rem;color:var(--neon);font-weight:600">El mejor momento para subir en el ranking es antes de que los demás lo hagan. Completá más cursos y vivenciales.</p>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD CERT MODAL -->
+<div class="modal-veil" id="uploadCertModal" onclick="closeIfVeil(event,'uploadCertModal')">
+  <div class="modal-card" style="max-width:420px">
+    <button class="modal-x" onclick="closeModal('uploadCertModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Subir certificado 📎</div>
+    <div class="td-group" style="margin-bottom:12px">
+      <label class="td-lbl-form">Título del certificado</label>
+      <input class="td-input" type="text" id="ucTitle" placeholder="Ej: Curso de Guía de Turismo — Instituto Nacional" oninput="checkUploadReady()">
+    </div>
+    <div class="td-group" style="margin-bottom:12px">
+      <label class="td-lbl-form">Fecha de emisión</label>
+      <input class="td-input" type="date" id="ucDate" onchange="checkUploadReady()">
+    </div>
+    <input type="file" id="ucFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleUCFile(this)">
+    <div class="upload-drop" id="ucDrop" onclick="document.getElementById('ucFile').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p id="ucDropLabel">Hacé clic para adjuntar un archivo<br><span style="font-size:.7rem;opacity:.6">PDF, JPG o PNG · máx. 5MB</span></p>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn" id="ucSubmit" style="flex:1;background:rgba(255,255,255,.08);color:var(--t3);cursor:not-allowed" disabled onclick="if(!this.disabled){showToast('✓ Certificado subido');closeModal('uploadCertModal')}">Subir certificado</button>
+      <button class="btn btn-out" onclick="closeModal('uploadCertModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEVELS MODAL -->
+<div class="modal-veil" id="levelsModal" onclick="closeIfVeil(event,'levelsModal')">
+  <div class="modal-card">
+    <button class="modal-x" onclick="closeModal('levelsModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-title">Niveles de formación ✦</div>
+    <div style="padding:0 0 4px 28px">
+      <!-- N1 -->
+      <div class="lvl-row">
+        <div class="lvl-num-badge" style="background:rgba(143,163,171,.15)">1</div>
+        <div class="lvl-row-info">
+          <div class="lvl-row-name" style="color:var(--t2)">Explorador</div>
+          <div class="lvl-row-req">Punto de partida — acceso gratuito</div>
+          <div class="lvl-row-benefit">Acceso a todos los cursos gratuitos</div>
+        </div>
+        <span class="lvl-xp-tag" style="background:rgba(143,163,171,.12);color:var(--t3)">0 XP</span>
+      </div>
+      <!-- N2 -->
+      <div class="lvl-row">
+        <div class="lvl-num-badge" style="background:rgba(78,205,184,.15)">2</div>
+        <div class="lvl-row-info">
+          <div class="lvl-row-name" style="color:var(--pl)">Aventurero</div>
+          <div class="lvl-row-req">Completar tu primer curso</div>
+          <div class="lvl-row-benefit">+5% de Créditos en cada compra</div>
+        </div>
+        <span class="lvl-xp-tag" style="background:rgba(78,205,184,.12);color:var(--pl)">500 XP</span>
+      </div>
+      <!-- N3 -->
+      <div class="lvl-row">
+        <div class="lvl-num-badge" style="background:rgba(14,107,92,.25)">3</div>
+        <div class="lvl-row-info">
+          <div class="lvl-row-name" style="color:var(--pr)">Viajero</div>
+          <div class="lvl-row-req">3 cursos completados o 1 vivencial</div>
+          <div class="lvl-row-benefit">Acceso anticipado a cursos nuevos</div>
+        </div>
+        <span class="lvl-xp-tag" style="background:rgba(14,107,92,.18);color:var(--pl)">1.000 XP</span>
+      </div>
+      <!-- N4 — CURRENT -->
+      <div class="lvl-row current">
+        <div class="lvl-num-badge" style="background:rgba(0,229,200,.2);color:#0A1E29">4</div>
+        <div class="lvl-row-info">
+          <div class="lvl-row-name">Expedicionista ← vos</div>
+          <div class="lvl-row-req">1.240 / 2.000 XP alcanzados</div>
+          <div class="lvl-row-benefit">Acceso anticipado a vivenciales + badge exclusivo</div>
+        </div>
+        <span class="lvl-xp-tag" style="background:var(--neon-dim);color:var(--neon)">2.000 XP</span>
+      </div>
+      <!-- N5 -->
+      <div class="lvl-row">
+        <div class="lvl-num-badge" style="background:rgba(201,154,58,.2)">5</div>
+        <div class="lvl-row-info">
+          <div class="lvl-row-name" style="color:var(--gd)">Embajador</div>
+          <div class="lvl-row-req">5 cursos + 2 vivenciales + 5 referidos</div>
+          <div class="lvl-row-benefit">Descuento exclusivo en vivenciales + acceso VIP</div>
+        </div>
+        <span class="lvl-xp-tag" style="background:rgba(201,154,58,.15);color:var(--gd)">5.000 XP</span>
+      </div>
+    </div>
+    <div style="font-size:.75rem;color:var(--t3);margin-top:14px;padding-top:12px;border-top:1px solid var(--ln)">Los XP son tu historial de aprendizaje — no se gastan. Los Créditos 🪙 son tu moneda canjeable — esos sí se descuentan.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── GREETING ── */
+const h = new Date().getHours();
+const gr = h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
+document.getElementById('greeting').innerHTML = gr+', <span>Mariana</span> 👋';
+
+/* ── LEVEL RING — r=48, circ=301.6, progreso XP=1240/2500=49.6% ── */
+setTimeout(()=>{
+  const prog = 1240/2500;
+  document.getElementById('avProg').style.strokeDashoffset = 301.6*(1-prog);
+  document.getElementById('xpBar').style.width = (prog*100)+'%';
+  document.getElementById('lvlBar').style.width = (prog*100)+'%';
+},200);
+
+/* ── TABS ── */
+const tabs=document.querySelectorAll('.tbtn');
+const panels=document.querySelectorAll('.tcnt');
+const tind=document.getElementById('tind');
+function updateInd(btn){tind.style.left=btn.offsetLeft+'px';tind.style.width=btn.offsetWidth+'px'}
+tabs.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    tabs.forEach(b=>b.classList.remove('on'));
+    panels.forEach(p=>p.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelector('[data-tcnt="'+btn.dataset.tab+'"]').classList.add('on');
+    updateInd(btn);
+    btn.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+  });
+});
+function switchTab(n){tabs[n].click()}
+const onBtn=document.querySelector('.tbtn.on');
+if(onBtn) setTimeout(()=>updateInd(onBtn),60);
+
+/* ── COURSE FILTER ── */
+document.querySelectorAll('[data-cf]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-cf]').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    const f=btn.dataset.cf;
+    document.querySelectorAll('[data-state]').forEach(c=>{
+      c.style.display=(f==='all'||c.dataset.state===f)?'':'none';
+    });
+  });
+});
+
+/* ── HEADER SCROLL ── */
+const ho=document.getElementById('ho'); let lY=0;
+window.addEventListener('scroll',()=>{
+  const y=window.scrollY;
+  if(y<20)ho.classList.remove('pill');
+  else if(y<lY)ho.classList.add('pill');
+  lY=y;
+},{passive:true});
+
+/* ── MODALS ── */
+function openLevelsModal(){ document.getElementById('levelsModal').classList.add('show') }
+function closeModal(id){ document.getElementById(id).classList.remove('show') }
+function closeIfVeil(e,id){ if(e.target===e.currentTarget) closeModal(id) }
+
+function openCertModal(course, date, num){
+  document.getElementById('certCourseName').textContent = course;
+  document.getElementById('certMeta').textContent = 'Emitido el '+date+' · N° '+num;
+  document.getElementById('certModal').classList.add('show');
+}
+function openVivModal(){
+  document.getElementById('vivModal').classList.add('show');
+  setTimeout(initVivModTabs, 80);
+}
+function openMovModal(){ document.getElementById('movModal').classList.add('show') }
+function openCanjearModal(){ document.getElementById('canjearModal').classList.add('show') }
+function openRankingModal(){ document.getElementById('rankingModal').classList.add('show') }
+function openUploadCertModal(){ document.getElementById('uploadCertModal').classList.add('show') }
+
+/* Vivencial modal tabs */
+function initVivModTabs(){
+  const btns=document.querySelectorAll('.viv-mod-tbtn');
+  const pnls=document.querySelectorAll('.viv-mod-tcnt');
+  const ind=document.getElementById('vivModTind');
+  function upd(btn){ind.style.left=btn.offsetLeft+'px';ind.style.width=btn.offsetWidth+'px'}
+  btns.forEach(btn=>{
+    btn.onclick=()=>{
+      btns.forEach(b=>b.classList.remove('on'));
+      pnls.forEach(p=>p.classList.remove('on'));
+      btn.classList.add('on');
+      document.querySelector('[data-vmcnt="'+btn.dataset.vmtab+'"]').classList.add('on');
+      upd(btn);
+    };
+  });
+  const onB=document.querySelector('.viv-mod-tbtn.on');
+  if(onB) upd(onB);
+}
+
+/* ── FAVORITOS: init badge count from real DOM ── */
+function updateFavBadge(){
+  const count = document.querySelectorAll('#favGrid .fav-card').length;
+  const badge = document.getElementById('favBadge');
+  if(badge) badge.textContent = count;
+}
+setTimeout(updateFavBadge, 100);
+
+/* ── REVIEW STARS ── */
+function handleStars(containerId, e, mode){
+  const container=document.getElementById(containerId); if(!container) return;
+  const stars=[...container.querySelectorAll('span')];
+  const s=e.target.closest('span'); if(!s) return;
+  const val=parseInt(s.dataset.s);
+  if(mode==='click'){ container.dataset.selected=val; stars.forEach((sp,i)=>{ sp.classList.toggle('on',i<val) }); }
+  if(mode==='over'){ stars.forEach((sp,i)=>{ sp.classList.toggle('on',i<val) }); }
+}
+function resetStarHover(containerId){
+  const container=document.getElementById(containerId); if(!container) return;
+  const val=parseInt(container.dataset.selected||0);
+  [...container.querySelectorAll('span')].forEach((sp,i)=>sp.classList.toggle('on',i<val));
+}
+function handleCourseStarClick(e){ handleStars('crsStars',e,'click') }
+function handleCourseStarHover(e){ handleStars('crsStars',e,'over') }
+function resetCourseStarHover(){ resetStarHover('crsStars') }
+function handleVivStarClick(e){ handleStars('vivStars',e,'click') }
+function handleVivStarHover(e){ handleStars('vivStars',e,'over') }
+function resetVivStarHover(){ resetStarHover('vivStars') }
+
+function submitReview(type, container){
+  const starsEl=document.getElementById(type==='crs'?'crsStars':'vivStars');
+  const textEl=document.getElementById(type==='crs'?'crsText':'vivText');
+  const rating=parseInt((starsEl||{}).dataset.selected||0);
+  const text=(textEl||{}).value||'';
+  if(!rating){ showToast('⚠ Seleccioná una calificación'); return; }
+  if(!text.trim()){ showToast('⚠ Escribí tu reseña antes de publicar'); return; }
+  if(container){ container.innerHTML='<div style="padding:8px 0;font-size:.8rem;color:var(--neon)">✓ Reseña publicada · ¡Gracias por tu opinión! +10 🪙</div>'; }
+  showToast('✓ Reseña publicada · +10 Créditos sumados');
+}
+
+/* ── UPLOAD CERT VALIDATION ── */
+let ucFileSelected = false;
+function handleUCFile(input){
+  ucFileSelected = input.files.length > 0;
+  const lbl = document.getElementById('ucDropLabel');
+  if(lbl && ucFileSelected) lbl.innerHTML = '📎 <strong style="color:var(--neon)">'+input.files[0].name+'</strong><br><span style="font-size:.7rem;opacity:.6">Cambiar archivo</span>';
+  checkUploadReady();
+}
+function checkUploadReady(){
+  const title=document.getElementById('ucTitle');
+  const date=document.getElementById('ucDate');
+  const btn=document.getElementById('ucSubmit');
+  if(!btn) return;
+  const ready = title&&title.value.trim() && date&&date.value && ucFileSelected;
+  if(ready){ btn.style.background='var(--neon)'; btn.style.color='#0A1E29'; btn.style.cursor='pointer'; btn.disabled=false; }
+  else{ btn.style.background='rgba(255,255,255,.08)'; btn.style.color='var(--t3)'; btn.style.cursor='not-allowed'; btn.disabled=true; }
+}
+function openUploadCertModal(){
+  ucFileSelected=false;
+  const lbl=document.getElementById('ucDropLabel');
+  if(lbl) lbl.innerHTML='Hacé clic para adjuntar un archivo<br><span style="font-size:.7rem;opacity:.6">PDF, JPG o PNG · máx. 5MB</span>';
+  const t=document.getElementById('ucTitle'); if(t) t.value='';
+  const d=document.getElementById('ucDate'); if(d) d.value='';
+  checkUploadReady();
+  document.getElementById('uploadCertModal').classList.add('show');
+}
+
+/* ── FAVORITOS REMOVE (update badge count) ── */
+function removeFav(e, id){
+  e.stopPropagation();
+  const card=document.getElementById(id);
+  if(card){ card.style.transition='opacity 260ms,transform 260ms'; card.style.opacity='0'; card.style.transform='scale(.92)'; setTimeout(()=>{ card.remove(); checkFavEmpty(); updateFavBadge(); }, 280); }
+  showToast('Eliminado de favoritos');
+}
+function checkFavEmpty(){
+  const grid=document.getElementById('favGrid');
+  if(grid && !grid.querySelectorAll('.fav-card').length){
+    grid.innerHTML='<div class="empty"><div class="empty-icon">♡</div><h3>Sin favoritos aún</h3><p>Guardá cursos y vivenciales con el corazón para verlos acá.</p></div>';
+  }
+}
+
+/* ── GO TO DETAIL (note: routes handled by React Router in production) ── */
+function goToDetail(type){ showToast('→ Redirige a /'+type+'/:slug (React Router)') }
+
+/* ── TUS DATOS SAVE ENABLE ── */
+const tdInputs=document.querySelectorAll('#tabTd5 .td-input, #tabTd5 input, #tabTd5 select');
+const tdSaveBtn=document.getElementById('tdSaveBtn');
+const tdSavedMsg=document.getElementById('tdSavedMsg');
+let tdOriginals={};
+function initTdForm(){
+  if(!tdSaveBtn) return;
+  document.querySelectorAll('[data-tcnt="5"] .td-input, [data-tcnt="5"] input[type="text"], [data-tcnt="5"] input[type="tel"], [data-tcnt="5"] input[type="date"], [data-tcnt="5"] select').forEach(inp=>{
+    tdOriginals[inp.name||inp.placeholder||inp.type] = inp.value;
+    inp.addEventListener('input', checkTdChanged);
+    inp.addEventListener('change', checkTdChanged);
+  });
+}
+function checkTdChanged(){
+  let changed=false;
+  document.querySelectorAll('[data-tcnt="5"] .td-input, [data-tcnt="5"] input[type="text"], [data-tcnt="5"] input[type="tel"], [data-tcnt="5"] input[type="date"], [data-tcnt="5"] select').forEach(inp=>{
+    if(inp.value !== (tdOriginals[inp.name||inp.placeholder||inp.type]||inp.defaultValue)) changed=true;
+  });
+  const btn=document.getElementById('tdSaveBtn');
+  if(!btn) return;
+  if(changed){ btn.style.background='var(--neon)'; btn.style.color='#0A1E29'; btn.style.cursor='pointer'; btn.disabled=false; btn.onclick=saveTdForm; }
+  else{ btn.style.background='rgba(255,255,255,.1)'; btn.style.color='var(--t3)'; btn.style.cursor='not-allowed'; btn.disabled=true; btn.onclick=null; }
+  if(tdSavedMsg) tdSavedMsg.style.display='none';
+}
+function saveTdForm(){
+  const btn=document.getElementById('tdSaveBtn');
+  showToast('✓ Datos guardados');
+  if(btn){ btn.style.background='rgba(255,255,255,.1)'; btn.style.color='var(--t3)'; btn.style.cursor='not-allowed'; btn.disabled=true; btn.onclick=null; }
+  const msg=document.getElementById('tdSavedMsg'); if(msg) msg.style.display='inline';
+  initTdForm();
+}
+function resetTdForm(){
+  document.querySelectorAll('[data-tcnt="5"] .td-input, [data-tcnt="5"] input[type="text"], [data-tcnt="5"] input[type="tel"], [data-tcnt="5"] input[type="date"], [data-tcnt="5"] select').forEach(inp=>{
+    const orig=tdOriginals[inp.name||inp.placeholder||inp.type];
+    if(orig!==undefined) inp.value=orig;
+  });
+  checkTdChanged();
+}
+setTimeout(initTdForm, 300);
+
+/* ── SHARE REF WA ── */
+function shareRefWA(){
+  const msg='¡Hola! Te invito a unirte a *Travexa Academy*, la plataforma de formación para asesores de viajes. Usá mi código TRAVEXA-MF2026 al registrarte y ambos ganamos Créditos 🪙\n\nhttps://academy.travexa.com.ar/r/TRAVEXA-MF2026';
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+/* ── TOAST ── */
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2800);
+}
+function copyRef(){
+  navigator.clipboard.writeText('https://academy.travexa.com.ar/r/marifu').catch(()=>{});
+  showToast('✓ Link de referido copiado');
+}
+</script>
+</body>
+</html>

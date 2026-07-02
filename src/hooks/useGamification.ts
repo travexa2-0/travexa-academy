@@ -20,15 +20,16 @@ export const POINTS = {
 
 // ── Badge conditions ──────────────────────────────────────────────
 
-const BADGE_CONDICIONES = [
-  'primera_leccion',
-  'streak_7',
-  'primera_resena',
-  'primer_vivencial',
-  'primer_referido',
-  'streak_100',
-  'top_learner',
-] as const
+// Deben coincidir EXACTAMENTE con academy_badges.condicion en la DB
+// (mismos valores que lee la edge function check-badges).
+type BadgeCondicion =
+  | 'first_lesson'
+  | 'streak_7'
+  | 'first_review'
+  | 'first_vivencial'
+  | 'first_referral'
+  | 'streak_100'
+  | 'top10_monthly'
 
 // ── Core: award points (idempotente por referencia_id + motivo) ──
 
@@ -73,7 +74,7 @@ async function awardPoints(
 
 async function checkAndAwardBadge(
   userId: string,
-  condicion: typeof BADGE_CONDICIONES[number],
+  condicion: BadgeCondicion,
 ): Promise<string | null> {
   // ¿El badge existe?
   const { data: badge } = await db()
@@ -178,7 +179,7 @@ export async function onLessonComplete(
   // 3. Primera lección ever → badge
   const totalLecciones = await countUserLessons(userId)
   if (totalLecciones === 1) {
-    badgeGanado = await checkAndAwardBadge(userId, 'primera_leccion')
+    badgeGanado = await checkAndAwardBadge(userId, 'first_lesson')
   }
 
   // 4. Streak 7 días
@@ -249,7 +250,7 @@ export async function onLessonComplete(
 /** Llamar al primer vivencial completado. */
 export async function onPrimerVivencial(userId: string): Promise<void> {
   await awardPoints(userId, POINTS.PRIMER_VIVENCIAL, 'primer_vivencial', `vivencial_${userId}`)
-  await checkAndAwardBadge(userId, 'primer_vivencial')
+  await checkAndAwardBadge(userId, 'first_vivencial')
 
   const { data: p } = await db().from('academy_profiles').select('total_vivenciales').eq('user_id', userId).single()
   const total = ((p?.total_vivenciales ?? 0) as number) + 1
@@ -261,7 +262,7 @@ export async function onPrimerVivencial(userId: string): Promise<void> {
 /** Llamar cuando un referido completa su primera compra. */
 export async function onReferralComplete(referrerId: string, referredId: string): Promise<void> {
   await awardPoints(referrerId, POINTS.REFERIDO, 'referido_exitoso', referredId)
-  await checkAndAwardBadge(referrerId, 'primer_referido')
+  await checkAndAwardBadge(referrerId, 'first_referral')
   await createNotification(referrerId, 'referido_registrado', '👥 ¡Referido exitoso!', '+500 puntos. Tu colega se sumó a Travexa Academy.', '/perfil?tab=referidos')
 }
 

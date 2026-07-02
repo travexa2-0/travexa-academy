@@ -86,6 +86,7 @@ export interface AcademyProfile {
   onboarding_completo: boolean
   ultimo_ingreso: string | null
   // nuevos campos
+  pais: string | null
   bio: string | null
   ciudad: string | null
   especialidades: string[]

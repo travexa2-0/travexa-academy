@@ -1,6 +1,6 @@
 # CLAUDE.md — Travexa Academy
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 29 Junio 2026 — Sesión 5**
+**Actualizado: 2 Julio 2026 — Sesión 9 (Onboarding obligatorio + referidos)**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -52,6 +52,7 @@ El usuario paga por lo que consume:
 | Sesión 4 | Supabase `fvrwtqhkskbaixqbxami` creada con schema completo + edge functions deployadas |
 | Sesión 5 | Schema extendido (tipos, vivencial, gamificación) + datos seed + prototipo HTML aprobado de `/cursos` y `/cursos/:slug` |
 | Sesión 8 | `/perfil` construido: `Profile.tsx` (6 tabs — Resumen, Mis Cursos, Favoritos, Vivenciales, Logros, Tus datos) replicando `academy_perfil.html`. Hooks nuevos (`useProfilePage.ts`), RPC `get_academy_ranking()`, tokens `--bg-3/--bg-4` + `.td-input`, tipos extendidos (creditos, fecha_nacimiento, genero, tipo_vendedor, anos_experiencia, destinos_principales, pool, NIVELES/nivelInfo). Header: "Cursos"→"Formación", "Perfil"→"Mi perfil". Reemplazó el `Perfil.tsx` viejo (4 secciones). |
+| Sesión 9 | **Onboarding obligatorio + referidos.** `Onboarding.tsx` (3 pasos, framer-motion `AnimatePresence`, stepper ruta-de-vuelo, boarding pass del código, confetti canvas, share `react-share`) replicando `academy_onboarding_proto.html`, con autoguardado por paso y resume desde DB. `ProtectedRoute` ahora es gate real contra `onboarding_completo`. Trigger `handle_new_user()` ampliado: persiste metadata + acredita referidos (cubre Google OAuth). Migración: `pais` agregado. Edge functions `award-points` + `check-badges` deployadas. Decisiones: se reusó `onboarding_completo` (no se creó `onboarding_completado`); referral_code se mantiene en 8 chars; sin botón "omitir". |
 
 ### ✅ Infraestructura lista
 
@@ -144,9 +145,36 @@ IBM Plex Mono 400 → badges, datos, timestamps
 **Hub de identidad:**
 ```
 profiles          → id, email, nombre, apellido, avatar_url, telefono
-academy_profiles  → bio, ciudad, username, referral_code, puntos, nivel,
+academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referral_code (hash 8 chars),
+                    puntos, creditos, nivel, onboarding_completo (BOOL, gate de acceso),
+                    fecha_nacimiento, genero, tipo_vendedor, anos_experiencia, destinos_principales (jsonb array),
                     streak_actual, streak_maximo, total_cursos_completados, total_vivenciales
 ```
+
+> **Onboarding gate:** el flag canónico es `onboarding_completo` (NO `onboarding_completado`).
+> Se reusó la columna existente en vez de crear una duplicada. El gate se lee contra la base
+> (nunca localStorage) y redirige a `/onboarding` hasta que sea `true`.
+>
+> Vive en **`OnboardingGate`** (`src/components/layout/OnboardingGate.tsx`), que envuelve
+> TODAS las rutas — es el único decisor. Así un usuario logueado sin onboarding va a
+> `/onboarding` aterrice donde aterrice, incluso si Google OAuth cae al Site URL (`/`) en vez
+> de `/auth/callback`. Rutas exentas: `/login`, `/registro`, `/auth/callback`, `/onboarding`.
+> `/auth/callback` usa el componente `AuthCallback` que espera a que la sesión se resuelva
+> desde la URL y recién ahí navega a `/cursos` (el gate decide el resto). `ProtectedRoute`
+> sigue cubriendo la autenticación de rutas privadas + el rebote de un usuario ya onboardeado
+> que visita `/onboarding` → `/cursos`.
+
+**Creación automática de perfil (triggers — ya existentes, ampliados Sesión 9):**
+```
+auth.users INSERT → handle_new_user()
+  → INSERT profiles (copia nombre/apellido del raw_user_meta_data)
+     → on_profile_created → create_academy_profile_on_signup() crea academy_profiles
+  → UPDATE academy_profiles.tipo_cuenta desde metadata
+  → si vino referral_code en metadata: inserta academy_referrals + acredita
+    referente (+30 XP / +20 Créditos) y nuevo usuario (+50 Créditos bienvenida)
+    vía award_points_and_credits(). Idempotente (guarda contra duplicados).
+```
+Esto cubre email/password **y Google OAuth** (ambos pasan por `auth.users`).
 
 **Catálogo:**
 ```
@@ -210,6 +238,8 @@ academy_payments          → user_id, tipo, course_id, monto_ars, monto_usd, mp
 | `create-course-payment` | ✅ ACTIVE | Genera link de pago MP |
 | `confirm-course-payment` | ✅ ACTIVE | Verifica pago y crea enrollment |
 | `mp-webhook-academy` | ✅ ACTIVE | Recibe notificaciones de MP |
+| `award-points` | ✅ ACTIVE | `POST {userId, accion, referenciaId?}` → `award_points_and_credits()` + dispara `check-badges`. Idempotente por `referenciaId`. Acciones: resena_publicada, referido_registrado, curso_completado, vivencial_completado, bono_bienvenida, perfil_completado |
+| `check-badges` | ✅ ACTIVE | `POST {userId}` → evalúa condiciones (first_lesson, first_review, first_vivencial, first_referral, streak_7, streak_100) contra `academy_badges.condicion`, otorga las nuevas y devuelve sus nombres |
 
 ```
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/create-course-payment
@@ -284,6 +314,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - `/u/:username` — Perfil público del alumno
 
 ### Privadas ✅
+- `/onboarding` — Onboarding obligatorio de 3 pasos (gate real vía `onboarding_completo`)
 - `/dashboard` — Home del alumno
 - `/mis-cursos` — Cursos enrollados + vivenciales
 - `/cursos/:slug/aprender` — Player con bottom bar fija

@@ -71,7 +71,7 @@ export default function Registro() {
     }
 
     setStatus('success')
-    setTimeout(() => navigate('/dashboard', { replace: true }), 700)
+    setTimeout(() => navigate('/onboarding', { replace: true }), 700)
   }
 
   const handleGoogle = async () => {
@@ -126,7 +126,7 @@ export default function Registro() {
               </motion.div>
             ))}
             <div className="pt-2 pl-1 font-mono text-xs" style={{ color: 'var(--primary-l)' }}>
-              🎉 Ganás 200 puntos de bienvenida al registrarte
+              🎁 Sumás Créditos de bienvenida si te registrás con el código de otro asesor
             </div>
           </div>
         </div>

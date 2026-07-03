@@ -12,7 +12,7 @@ function formatARS(n: number | null): string {
 }
 
 function formatPrice(ars: number | null, tipo_acceso: string): string {
-  if (tipo_acceso === 'free' || ars === null || ars === 0) return 'GRATIS'
+  if (tipo_acceso === 'gratuito' || ars === null || ars === 0) return 'GRATIS'
   return formatARS(ars)
 }
 
@@ -117,7 +117,7 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
 
   const isLive     = course.tipo === 'en_vivo'
   const isVivencial = course.tipo === 'vivencial'
-  const isFree     = course.tipo_acceso === 'free' || course.precio_ars === 0
+  const isFree     = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
   const cupoLow    = isVivencial && course.vivencial_cupo_disponible !== null && course.vivencial_cupo_disponible <= 5
 
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLElement>) => {

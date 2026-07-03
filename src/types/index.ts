@@ -3,7 +3,8 @@
 export type PlanName = 'free' | 'mensual' | 'anual'
 export type SubscriptionStatus = 'free' | 'active' | 'cancelled' | 'pending'
 export type TipoCuenta = 'asesor' | 'agencia' | 'instructor' | 'externo'
-export type TipoAcceso = 'free' | 'paid' | 'subscription'
+// Valores reales del CHECK de academy_courses.tipo_acceso.
+export type TipoAcceso = 'gratuito' | 'pago' | 'suscripcion' | 'b2b_incluido'
 export type NivelCurso = 'principiante' | 'intermedio' | 'avanzado'
 export type TipoCurso = 'grabado' | 'en_vivo' | 'vivencial'
 export type TipoPunto = 'ganado' | 'canjeado'
@@ -66,6 +67,7 @@ export interface Profile {
   apellido: string | null
   avatar_url: string | null
   telefono: string | null
+  es_admin: boolean
   created_at: string
   updated_at: string
 }
@@ -153,16 +155,23 @@ export interface Course {
   titulo: string
   slug: string
   descripcion: string | null
+  descripcion_larga: string | null
   thumbnail_url: string | null
   trailer_url: string | null
   category_id: string | null
   instructor_id: string | null
   nivel: NivelCurso
+  tags: string[]
   tipo_acceso: TipoAcceso
   precio_usd: number | null
   precio_ars: number | null
   publicado: boolean
   destacado: boolean
+  archivado: boolean
+  orden: number
+  idioma: string | null
+  duracion_minutos: number
+  rating_promedio: number
   total_alumnos: number
   created_at: string
   // nuevos campos
@@ -182,6 +191,7 @@ export interface Course {
   vivencial_fecha_regreso: string | null
   vivencial_ciudad_salida: string | null
   vivencial_pais: string | null
+  vivencial_region: string | null
   vivencial_punto_encuentro: string | null
   vivencial_cupo_maximo: number | null
   vivencial_cupo_disponible: number | null
@@ -223,7 +233,7 @@ export interface Enrollment {
   id: string
   user_id: string
   course_id: string
-  tipo_acceso: TipoAcceso
+  tipo_acceso: TipoAccesoEnrollment
   progreso_pct: number
   completado: boolean
   created_at: string
@@ -360,6 +370,39 @@ export interface Referral {
   created_at: string
 }
 
+// ── Backoffice / admin ──
+
+// Valores reales del CHECK de academy_enrollments.tipo_acceso (distinto del legacy TipoAcceso público).
+export type TipoAccesoEnrollment = 'pago' | 'suscripcion' | 'gratuito' | 'regalo' | 'b2b'
+
+// academy_settings (key/value jsonb, RLS admin-only)
+export interface AcademySetting {
+  key: string
+  value: unknown
+}
+
+export interface AdminSettings {
+  tipo_cambio_usd_ars: number
+  comision_mp_pct: number
+  meta_ingresos_mensual_ars: number
+  inversion_marketing_mensual_ars: number
+}
+
+// Inscripción con el perfil del alumno resuelto (para la tabla de inscriptos)
+export interface EnrollmentWithProfile extends Enrollment {
+  profile?: Pick<Profile, 'id' | 'nombre' | 'apellido' | 'email' | 'avatar_url'>
+}
+
+// KPIs del panel de Resumen
+export interface AdminSummaryKpis {
+  ingresosMesArs: number
+  ventasMes: number
+  alumnosNuevosMes: number
+  cursosPublicados: number
+  cursosBorrador: number
+  vivencialesCupoAbierto: number
+}
+
 // ── Database type map ──
 export interface Database {
   public: {
@@ -481,6 +524,18 @@ export interface Database {
         Row: Referral
         Insert: Omit<Referral, 'id' | 'created_at'>
         Update: Partial<Omit<Referral, 'id'>>
+        Relationships: []
+      }
+      academy_reviews: {
+        Row: Review
+        Insert: Omit<Review, 'id' | 'created_at'>
+        Update: Partial<Omit<Review, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      academy_settings: {
+        Row: AcademySetting
+        Insert: AcademySetting
+        Update: Partial<AcademySetting>
         Relationships: []
       }
     }

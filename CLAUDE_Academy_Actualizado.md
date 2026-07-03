@@ -1,6 +1,6 @@
-# CLAUDE.md — Travexa Academy
+# Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 2 Julio 2026 — Sesión 9 (Onboarding obligatorio + referidos)**
+**Actualizado: 3 Julio 2026 — Sesión 10**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -51,35 +51,42 @@ El usuario paga por lo que consume:
 | Días 1-3 | Setup completo: Vite + React 18 + TS + shadcn/ui + Tailwind v4 + Supabase + auth + páginas base + edge functions MP |
 | Sesión 4 | Supabase `fvrwtqhkskbaixqbxami` creada con schema completo + edge functions deployadas |
 | Sesión 5 | Schema extendido (tipos, vivencial, gamificación) + datos seed + prototipo HTML aprobado de `/cursos` y `/cursos/:slug` |
-| Sesión 8 | `/perfil` construido: `Profile.tsx` (6 tabs — Resumen, Mis Cursos, Favoritos, Vivenciales, Logros, Tus datos) replicando `academy_perfil.html`. Hooks nuevos (`useProfilePage.ts`), RPC `get_academy_ranking()`, tokens `--bg-3/--bg-4` + `.td-input`, tipos extendidos (creditos, fecha_nacimiento, genero, tipo_vendedor, anos_experiencia, destinos_principales, pool, NIVELES/nivelInfo). Header: "Cursos"→"Formación", "Perfil"→"Mi perfil". Reemplazó el `Perfil.tsx` viejo (4 secciones). |
-| Sesión 9 | **Onboarding obligatorio + referidos.** `Onboarding.tsx` (3 pasos, framer-motion `AnimatePresence`, stepper ruta-de-vuelo, boarding pass del código, confetti canvas, share `react-share`) replicando `academy_onboarding_proto.html`, con autoguardado por paso y resume desde DB. `ProtectedRoute` ahora es gate real contra `onboarding_completo`. Trigger `handle_new_user()` ampliado: persiste metadata + acredita referidos (cubre Google OAuth). Migración: `pais` agregado. Edge functions `award-points` + `check-badges` deployadas. Decisiones: se reusó `onboarding_completo` (no se creó `onboarding_completado`); referral_code se mantiene en 8 chars; sin botón "omitir". |
+| Sesión 6 | `/cursos`, `/cursos/:slug`, `/vivencial`, `/vivencial/:slug` implementados en React. `cupoEstado()` como única fuente de verdad |
+| Sesión 7 | Prototipos `/vivencial` y `/perfil` diseñados y aprobados. Sistema dual XP/Créditos, niveles, referidos definidos |
+| Sesión 8 | `Profile.tsx` implementado (6 tabs, 7 modales). Header actualizado ("Formación" / "Mi perfil") |
+| Sesión 9 | Onboarding obligatorio de 3 pasos, gate real contra DB, referidos vía trigger, `award-points`/`check-badges` deployadas, Google OAuth activado y probado en local, badges client-side corregidos |
+| Sesión 10 | **Backoffice `/admin/*`** (Resumen, Cursos, Vivenciales, Métricas) conectado a Supabase. Migración `backoffice_admin_rls` (función `is_academy_admin()` + policies admin CRUD/lectura). `AdminGate` + redirect admin post-login salteando onboarding. Wizards de 5 pasos (curso/vivencial) con react-hook-form/zod, TAG_SUGGESTIONS, upload a `academy-media`, currículum, itinerario con renumeración, preview reusando `CourseDetail` (`?preview=1`), inscripción manual con decremento de cupo, drawer de settings (`academy_settings`), command palette ⌘K. Catálogo público endurecido a `publicado=true AND archivado=false` (RLS + query). Fix latente: `tipo_acceso` legacy `'free'`→valores reales de la DB (`gratuito`…) |
 
 ### ✅ Infraestructura lista
 
 - Supabase `fvrwtqhkskbaixqbxami` creada, schema completo con RLS y todas las migraciones
-- 5 edge functions deployadas y ACTIVE
+- 7 edge functions deployadas y ACTIVE (las 3 de pagos + `award-points` + `check-badges`, más las 2 originales de MP)
 - Bucket `academy-media` creado en Storage (avatars, fotos de cursos)
 - Datos seed cargados: 8 cursos, 3 instructores, 5 categorías, 7 badges
+- Onboarding obligatorio en producción: `academy_profiles.onboarding_completo` gatea todas las rutas privadas (`OnboardingGate`), sin depender de localStorage ni de la config de Redirect URLs
 
 ### 🔴 Acción manual pendiente
 
 - `MP_ACCESS_TOKEN` → cargar en `supabase.com/dashboard/project/fvrwtqhkskbaixqbxami/settings/functions`
-- Google OAuth → activar en Supabase Auth providers
+- Google OAuth en producción → funciona en local; falta agregar el dominio de Vercel prod (no preview) a Redirect URLs de Supabase + Authorized redirect URIs de Google Cloud Console
+- Test users de Google OAuth → mientras el OAuth Client esté en modo "Testing", solo loguean cuentas agregadas a mano en Google Cloud Console
+- Volver a activar "Confirm email" en Supabase (se apagó para testear sin rate limit)
+- SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real
 
-### 🟡 Próximos pasos (Sesión 6)
+### 🟡 Próximos pasos
 
-Replicar el prototipo HTML aprobado en React:
-1. `/cursos` — Catalog.tsx: filtros por modalidad + categoría, sort, search, cards con DAH hover, badges de tipo
-2. `/cursos/:slug` — CourseDetail.tsx: hero, tabs, accordion, CTA sticky, FAQ modal, share, regalar
-3. Instalar dependencias nuevas: `framer-motion`, `canvas-confetti`, `react-share`, `date-fns`
+1. Badge `top10_monthly` ("Top Learner") — única condición de badge sin implementar, es ranking-based, necesita lógica propia contra `get_academy_ranking()`
+2. Auditar `academy_badges.condicion` completo contra la DB real por si hay condiciones cargadas que nada cubre todavía
+3. `/beneficios` — página de canje de créditos
+4. Backoffice: módulos/días desde el panel
 
 ---
 
-## PROTOTIPO HTML APROBADO
+## PROTOTIPOS HTML APROBADOS
 
-El archivo `docs/proto/academy_catalogo.html` en el repo es la **fuente de verdad visual** para `/cursos` y `/cursos/:slug`. Claude Code debe replicar ese diseño exactamente en React.
+Los prototipos viven en la **raíz del proyecto** (no en `docs/proto/` pese a lo que digan versiones viejas de este documento): `academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`. Son la **fuente de verdad visual**. Claude Code debe replicar ese diseño exactamente en React, no reinterpretarlo.
 
-**Lo que tiene el prototipo:**
+**`academy_catalogo.html`** — referencia de `/cursos` y `/cursos/:slug`:
 - Header liquid glass pill (iOS behavior: desaparece al scrollear abajo, reaparece al subir)
 - Page header blanco con foto de fondo + esfumado blanco→navy
 - Filtros en 2 filas: **Modalidad** (Todos / A tu ritmo / En Vivo / Vivencial / Gratis) + **Categoría**
@@ -97,6 +104,12 @@ El archivo `docs/proto/academy_catalogo.html` en el repo es la **fuente de verda
 - Copiar link en hero del detalle
 - WhatsApp flotante bottom-right (siempre visible)
 - Mobile responsive: barra CTA fija en bottom en mobile
+
+**`academy_onboarding_proto.html`** — referencia de `/onboarding` (implementado Sesión 9):
+- Stepper de 3 pasos con línea punteada tipo ruta de vuelo, avioncito indicador de progreso
+- Paso 3: código de referido en formato "pase de embarque" (tarjeta troquelada, shimmer antes de mostrar el código)
+- Gold solo en el logo y en el bloque de recompensa de créditos — en ningún otro lugar
+- Sin botón de "omitir": el onboarding es obligatorio
 
 ---
 
@@ -145,36 +158,16 @@ IBM Plex Mono 400 → badges, datos, timestamps
 **Hub de identidad:**
 ```
 profiles          → id, email, nombre, apellido, avatar_url, telefono
-academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referral_code (hash 8 chars),
-                    puntos, creditos, nivel, onboarding_completo (BOOL, gate de acceso),
-                    fecha_nacimiento, genero, tipo_vendedor, anos_experiencia, destinos_principales (jsonb array),
+academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referral_code,
+                    puntos, creditos, nivel, tipo_cuenta,
+                    fecha_nacimiento, genero, tipo_vendedor, anos_experiencia,
+                    destinos_principales (array), onboarding_completo (bool, default false),
                     streak_actual, streak_maximo, total_cursos_completados, total_vivenciales
 ```
 
-> **Onboarding gate:** el flag canónico es `onboarding_completo` (NO `onboarding_completado`).
-> Se reusó la columna existente en vez de crear una duplicada. El gate se lee contra la base
-> (nunca localStorage) y redirige a `/onboarding` hasta que sea `true`.
->
-> Vive en **`OnboardingGate`** (`src/components/layout/OnboardingGate.tsx`), que envuelve
-> TODAS las rutas — es el único decisor. Así un usuario logueado sin onboarding va a
-> `/onboarding` aterrice donde aterrice, incluso si Google OAuth cae al Site URL (`/`) en vez
-> de `/auth/callback`. Rutas exentas: `/login`, `/registro`, `/auth/callback`, `/onboarding`.
-> `/auth/callback` usa el componente `AuthCallback` que espera a que la sesión se resuelva
-> desde la URL y recién ahí navega a `/cursos` (el gate decide el resto). `ProtectedRoute`
-> sigue cubriendo la autenticación de rutas privadas + el rebote de un usuario ya onboardeado
-> que visita `/onboarding` → `/cursos`.
+⚠️ `onboarding_completo` es el campo canónico del gate de acceso — no confundir ni duplicar con ningún otro nombre similar. Gatea `/onboarding` vía `OnboardingGate` para toda ruta privada, sea cual sea el método de login (email o Google).
 
-**Creación automática de perfil (triggers — ya existentes, ampliados Sesión 9):**
-```
-auth.users INSERT → handle_new_user()
-  → INSERT profiles (copia nombre/apellido del raw_user_meta_data)
-     → on_profile_created → create_academy_profile_on_signup() crea academy_profiles
-  → UPDATE academy_profiles.tipo_cuenta desde metadata
-  → si vino referral_code en metadata: inserta academy_referrals + acredita
-    referente (+30 XP / +20 Créditos) y nuevo usuario (+50 Créditos bienvenida)
-    vía award_points_and_credits(). Idempotente (guarda contra duplicados).
-```
-Esto cubre email/password **y Google OAuth** (ambos pasan por `auth.users`).
+⚠️ `referral_code`: hoy se genera con un default de 8 caracteres random en Postgres. El formato legible tipo `TRVX-NOMBRE-2026` quedó evaluado pero sin decisión final — revisar si se aplica antes de que el código empiece a compartirse en volumen.
 
 **Catálogo:**
 ```
@@ -200,11 +193,14 @@ academy_lessons       → module_id, course_id, titulo, video_url, duracion_segu
 
 **Gamificación:**
 ```
-academy_points_transactions → user_id, puntos, tipo, motivo, referencia_id
+academy_points_transactions → user_id, puntos, tipo, motivo, referencia_id, pool ('xp'|'creditos')
 academy_badges              → nombre, descripcion, icono, color, condicion, activo
 academy_user_badges         → user_id, badge_id, earned_at
 academy_certificates        → user_id, course_id, enrollment_id, numero, emitido_at
+academy_credit_redemptions  → user_id, ...(canje de créditos)
 ```
+
+⚠️ Valores reales de `academy_badges.condicion` confirmados contra la DB (Sesión 9): `first_lesson`, `first_review`, `first_vivencial`, `first_referral`, `streak_7`, `streak_100`, `top10_monthly`. Los strings en español (`primera_leccion`, etc.) que aparecían en versiones viejas del código **no existen en la DB** — no reintroducirlos. `top10_monthly` es la única sin lógica implementada todavía (es ranking-based, no evento puntual).
 
 **Extras:**
 ```
@@ -238,14 +234,18 @@ academy_payments          → user_id, tipo, course_id, monto_ars, monto_usd, mp
 | `create-course-payment` | ✅ ACTIVE | Genera link de pago MP |
 | `confirm-course-payment` | ✅ ACTIVE | Verifica pago y crea enrollment |
 | `mp-webhook-academy` | ✅ ACTIVE | Recibe notificaciones de MP |
-| `award-points` | ✅ ACTIVE | `POST {userId, accion, referenciaId?}` → `award_points_and_credits()` + dispara `check-badges`. Idempotente por `referenciaId`. Acciones: resena_publicada, referido_registrado, curso_completado, vivencial_completado, bono_bienvenida, perfil_completado |
-| `check-badges` | ✅ ACTIVE | `POST {userId}` → evalúa condiciones (first_lesson, first_review, first_vivencial, first_referral, streak_7, streak_100) contra `academy_badges.condicion`, otorga las nuevas y devuelve sus nombres |
+| `award-points` | ✅ ACTIVE | Acredita XP/Créditos por acción, dispara check-badges |
+| `check-badges` | ✅ ACTIVE | Evalúa condiciones y otorga badges nuevas |
 
 ```
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/create-course-payment
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/confirm-course-payment
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/mp-webhook-academy
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/award-points
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/check-badges
 ```
+
+**Además, en DB:** `handle_new_user()` (trigger sobre `auth.users`) crea `academy_profiles` para cualquier signup — email o Google por igual — copia metadata (nombre/apellido/tipo_cuenta) y, si vino `referral_code`, acredita al referente y al nuevo usuario vía `award_points_and_credits()`. No recrear esta lógica en el frontend ni en una edge function aparte.
 
 ---
 
@@ -274,7 +274,7 @@ Repo:     github.com/travexa2-0/travexa-academy (público)
 Vercel:   travexa-academy (prj_EVk9I5qgCzTEJ5FAqNODm1t5N8AC)
 Supabase: fvrwtqhkskbaixqbxami (São Paulo)
 Local:    /Users/nicolasbelinco/Projects/travexa/travexa-academy
-Proto:    docs/proto/academy_catalogo.html — referencia visual aprobada
+Proto:    Prototipos HTML en la raíz del proyecto (no docs/proto/) — academy_catalogo.html, academy_perfil.html, academy_vivencial.html, academy_onboarding_proto.html
 ```
 
 **NO confundir con:**
@@ -305,41 +305,45 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 ## PÁGINAS
 
 ### Públicas ✅
-- `/cursos` — Catálogo
+- `/cursos` — Catálogo. Es el destino post-onboarding (home actual, no `/dashboard` todavía)
 - `/cursos/:slug` — Detalle de curso
-- `/login` — Login (email + Google OAuth)
-- `/registro` — Registro con tipo de cuenta
+- `/login` — Login (email + Google OAuth, activo y probado en local)
+- `/registro` — Registro con tipo de cuenta (ya no pide `destinos_principales`, eso quedó en el onboarding)
+- `/auth/callback` — Callback de OAuth, espera resolución de sesión antes de navegar
 - `/pago-confirmado` — Post-pago
 - `/pago-error` — Error de pago
 - `/u/:username` — Perfil público del alumno
 
 ### Privadas ✅
-- `/onboarding` — Onboarding obligatorio de 3 pasos (gate real vía `onboarding_completo`)
-- `/dashboard` — Home del alumno
+- `/onboarding` — Obligatorio, 3 pasos, gateado vía `OnboardingGate` contra `onboarding_completo`. Autoguardado por paso, resume si se corta a mitad de camino
+- `/dashboard` — Home del alumno (existe la ruta, pero el flujo actual no aterriza acá — ver nota arriba)
 - `/mis-cursos` — Cursos enrollados + vivenciales
 - `/cursos/:slug/aprender` — Player con bottom bar fija
 - `/perfil` — Perfil del alumno (badges, certificados, referidos)
 - `/viaje/:slug` — Detalle de vivencial (itinerario, pagos, checklist)
 
-### Vivencial (nuevas — Sesión 7)
-- `/vivencial` — Catálogo público de vivenciales ✅
-- `/vivencial/:slug` — Detalle público de vivencial ✅
+### Admin ✅ (Sesión 10)
+- `/admin/resumen` — KPIs, gráfico de ingresos, alertas accionables, actividad reciente, estados vacíos reales
+- `/admin/cursos` — lista con filtros client-side, wizard 5 pasos, preview, publicar/archivar/eliminar (0 inscriptos)
+- `/admin/vivenciales` — mismo motor filtrado por `tipo='vivencial'`, itinerario, inscriptos + inscripción manual (decrementa cupo)
+- `/admin/metricas` — ingresos, rentabilidad por instructor, compradores, uso/funnel derivado, ROI marketing
+- Gate: `AdminGate` (RLS + `profiles.es_admin`); admin aterriza en `/admin/resumen` salteando `OnboardingGate`
 
 ### Pendientes
-- `/admin/*` — Backoffice Academy (backlog)
+- Drag-and-drop para reordenar módulos/lecciones e itinerario (hoy el orden es por posición, sin DnD)
 
 ---
 
 ## BACKLOG (NO CONSTRUIR AHORA)
 
-- [ ] Backoffice completo: métricas, gestión de cursos, ventas, estadísticas
-  - Al crear/editar **curso**: agregar N módulos (titulo + descripcion) → `academy_modules`. Dentro de cada módulo, lecciones → `academy_lessons`.
-  - Al crear/editar **vivencial**: agregar N días (titulo + descripcion) que se guardan como JSONB en `vivencial_itinerario`. Cada item: `{ "dia": "Día 1", "titulo": "...", "descripcion": "..." }`. El campo `dia` es texto libre (soporta rangos tipo "Días 3-4").
+- [x] Backoffice completo: métricas, gestión de cursos, ventas, estadísticas (Sesión 10)
 - [ ] Certificados PDF auto-generados
 - [ ] Comunidad: feed social + directorio
 - [ ] Eventos: webinars con cards boarding pass
-- [ ] Google OAuth activación (paso manual en Supabase dashboard)
+- [ ] Badge `top10_monthly` (ranking-based, necesita `get_academy_ranking()`)
 - [ ] MP_ACCESS_TOKEN carga en Supabase Secrets
+- [ ] Google OAuth en producción (dominio prod, no preview)
+- [ ] SMTP propio para confirmación de email en volumen real
 
 ---
 
@@ -351,9 +355,9 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 4. **No borrar datos.** Soft-delete siempre.
 5. **No re-crear tablas.** Solo `ALTER TABLE`.
 6. **Modelo:** registro gratis, pago por curso/vivencial/evento. Sin suscripciones.
-7. **Diseño:** prototipo HTML en `docs/proto/` es la fuente de verdad visual.
+7. **Diseño:** prototipos HTML en la raíz del proyecto son la fuente de verdad visual.
 8. **Actualizar este archivo** con cada sesión.
 
 ---
 
-*Pencom Travexa SAS · Junio 2026 · Uso interno confidencial*
+*Pencom Travexa SAS · Julio 2026 · Uso interno confidencial*

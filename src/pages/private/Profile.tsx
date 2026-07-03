@@ -221,7 +221,7 @@ function FavCard({ w, onRemove }: { w: WishlistItem; onRemove: (id: string) => v
   const navigate = useNavigate()
   const c = w.course
   if (!c) return null
-  const priceLabel = c.tipo_acceso === 'free'
+  const priceLabel = c.tipo_acceso === 'gratuito'
     ? 'Gratis'
     : c.precio_ars ? money(c.precio_ars) : 'Consultar'
 

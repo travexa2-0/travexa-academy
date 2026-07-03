@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         const j = await res.json() as { badges?: string[] }
         badges = j.badges ?? []
       }
-    } catch (_) {
+    } catch {
       // ignore — points were already awarded
     }
 

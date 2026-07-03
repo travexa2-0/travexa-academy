@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Copy, CheckCircle2, Users, Clock,
@@ -302,7 +302,7 @@ interface CTACardProps {
 function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, onEnroll, onWishlist, onGift, onFAQ }: CTACardProps) {
   const isVivencial = course.tipo === 'vivencial'
   const isLive      = course.tipo === 'en_vivo'
-  const isFree      = course.tipo_acceso === 'free' || course.precio_ars === 0
+  const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
 
   const ctaLabel = enrolled ? 'Continuar aprendiendo'
     : isFree      ? 'Acceder gratis'
@@ -426,6 +426,8 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, o
 
 export default function CourseDetail() {
   const { slug } = useParams<{ slug: string }>()
+  const [searchParams] = useSearchParams()
+  const preview = searchParams.get('preview') === '1'
   const { user } = useAuth()
   const navigate  = useNavigate()
 
@@ -434,7 +436,7 @@ export default function CourseDetail() {
   const [copiedLink, setCopiedLink] = useState(false)
   const [toast, setToast]           = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false })
 
-  const { data: course, isLoading, error } = useCourseDetail(slug ?? '')
+  const { data: course, isLoading, error } = useCourseDetail(slug ?? '', preview)
   const { data: wishlist = [] }            = useWishlist(user?.id)
   const { mutate: toggleWishlist }         = useToggleWishlist(user?.id)
   const { data: enrollments = [] }         = useMyEnrollments(user?.id)
@@ -450,7 +452,7 @@ export default function CourseDetail() {
 
   const handleEnroll = useCallback(async () => {
     if (!user) { navigate('/registro', { state: { from: `/cursos/${slug}` } }); return }
-    if (course?.tipo_acceso === 'free' || enrolled) { navigate(`/cursos/${slug}/aprender`); return }
+    if (course?.tipo_acceso === 'gratuito' || enrolled) { navigate(`/cursos/${slug}/aprender`); return }
     const initPoint = await initiate(course!.id)
     if (initPoint) window.location.href = initPoint
   }, [user, course, enrolled, slug, navigate, initiate])
@@ -507,7 +509,7 @@ export default function CourseDetail() {
 
   const isVivencial = course.tipo === 'vivencial'
   const isLive      = course.tipo === 'en_vivo'
-  const isFree      = course.tipo_acceso === 'free' || course.precio_ars === 0
+  const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
   const nivelStyle  = NIVEL_STYLES[course.nivel]
 
   const totalLessons = course.modules?.reduce((a, m) => a + (m.lessons?.length ?? 0), 0) ?? 0
@@ -532,6 +534,12 @@ export default function CourseDetail() {
   return (
     <div className="min-h-screen pb-24 md:pb-0" style={{ background: 'var(--bg)' }}>
       <Header />
+
+      {preview && (
+        <div style={{ position: 'sticky', top: 0, zIndex: 60, background: '#C99A3A', color: '#0A1E29', textAlign: 'center', padding: '8px 16px', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
+          Modo preview — así se va a ver el curso publicado. {!course.publicado && 'Todavía está en borrador.'}
+        </div>
+      )}
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden" style={{ height: 'clamp(240px,40vw,400px)' }}>

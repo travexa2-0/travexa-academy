@@ -29,6 +29,7 @@ async function fetchCourses(categoryId?: string): Promise<Course[]> {
     .from('academy_courses')
     .select(`*, category:academy_categories(*), instructor:academy_instructors(*)`)
     .eq('publicado', true)
+    .eq('archivado', false)
     .order('destacado', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -39,8 +40,8 @@ async function fetchCourses(categoryId?: string): Promise<Course[]> {
   return (data as CourseRow[]).map(normalizeCourse)
 }
 
-async function fetchCourseBySlug(slug: string): Promise<Course & { modules: Module[] }> {
-  const { data, error } = await supabase
+async function fetchCourseBySlug(slug: string, preview = false): Promise<Course & { modules: Module[] }> {
+  let query = supabase
     .from('academy_courses')
     .select(`
       *,
@@ -49,8 +50,11 @@ async function fetchCourseBySlug(slug: string): Promise<Course & { modules: Modu
       modules:academy_modules(*, lessons:academy_lessons(*))
     `)
     .eq('slug', slug)
-    .eq('publicado', true)
-    .single()
+
+  // Preview mode (admin only, gated by RLS): ver borradores/archivados sin filtrar estado.
+  if (!preview) query = query.eq('publicado', true).eq('archivado', false)
+
+  const { data, error } = await query.single()
 
   if (error) throw new Error(error.message)
   const course = normalizeCourse(data as CourseRow)
@@ -108,11 +112,11 @@ export function useCourses(categoryId?: string) {
   })
 }
 
-export function useCourseDetail(slug: string) {
+export function useCourseDetail(slug: string, preview = false) {
   return useQuery({
-    queryKey: ['course', slug],
-    queryFn:  () => fetchCourseBySlug(slug),
-    staleTime: 1000 * 60 * 5,
+    queryKey: ['course', slug, preview ? 'preview' : 'public'],
+    queryFn:  () => fetchCourseBySlug(slug, preview),
+    staleTime: preview ? 0 : 1000 * 60 * 5,
     enabled:  !!slug,
   })
 }

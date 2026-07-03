@@ -5,6 +5,8 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import OnboardingGate from '@/components/layout/OnboardingGate'
+import AdminGate from '@/components/layout/AdminGate'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 const Login               = lazy(() => import('@/pages/public/Login'))
 const Registro            = lazy(() => import('@/pages/public/Registro'))
@@ -21,6 +23,11 @@ const Player            = lazy(() => import('@/pages/private/Player'))
 const Profile           = lazy(() => import('@/pages/private/Profile'))
 const Onboarding        = lazy(() => import('@/pages/private/Onboarding'))
 const VivencialDetalle  = lazy(() => import('@/pages/private/VivencialDetalle'))
+const AdminLayout       = lazy(() => import('@/pages/admin/AdminLayout'))
+const AdminResumen      = lazy(() => import('@/pages/admin/Resumen'))
+const AdminCursos       = lazy(() => import('@/pages/admin/Cursos'))
+const AdminVivenciales  = lazy(() => import('@/pages/admin/Vivenciales'))
+const AdminMetricas     = lazy(() => import('@/pages/admin/Metricas'))
 
 function PageLoader() {
   return (
@@ -34,6 +41,7 @@ function PageLoader() {
 // navegar a una ruta real; el OnboardingGate decide luego si va a /onboarding o /cursos.
 function AuthCallback() {
   const { user, loading } = useAuth()
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin()
   const [timedOut, setTimedOut] = useState(false)
 
   useEffect(() => {
@@ -41,7 +49,10 @@ function AuthCallback() {
     return () => clearTimeout(t)
   }, [])
 
-  if (!loading && user) return <Navigate to="/cursos" replace />
+  // Un admin aterriza directo en el backoffice, salteando el onboarding de alumno.
+  if (!loading && user && !adminLoading) {
+    return <Navigate to={isAdmin ? '/admin/resumen' : '/cursos'} replace />
+  }
   if (timedOut && !user) return <Navigate to="/login" replace />
   return <PageLoader />
 }
@@ -86,6 +97,19 @@ export default function App() {
                 <Route path="/cursos/:slug/aprender/:lessonId" element={<Player />} />
                 <Route path="/mi-cuenta" element={<Navigate to="/perfil" replace />} />
                 <Route path="/perfil" element={<Profile />} />
+              </Route>
+
+              {/* Admin backoffice — real route-level gate (AdminGate) + RLS */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AdminGate />}>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Navigate to="/admin/resumen" replace />} />
+                    <Route path="resumen" element={<AdminResumen />} />
+                    <Route path="cursos" element={<AdminCursos />} />
+                    <Route path="vivenciales" element={<AdminVivenciales />} />
+                    <Route path="metricas" element={<AdminMetricas />} />
+                  </Route>
+                </Route>
               </Route>
 
               {/* Fallback */}

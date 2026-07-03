@@ -21,7 +21,9 @@ export default function Login() {
   const { signIn, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard'
+  // Sin destino explícito, pasamos por /auth/callback: es el único punto que decide
+  // admin (→ /admin/resumen) vs alumno (→ /cursos, luego OnboardingGate si falta onboarding).
+  const from = (location.state as { from?: string } | null)?.from ?? '/auth/callback'
   const shouldReduce = useReducedMotion()
 
   const [email, setEmail] = useState('')

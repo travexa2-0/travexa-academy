@@ -8,6 +8,7 @@ import OnboardingGate from '@/components/layout/OnboardingGate'
 import AdminGate from '@/components/layout/AdminGate'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 
+const Home                = lazy(() => import('@/pages/Home'))
 const Login               = lazy(() => import('@/pages/public/Login'))
 const Registro            = lazy(() => import('@/pages/public/Registro'))
 const Catalog             = lazy(() => import('@/pages/public/Catalog'))
@@ -73,7 +74,7 @@ export default function App() {
             {/* OnboardingGate global: único decisor del gate de onboarding para todas las rutas */}
             <Route element={<OnboardingGate />}>
               {/* Public */}
-              <Route path="/" element={<Navigate to="/cursos" replace />} />
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/registro" element={<Registro />} />
               <Route path="/cursos" element={<Catalog />} />

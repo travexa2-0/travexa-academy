@@ -14,11 +14,15 @@ import { Link } from 'react-router-dom'
 const TOTAL_FRAMES = 116          // frames extraídos de avion.mov (fps=15)
 const TRACK_VH_DESKTOP = 200      // alto del track de scroll (desktop)
 const TRACK_VH_MOBILE = 140       // alto del track de scroll (mobile)
-// Velocidad neta a la que la card se mueve respecto del scroll mientras dura el
-// track (~1/8). En vez de pinnearla (sticky = velocidad 0 = pantalla congelada),
-// la desplazamos con translateY para que avance lento pero continuo, y que el
-// último frame aterrice justo cuando el track termina y entra la sección siguiente.
-const CARD_SCROLL_RATIO = 0.12
+// Movimiento de la card durante el scrub. En vez de una velocidad constante
+// (se sentía estática al final y después "saltaba" al soltar), usamos una
+// curva: arranca lenta (START_SPEED del scroll, se siente pinneada mientras el
+// avión carretea) y acelera hasta IGUALAR la velocidad de scroll al terminar el
+// track — así el traspaso a la sección siguiente es continuo, sin salto, y para
+// el final la card ya subió lo suficiente como para dejar ver lo que viene.
+const START_SPEED = 0.16
+// Umbral de progress a partir del cual el video se funde a oscuro (0→1).
+const FADE_START = 0.8
 const COLLAPSE_MQ = '(max-width: 920px)' // el grid colapsa a 1 columna
 const SMALL_MQ = '(max-width: 767px)'    // se sirven los frames mobile
 
@@ -40,6 +44,7 @@ export default function PlaneTakeoffHero() {
   const trackRef  = useRef<HTMLDivElement>(null)
   const stickyRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fadeRef   = useRef<HTMLDivElement>(null)
   const lastFrame = useRef(-1)
 
   // Decididos una sola vez al montar (cliente).
@@ -54,6 +59,7 @@ export default function PlaneTakeoffHero() {
     const canvas = canvasRef.current
     const sticky = stickyRef.current
     const track  = trackRef.current
+    const fade   = fadeRef.current
     if (!canvas || !sticky || !track) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -88,12 +94,16 @@ export default function PlaneTakeoffHero() {
       const scrollable = track.offsetHeight - sticky.offsetHeight
       const top = track.getBoundingClientRect().top
       const progress = scrollable > 0 ? Math.min(1, Math.max(0, -top / scrollable)) : 0
-      // Posición de la card: en flujo normal subiría 1:1 con el scroll (progress*
-      // scrollable). La contrarrestamos dejando que sólo suba una fracción
-      // (CARD_SCROLL_RATIO), o sea trasladándola hacia abajo el resto. Mismo
-      // progress que el frame → posición y frame llegan juntos a su estado final.
-      const translateY = progress * scrollable * (1 - CARD_SCROLL_RATIO)
+      // translateY = scrollable·(k·p − k/2·p²) con k = 1−START_SPEED. La card
+      // sube lento al principio (g'(0)=START_SPEED) y acelera hasta igualar el
+      // scroll al final (g'(1)=1): traspaso continuo, sin salto al soltar el track.
+      const k = 1 - START_SPEED
+      const translateY = scrollable * (k * progress - (k / 2) * progress * progress)
       sticky.style.transform = `translate3d(0, ${translateY}px, 0)`
+      // Fundido a oscuro en el tramo final, con el mismo progress que el frame.
+      if (fade) {
+        fade.style.opacity = String(Math.min(1, Math.max(0, (progress - FADE_START) / (1 - FADE_START))))
+      }
       const idx = Math.round(progress * (TOTAL_FRAMES - 1))
       if (idx !== lastFrame.current) { drawFrame(idx); lastFrame.current = idx }
     }
@@ -184,6 +194,7 @@ export default function PlaneTakeoffHero() {
           <div className="hero-video-track" ref={trackRef} style={{ height: `${trackVh}vh` }}>
             <div className="hero-video-card hero-video-scrub" ref={stickyRef}>
               <canvas ref={canvasRef} className="takeoff-canvas" aria-hidden="true" />
+              <div ref={fadeRef} className="takeoff-fade" aria-hidden="true" />
               {!ready && <div className="takeoff-skeleton" aria-hidden="true" />}
             </div>
           </div>

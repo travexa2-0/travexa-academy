@@ -96,6 +96,10 @@
   .takeoff-canvas{ display:block; width:100%; height:100%; }
   .takeoff-poster{ display:block; width:100%; height:100%; object-fit:cover; }
   .takeoff-skeleton{ position:absolute; inset:0; background:linear-gradient(100deg, var(--bg2) 30%, var(--bg3) 50%, var(--bg2) 70%); background-size:200% 100%; animation:home-shimmer 1.4s ease-in-out infinite; }
+  /* Fundido a oscuro sobre el final del scrub: JS sube su opacity en el último
+     tramo del progress, así el video "se apaga" en el mismo color que las
+     secciones oscuras que siguen, en vez de cortar seco. */
+  .takeoff-fade{ position:absolute; inset:0; background:var(--bg); opacity:0; pointer-events:none; }
   .eyebrow{ font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--primary-l); display:flex; align-items:center; gap:9px; }
   .eyebrow::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--primary-l); box-shadow:0 0 0 4px rgba(78,205,184,0.18); }
   .hero h1{ font-family:var(--font-display); font-weight:700; font-size:clamp(2.5rem, 5vw, 4rem); line-height:1.06; letter-spacing:-0.02em; margin-top:20px; color:var(--text-1); }
@@ -320,17 +324,19 @@
   .sample-tag::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--gold); }
 
   /* ============ GAMIFICACION ============ */
-  /* padding vertical acotado: como la sección centra su contenido en 100vh, el
-     aire lo pone el centrado; un padding grande sólo empujaría fuera de pantalla
-     en laptops bajitos. */
-  .gami{ padding:48px 0; position:relative; overflow:hidden; }
+  /* Una sola sección (concepto + niveles). Espaciados apretados (padding,
+     márgenes entre bloques, padding de las cards) para que TODO entre en una
+     pantalla sin recortar contenido ni achicar tipografías. El centrado en
+     100dvh pone el aire; el padding vertical es chico a propósito. */
+  .gami{ padding:32px 0; position:relative; overflow:hidden; }
   .gami .container{ position:relative; z-index:1; }
-  .gami-top-text .section-sub{ max-width:780px; }
-  .gami-value-row{ margin-top:28px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .gami-top-text .section-sub{ max-width:780px; margin-top:12px; }
+  .gami .section-title{ margin-top:9px; }
+  .gami-value-row{ margin-top:22px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .gami-value-card{
-    display:flex; align-items:flex-start; gap:13px;
+    display:flex; align-items:flex-start; gap:12px;
     background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--primary-l);
-    border-radius:14px; padding:16px 18px;
+    border-radius:14px; padding:13px 16px;
   }
   .gami-value-card.gold{ border-left-color:var(--gold); }
   .gami-value-card .ic{ flex:0 0 auto; width:32px; height:32px; border-radius:9px; background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
@@ -340,11 +346,11 @@
   .gami-value-card p{ font-size:0.8rem; color:var(--text-2); margin-top:4px; line-height:1.5; }
 
   .gami-sync{
-    margin-top:32px; display:flex; align-items:center; justify-content:center; gap:22px;
-    padding:22px 28px; border-radius:18px; background:var(--bg2); border:1px solid var(--line);
+    margin-top:20px; display:flex; align-items:center; justify-content:center; gap:22px;
+    padding:16px 24px; border-radius:18px; background:var(--bg2); border:1px solid var(--line);
     flex-wrap:wrap;
   }
-  .sync-card{ flex:0 0 auto; width:230px; background:var(--bg3); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .sync-card{ flex:0 0 auto; width:230px; background:var(--bg3); border:1px solid var(--line); border-radius:14px; padding:11px 14px; }
   .sync-card.academy{ border-left:3px solid var(--primary-l); }
   .sync-card.marketplace{ border-left:3px solid var(--gold); }
   .sync-card .sync-label{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); }
@@ -361,13 +367,11 @@
   .sync-mini-badge svg{ width:11px; height:11px; color:var(--gold); }
   .sync-arrow{ flex:0 1 120px; min-width:70px; display:flex; align-items:center; justify-content:center; }
   .sync-arrow svg{ width:100%; height:22px; animation:home-syncPulse 2.6s ease-in-out infinite; }
-  .gami-sync-caption{ margin-top:12px; text-align:center; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); }
+  .gami-sync-caption{ margin-top:10px; text-align:center; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); }
 
-  .gami-stepper-head{ margin-top:36px; display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .gami-stepper-head{ margin-top:24px; display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .gami-stepper-head h4{ font-family:var(--font-display); font-weight:600; font-size:0.98rem; color:var(--text-1); }
-  .gami-stepper{ margin-top:18px; position:relative; }
-  /* Pantalla B (sólo niveles): el stepper respira más bajo su heading propio. */
-  .gami-levels .gami-stepper{ margin-top:48px; }
+  .gami-stepper{ margin-top:16px; position:relative; }
   .stepper-track{ position:relative; display:flex; justify-content:space-between; }
   .stepper-line{ position:absolute; top:5px; left:12px; right:12px; height:2px; background:var(--line); border-radius:2px; }
   .stepper-line-fill{ position:absolute; top:5px; left:12px; height:2px; background:var(--primary-l); border-radius:2px; width:38%; }
@@ -399,24 +403,22 @@
   .footer-links a:hover{ color:var(--text-1); }
   .footer-meta{ font-family:var(--font-mono); font-size:11px; color:var(--text-3); }
 
-  /* ============ SECCIONES A PANTALLA COMPLETA + SNAP ============ */
-  /* Cada sección llena exactamente una pantalla (descontando el header fijo) con
-     su contenido centrado, para no aterrizar nunca con media sección cortada.
-     min-height (no height): si el contenido no entra —p.ej. gamificación en
-     viewports bajos— la sección crece en vez de recortar. El scroll-snap va en
-     <html> (ver regla global abajo) con proximity para no pelear con el scrub
-     del hero. El hero NO lleva snap-align: es un track de 200vh con scroll
-     propio, y un punto de snap arriba tironearía al usuario de vuelta apenas
-     empieza a scrollear el scrub. El primer snap es .pilares. */
+  /* ============ SECCIONES A PANTALLA COMPLETA ============ */
+  /* Cada sección mide exactamente una pantalla (100dvh, sin snap) con su
+     contenido centrado. 100dvh (no 100vh - hdr): así las secciones tilean el
+     viewport justo y no se cuela un pedacito de la anterior. dvh usa el alto
+     visible real (importa en mobile con la barra de URL). El scroll es libre:
+     el usuario decide dónde parar; el alto de 1 pantalla por sección da el
+     efecto sin reposicionar el scroll solo. */
   & > .pilares,
   & > .catalogo,
   & > .vivencial-hl,
   & > .como,
   & > .gami,
   & > .cta-final{
-    min-height:calc(100vh - var(--hdr));
+    min-height:100vh;
+    min-height:100dvh;
     display:flex; flex-direction:column; justify-content:center;
-    scroll-snap-align:start;
   }
 
   /* ============ RESPONSIVE ============ */
@@ -459,13 +461,6 @@
     .pilar-grid{ grid-template-columns:1fr; }
   }
 }
-
-/* Scroll-snap sólo mientras la Home está montada (:has(.home-root)); al navegar
-   a otra ruta el .home-root se desmonta y el snap se apaga solo. proximity (no
-   mandatory) es suave y no interfiere con el scroll custom del hero.
-   scroll-padding-top = alto del header fijo, para que el tope de cada sección
-   snapee justo debajo del nav. */
-html:has(.home-root){ scroll-snap-type:y proximity; scroll-padding-top:56px; }
 
 /* ============ KEYFRAMES (global — prefixed to avoid collisions) ============ */
 @keyframes home-floatTesti{ 0%,100%{ transform:rotate(3deg) translateY(0); } 50%{ transform:rotate(3deg) translateY(-10px); } }

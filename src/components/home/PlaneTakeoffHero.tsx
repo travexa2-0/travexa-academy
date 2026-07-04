@@ -12,8 +12,12 @@ import { Link } from 'react-router-dom'
 
 // ── constantes tuneables ──
 const TOTAL_FRAMES = 116          // frames extraídos de avion.mov (fps=15)
-const TRACK_VH_DESKTOP = 200      // alto del track de scroll (desktop)
-const TRACK_VH_MOBILE = 140       // alto del track de scroll (mobile)
+// Alto del track. Corto a propósito: el track largo dejaba, al terminar los
+// frames, un hueco enorme entre el video (que sube con el scrub) y la sección
+// siguiente. Con ~125vh el desfase es chico y la sección de abajo entra apenas
+// termina el video (el hueco = 0.58 · (track − alto card), crece con el track).
+const TRACK_VH_DESKTOP = 125      // alto del track de scroll (desktop)
+const TRACK_VH_MOBILE = 120       // alto del track de scroll (mobile)
 // Movimiento de la card durante el scrub. En vez de una velocidad constante
 // (se sentía estática al final y después "saltaba" al soltar), usamos una
 // curva: arranca lenta (START_SPEED del scroll, se siente pinneada mientras el
@@ -21,8 +25,11 @@ const TRACK_VH_MOBILE = 140       // alto del track de scroll (mobile)
 // track — así el traspaso a la sección siguiente es continuo, sin salto, y para
 // el final la card ya subió lo suficiente como para dejar ver lo que viene.
 const START_SPEED = 0.16
-// Umbral de progress a partir del cual el video se funde a oscuro (0→1).
-const FADE_START = 0.8
+// Umbral de progress a partir del cual el video se funde a oscuro, y opacidad
+// máxima del velo: NO llega a negro total (si no, la card parece un hueco vacío
+// al final); se oscurece lo justo para leer "el video está terminando".
+const FADE_START = 0.72
+const FADE_MAX = 0.58
 const COLLAPSE_MQ = '(max-width: 920px)' // el grid colapsa a 1 columna
 const SMALL_MQ = '(max-width: 767px)'    // se sirven los frames mobile
 
@@ -110,7 +117,8 @@ export default function PlaneTakeoffHero() {
       if (inner) inner.style.transform = tf
       // Fundido a oscuro en el tramo final, con el mismo progress que el frame.
       if (fade) {
-        fade.style.opacity = String(Math.min(1, Math.max(0, (progress - FADE_START) / (1 - FADE_START))))
+        const f = Math.min(1, Math.max(0, (progress - FADE_START) / (1 - FADE_START)))
+        fade.style.opacity = String(f * FADE_MAX)
       }
       const idx = Math.round(progress * (TOTAL_FRAMES - 1))
       if (idx !== lastFrame.current) { drawFrame(idx); lastFrame.current = idx }

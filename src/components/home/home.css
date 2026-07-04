@@ -77,12 +77,11 @@
      ocupa 1fr (lo que sobra). align-items:start: cada columna maneja su propia
      altura (ambas son sticky 100vh), no se centran contra el alto del track. */
   .hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,520px) 1fr; gap:56px; align-items:start; }
-  /* El texto también es sticky: se centra contra el viewport visible (100vh),
-     NO contra el track de 200vh — así el H1/CTA quedan arriba del fold desde
-     el primer frame y pinneados al lado del video durante todo el scroll-scrub.
-     (Centrar contra el track dejaba el H1 en el punto medio del track, fuera
-     de pantalla en la carga inicial: rompía el propósito del hero.) */
-  .hero-inner{ max-width:520px; position:sticky; top:var(--hdr); height:calc(100vh - var(--hdr)); display:flex; flex-direction:column; justify-content:center; }
+  /* El texto arranca centrado contra el viewport visible (100vh - hdr) y se
+     mueve con el MISMO translateY que la card del video (lo aplica JS), así los
+     dos viajan en lockstep durante el scrub y no quedan desfasados al final.
+     No es sticky: si estuviera pinneado, el video subiría y el texto no. */
+  .hero-inner{ max-width:520px; height:calc(100vh - var(--hdr)); display:flex; flex-direction:column; justify-content:center; will-change:transform; }
 
   /* Columna derecha del video */
   .hero-video-track{ position:relative; }

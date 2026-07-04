@@ -45,13 +45,16 @@ export default function PlaneTakeoffHero() {
   const stickyRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fadeRef   = useRef<HTMLDivElement>(null)
+  const innerRef  = useRef<HTMLDivElement>(null)
   const lastFrame = useRef(-1)
 
   // Decididos una sola vez al montar (cliente).
   const [staticMode] = useState(prefersStatic)
   const [isMobile]   = useState(() => typeof window !== 'undefined' && window.matchMedia(SMALL_MQ).matches)
-  const [trackVh]    = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia(COLLAPSE_MQ).matches ? TRACK_VH_MOBILE : TRACK_VH_DESKTOP)
+  // Layout colapsado (1 columna): el texto va en flujo normal arriba del video,
+  // así que NO le aplicamos el translateY del scrub (rompería el apilado).
+  const [isCollapsed] = useState(() => typeof window !== 'undefined' && window.matchMedia(COLLAPSE_MQ).matches)
+  const [trackVh]    = useState(() => (isCollapsed ? TRACK_VH_MOBILE : TRACK_VH_DESKTOP))
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function PlaneTakeoffHero() {
     const sticky = stickyRef.current
     const track  = trackRef.current
     const fade   = fadeRef.current
+    const inner  = isCollapsed ? null : innerRef.current
     if (!canvas || !sticky || !track) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -99,7 +103,11 @@ export default function PlaneTakeoffHero() {
       // scroll al final (g'(1)=1): traspaso continuo, sin salto al soltar el track.
       const k = 1 - START_SPEED
       const translateY = scrollable * (k * progress - (k / 2) * progress * progress)
-      sticky.style.transform = `translate3d(0, ${translateY}px, 0)`
+      const tf = `translate3d(0, ${translateY}px, 0)`
+      sticky.style.transform = tf
+      // Mismo translateY para el texto: viaja en lockstep con el video (no queda
+      // desfasado al final del scrub). En 1 columna (isCollapsed) no se aplica.
+      if (inner) inner.style.transform = tf
       // Fundido a oscuro en el tramo final, con el mismo progress que el frame.
       if (fade) {
         fade.style.opacity = String(Math.min(1, Math.max(0, (progress - FADE_START) / (1 - FADE_START))))
@@ -139,7 +147,7 @@ export default function PlaneTakeoffHero() {
       window.removeEventListener('resize', onResize)
       cancelAnimationFrame(raf)
     }
-  }, [staticMode, isMobile])
+  }, [staticMode, isMobile, isCollapsed])
 
   const trustAvatars = (
     <div className="hero-trust">
@@ -166,7 +174,7 @@ export default function PlaneTakeoffHero() {
         }}
       />
       <div className="container hero-grid">
-        <div className="hero-inner">
+        <div className="hero-inner" ref={innerRef}>
           <p className="eyebrow">Trade turístico argentino</p>
           <h1>La formación que se nota <em>en tus ventas.</em></h1>
           <p className="lead">

@@ -14,6 +14,11 @@ import { Link } from 'react-router-dom'
 const TOTAL_FRAMES = 116          // frames extraídos de avion.mov (fps=15)
 const TRACK_VH_DESKTOP = 200      // alto del track de scroll (desktop)
 const TRACK_VH_MOBILE = 140       // alto del track de scroll (mobile)
+// Velocidad neta a la que la card se mueve respecto del scroll mientras dura el
+// track (~1/8). En vez de pinnearla (sticky = velocidad 0 = pantalla congelada),
+// la desplazamos con translateY para que avance lento pero continuo, y que el
+// último frame aterrice justo cuando el track termina y entra la sección siguiente.
+const CARD_SCROLL_RATIO = 0.12
 const COLLAPSE_MQ = '(max-width: 920px)' // el grid colapsa a 1 columna
 const SMALL_MQ = '(max-width: 767px)'    // se sirven los frames mobile
 
@@ -83,6 +88,12 @@ export default function PlaneTakeoffHero() {
       const scrollable = track.offsetHeight - sticky.offsetHeight
       const top = track.getBoundingClientRect().top
       const progress = scrollable > 0 ? Math.min(1, Math.max(0, -top / scrollable)) : 0
+      // Posición de la card: en flujo normal subiría 1:1 con el scroll (progress*
+      // scrollable). La contrarrestamos dejando que sólo suba una fracción
+      // (CARD_SCROLL_RATIO), o sea trasladándola hacia abajo el resto. Mismo
+      // progress que el frame → posición y frame llegan juntos a su estado final.
+      const translateY = progress * scrollable * (1 - CARD_SCROLL_RATIO)
+      sticky.style.transform = `translate3d(0, ${translateY}px, 0)`
       const idx = Math.round(progress * (TOTAL_FRAMES - 1))
       if (idx !== lastFrame.current) { drawFrame(idx); lastFrame.current = idx }
     }
@@ -171,7 +182,7 @@ export default function PlaneTakeoffHero() {
           </div>
         ) : (
           <div className="hero-video-track" ref={trackRef} style={{ height: `${trackVh}vh` }}>
-            <div className="hero-video-card hero-video-sticky" ref={stickyRef}>
+            <div className="hero-video-card hero-video-scrub" ref={stickyRef}>
               <canvas ref={canvasRef} className="takeoff-canvas" aria-hidden="true" />
               {!ready && <div className="takeoff-skeleton" aria-hidden="true" />}
             </div>

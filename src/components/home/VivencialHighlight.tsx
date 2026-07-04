@@ -19,6 +19,24 @@ function formatDateRange(salida: string | null, regreso: string | null): string 
   return regreso ? `${fmtFull(salida)} – ${fmtFull(regreso)}` : fmtFull(salida)
 }
 
+// Encabezado propio de la sección Vivencial (no reusa el copy de Cursos):
+// título/subtítulo sobre viajes educativos y link a /vivencial.
+const VivencialHead = () => (
+  <Reveal>
+    <div className="section-head-row">
+      <div>
+        <div className="section-label on-light">Vivencial</div>
+        <h2 className="section-title on-light">Conocé el destino antes de venderlo</h2>
+        <p className="section-sub on-light">Viajes educativos con otros asesores: volvés con material real para vender mejor.</p>
+      </div>
+      <Link to="/vivencial" className="link-arrow">
+        Ver todas las salidas
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </Link>
+    </div>
+  </Reveal>
+)
+
 // Headliner de vivencial. Trae el próximo vivencial publicado real; si no
 // hay ninguno, muestra un estado vacío en vez del dato hardcodeado.
 export default function VivencialHighlight({ vivencial, loading }: Props) {
@@ -26,6 +44,7 @@ export default function VivencialHighlight({ vivencial, loading }: Props) {
     return (
       <section className="vivencial-hl">
         <div className="container">
+          <VivencialHead />
           <Reveal>
             <div className="catalogo-empty" style={{ background: 'var(--content-white)' }}>
               <h4>{loading ? 'Buscando próximas salidas…' : 'Estamos armando el próximo vivencial'}</h4>
@@ -51,11 +70,12 @@ export default function VivencialHighlight({ vivencial, loading }: Props) {
   return (
     <section className="vivencial-hl">
       <div className="container">
+        <VivencialHead />
         <Reveal>
           <div className="vivencial-card">
             <div className="vivencial-text">
-              <span className="vivencial-badge">✦ Vivencial</span>
-              <h3>Conocé el destino <span>antes de venderlo.</span></h3>
+              <span className="vivencial-badge">✦ Próxima salida</span>
+              <h3>Volvé con lo que <span>no se aprende grabado.</span></h3>
               <p>
                 Viajá con Yesica y otros asesores de toda Argentina. Volvé con fotos reales,
                 contactos reales y un argumento de venta que ningún curso grabado te da.

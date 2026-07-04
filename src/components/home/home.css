@@ -70,10 +70,15 @@
     opacity:.6; pointer-events:none;
   }
   /* Dos columnas: texto con ancho tope FIJO (no fr, no se estira) + el video
-     ocupa 1fr (lo que sobra). align-items:center centra el texto contra el
-     alto total de la fila (que es alto por el track de scroll del video). */
-  .hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,520px) 1fr; gap:56px; align-items:center; }
-  .hero-inner{ max-width:520px; }
+     ocupa 1fr (lo que sobra). align-items:start: cada columna maneja su propia
+     altura (ambas son sticky 100vh), no se centran contra el alto del track. */
+  .hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,520px) 1fr; gap:56px; align-items:start; }
+  /* El texto también es sticky: se centra contra el viewport visible (100vh),
+     NO contra el track de 200vh — así el H1/CTA quedan arriba del fold desde
+     el primer frame y pinneados al lado del video durante todo el scroll-scrub.
+     (Centrar contra el track dejaba el H1 en el punto medio del track, fuera
+     de pantalla en la carga inicial: rompía el propósito del hero.) */
+  .hero-inner{ max-width:520px; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; justify-content:center; }
 
   /* Columna derecha del video */
   .hero-video-track{ position:relative; }
@@ -394,7 +399,8 @@
   /* hero de dos columnas colapsa a una: texto arriba, card de video debajo */
   @media (max-width:920px){
     .hero-grid{ grid-template-columns:1fr; gap:40px; }
-    .hero-inner{ max-width:none; }
+    /* en 1 columna el texto vuelve a flujo normal (arriba del video), no sticky */
+    .hero-inner{ max-width:none; position:static; height:auto; display:block; }
     .hero-video-sticky{ height:60vh; }
   }
   @media (max-width:880px){ .hero{ padding-top:64px; } }

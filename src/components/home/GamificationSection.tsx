@@ -52,9 +52,11 @@ export default function GamificationSection() {
             <div className="sync-card academy">
               <div className="sync-label">Travexa Academy</div>
               <div className="sync-top">
-                <img src="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&q=80" alt="" />
+                <span className="sync-avatar" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                </span>
                 <div>
-                  <div className="sync-name">Marina Sosa</div>
+                  <div className="sync-name">Tu perfil</div>
                   <div className="sync-status">Nivel Trotamundos · 1.500 XP</div>
                 </div>
               </div>
@@ -81,9 +83,11 @@ export default function GamificationSection() {
             <div className="sync-card marketplace">
               <div className="sync-label">Travexa Marketplace</div>
               <div className="sync-top">
-                <img src="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&q=80" alt="" />
+                <span className="sync-avatar" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                </span>
                 <div>
-                  <div className="sync-name">Marina Sosa</div>
+                  <div className="sync-name">Tu perfil</div>
                   <div className="sync-status">Asesora verificada ✦</div>
                 </div>
               </div>

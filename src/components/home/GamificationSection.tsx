@@ -5,8 +5,11 @@ import { motion } from 'framer-motion'
 // Sección de gamificación — estática. Niveles/XP son valores fijos del
 // sistema (ver types/index.ts nivelInfo), no vienen de la DB. Las tarjetas
 // de perfil son ilustrativas del concepto de sincronización con Marketplace.
+// Se parte en DOS pantallas (no se recorta contenido): A = concepto + sync,
+// B = los 5 niveles con su propio heading. Así cada una entra sobrada en 100vh.
 export default function GamificationSection() {
   return (
+    <>
     <section className="gami">
       <div className="glow-orb" aria-hidden="true" />
       <div className="container">
@@ -98,12 +101,22 @@ export default function GamificationSection() {
           </div>
         </Reveal>
         <Reveal><div className="gami-sync-caption">Mismo login, mismo perfil — un ecosistema, un solo historial</div></Reveal>
+      </div>
+    </section>
 
-        <Reveal>
-          <div className="gami-stepper-head">
-            <h4>Los 5 niveles de Academy</h4>
-          </div>
-        </Reveal>
+    {/* Pantalla B: los 5 niveles, con heading propio. */}
+    <section className="gami gami-levels">
+      <div className="container">
+        <div className="gami-top-text">
+          <Reveal><div className="section-label">Tu recorrido</div></Reveal>
+          <Reveal delay={0.05}><h2 className="section-title">Los 5 niveles de Academy</h2></Reveal>
+          <Reveal delay={0.1}>
+            <p className="section-sub">
+              De Explorador a Embajador: cada XP que sumás te acerca al próximo nivel y a
+              más beneficios dentro del ecosistema.
+            </p>
+          </Reveal>
+        </div>
         <Reveal>
           <div className="gami-stepper">
             <div className="stepper-track">
@@ -119,5 +132,6 @@ export default function GamificationSection() {
         </Reveal>
       </div>
     </section>
+    </>
   )
 }

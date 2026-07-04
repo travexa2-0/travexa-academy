@@ -320,7 +320,10 @@
   .sample-tag::before{ content:''; width:5px; height:5px; border-radius:50%; background:var(--gold); }
 
   /* ============ GAMIFICACION ============ */
-  .gami{ padding:76px 0 80px; position:relative; overflow:hidden; }
+  /* padding vertical acotado: como la sección centra su contenido en 100vh, el
+     aire lo pone el centrado; un padding grande sólo empujaría fuera de pantalla
+     en laptops bajitos. */
+  .gami{ padding:48px 0; position:relative; overflow:hidden; }
   .gami .container{ position:relative; z-index:1; }
   .gami-top-text .section-sub{ max-width:780px; }
   .gami-value-row{ margin-top:28px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
@@ -363,6 +366,8 @@
   .gami-stepper-head{ margin-top:36px; display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .gami-stepper-head h4{ font-family:var(--font-display); font-weight:600; font-size:0.98rem; color:var(--text-1); }
   .gami-stepper{ margin-top:18px; position:relative; }
+  /* Pantalla B (sólo niveles): el stepper respira más bajo su heading propio. */
+  .gami-levels .gami-stepper{ margin-top:48px; }
   .stepper-track{ position:relative; display:flex; justify-content:space-between; }
   .stepper-line{ position:absolute; top:5px; left:12px; right:12px; height:2px; background:var(--line); border-radius:2px; }
   .stepper-line-fill{ position:absolute; top:5px; left:12px; height:2px; background:var(--primary-l); border-radius:2px; width:38%; }

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BookOpen, LogOut, User, Menu, X, Bell, LayoutDashboard, Library, Globe } from 'lucide-react'
+import { BookOpen, LogOut, User, Menu, X, Bell, LayoutDashboard, Library, Globe, Home } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
@@ -42,7 +42,8 @@ export default function Header() {
     navigate('/')
   }
 
-  const isActive = (path: string) => location.pathname.startsWith(path)
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
   const isPill = scroll !== 'top'
 
@@ -97,6 +98,7 @@ export default function Header() {
           {/* Nav desktop */}
           <nav className="hidden md:flex items-center gap-1">
             {[
+              { to: '/',           label: 'Inicio',     icon: Home },
               { to: '/cursos',     label: 'Formación',  icon: Library },
               { to: '/vivencial',  label: 'Vivencial',  icon: Globe },
               ...(user ? [
@@ -226,6 +228,9 @@ export default function Header() {
             className="fixed top-14 left-0 right-0 z-40 border-b px-4 py-4 space-y-1"
             style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}
           >
+            <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+              <Home className="h-4 w-4" /> Inicio
+            </Link>
             <Link to="/cursos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
               <Library className="h-4 w-4" /> Formación
             </Link>

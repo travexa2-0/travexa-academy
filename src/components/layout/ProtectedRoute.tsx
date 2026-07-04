@@ -23,7 +23,10 @@ export default function ProtectedRoute() {
   const onOnboarding = location.pathname === '/onboarding'
 
   if (!done && !onOnboarding) return <Navigate to="/onboarding" replace />
-  if (done && onOnboarding) return <Navigate to="/cursos" replace />
+  // Usuario ya onboardeado que cae en /onboarding → a la home (pantalla
+  // principal). Si finish() setea done=true mientras sigue montado /onboarding,
+  // este redirect también manda a la home (mismo destino, sin quedar colgado).
+  if (done && onOnboarding) return <Navigate to="/" replace />
 
   return <Outlet />
 }

@@ -176,11 +176,13 @@ export default function Onboarding() {
         .update({ onboarding_completo: true })
         .eq('user_id', user.id)
       if (error) throw new Error(error.message)
-      // Optimista: el OnboardingGate lee esta query; sin esto podría ver done=false
-      // al aterrizar en /cursos y rebotar de vuelta a /onboarding.
+      // Optimista: los gates (OnboardingGate/ProtectedRoute) leen esta query.
+      // Con staleTime de 2min no se refetchea al navegar, así que done=true
+      // persiste y la home no rebota a /onboarding. NO invalidamos acá a
+      // propósito: forzar el refetch podía devolver done=false por lag de la
+      // DB y dejaba el botón colgado en un ping-pong /onboarding ↔ home.
       qc.setQueryData(['academy-profile', user.id], (old: unknown) =>
         old && typeof old === 'object' ? { ...(old as object), onboarding_completo: true } : old)
-      await qc.invalidateQueries({ queryKey: ['academy-profile', user.id] })
 
       if (!shouldReduce) {
         void confetti({
@@ -190,7 +192,9 @@ export default function Onboarding() {
           colors: ['#4ECDB8', '#C99A3A', '#F5F3EC', '#0E6B5C'],
         })
       }
-      setTimeout(() => navigate('/cursos', { replace: true }), shouldReduce ? 0 : 320)
+      // A la pantalla principal (home) ya logueado. Navegación directa: sin el
+      // setTimeout ni el await del refetch, que dejaban el botón colgado.
+      navigate('/', { replace: true })
     } catch (err) {
       toast.error('No pudimos finalizar el onboarding. Intentá de nuevo.')
       console.error(err)

@@ -31,11 +31,15 @@ export default function HomeHero() {
             <span className="hero-cta-sub">Sin tarjeta · Acceso inmediato</span>
           </div>
           <div className="hero-trust">
-            <div className="avatar-stack">
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="" />
-              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="" />
-              <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80" alt="" />
-              <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&q=80" alt="" />
+            {/* Avatares genéricos (icono en placeholder, sin fotos de personas
+                reales ajenas a Travexa): mismo tratamiento que la card de
+                gamificación. Cluster decorativo, no afirma personas concretas. */}
+            <div className="avatar-stack" aria-hidden="true">
+              {[0, 1, 2, 3].map(i => (
+                <span className="av" key={i}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                </span>
+              ))}
             </div>
             {/* Sin número inventado de "asesores formados": no hay conteo real
                 público todavía (RLS). Mensaje honesto, no-numérico. */}

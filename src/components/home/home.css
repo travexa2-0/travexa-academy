@@ -81,6 +81,10 @@
   .avatar-stack{ display:flex; }
   .avatar-stack img{ width:36px; height:36px; border-radius:50%; object-fit:cover; border:2.5px solid var(--bg2); margin-left:-11px; }
   .avatar-stack img:first-child{ margin-left:0; }
+  /* avatar genérico (icono en placeholder) — mismo tratamiento que .sync-avatar */
+  .avatar-stack .av{ width:36px; height:36px; border-radius:50%; border:2.5px solid var(--bg2); margin-left:-11px; background:var(--bg4); display:flex; align-items:center; justify-content:center; }
+  .avatar-stack .av:first-child{ margin-left:0; }
+  .avatar-stack .av svg{ width:18px; height:18px; color:var(--text-3); }
   .trust-text{ font-size:13px; color:var(--text-2); line-height:1.4; }
   .trust-text b{ color:var(--text-1); font-weight:600; }
 

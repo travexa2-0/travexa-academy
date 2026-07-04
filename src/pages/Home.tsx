@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import Header from '@/components/layout/Header'
 import WhatsAppFloat from '@/components/shared/WhatsAppFloat'
-import HomeHero from '@/components/home/HomeHero'
+import PlaneTakeoffHero from '@/components/home/PlaneTakeoffHero'
 import ProofStrip from '@/components/home/ProofStrip'
 import ValuePropsGrid from '@/components/home/ValuePropsGrid'
 import FeaturedCoursesMarquee from '@/components/home/FeaturedCoursesMarquee'
@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <div className="home-root">
       <Header />
-      <HomeHero />
+      <PlaneTakeoffHero />
       <ProofStrip
         coursesCount={coursesCount}
         vivencialCount={vivencialCount}

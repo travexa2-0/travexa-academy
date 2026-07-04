@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Video fuente del hero (no se commitea — binario pesado; frames van a public/)
+assets/source/

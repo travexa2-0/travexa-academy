@@ -1,10 +1,16 @@
 import { Reveal } from './Reveal'
 
-// ⚠️ Contenido de MUESTRA. Todavía no existen reseñas reales en la DB
-// (academy_reviews vacía). Por decisión de producto se muestra igual, pero
-// visiblemente etiquetado como ejemplo (ver `.sample-tag`). Cuando existan
-// reseñas reales, reemplazar SAMPLE_TESTIMONIALS por datos de la DB y quitar
-// el tag / los números de muestra (96%, +300, 4.8/5).
+// ⚠️ SECCIÓN OCULTA EN PRODUCCIÓN. No hay reseñas reales en la DB
+// (academy_reviews vacía), así que NO se muestra nada a visitantes reales:
+// mostrar prueba social falsa (aunque esté etiquetada) en la home de
+// adquisición es peor que no mostrar rating — le avisa al prospecto que
+// fabricamos confianza.
+//
+// Todo el markup y los datos de muestra quedan acá para reactivar la
+// sección cuando existan reseñas reales: poner SHOW_TESTIMONIALS = true y
+// reemplazar SAMPLE_TESTIMONIALS + los números (96%, +300, 4.8/5) por datos
+// reales desde la DB.
+const SHOW_TESTIMONIALS = false
 interface Testimonial {
   quote: string
   photo: string
@@ -39,6 +45,8 @@ function TestiCard({ t }: { t: Testimonial }) {
 }
 
 export default function TestimonialsSection() {
+  if (!SHOW_TESTIMONIALS) return null
+
   const loop = [...SAMPLE_TESTIMONIALS, ...SAMPLE_TESTIMONIALS]
   return (
     <section className="testi">

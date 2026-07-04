@@ -1,38 +1,38 @@
 interface Props {
   coursesCount: number
   vivencialCount: number
+  freeCount: number
+  instructorsCount: number
   loading: boolean
 }
 
-// Proof strip. `cursos disponibles` y `vivencial activo` salen de la DB
-// real (academy_courses). `asesores formados` y `rating promedio` son de
-// muestra: no hay fuente pública real todavía (RLS bloquea el conteo de
-// perfiles a anon, y aún no existen reseñas). Ver SAMPLE en ProofStrip.
-const SAMPLE_ASESORES = '867'
-const SAMPLE_RATING = '4.7'
+// Proof strip — SOLO números reales derivados de useCourses()/academy_courses.
+// No hay fuente pública real para "asesores formados" (RLS bloquea el conteo
+// de perfiles a anon) ni "rating promedio" (aún no hay reseñas), así que esas
+// métricas inventadas del prototipo NO se muestran. Si no hay nada publicado
+// todavía, la tira entera se oculta en vez de mostrar una fila de ceros.
+export default function ProofStrip({ coursesCount, vivencialCount, freeCount, instructorsCount, loading }: Props) {
+  if (loading) return null
+  const hasContent = coursesCount > 0 || vivencialCount > 0
+  if (!hasContent) return null
 
-export default function ProofStrip({ coursesCount, vivencialCount, loading }: Props) {
-  const dash = loading ? '—' : null
+  const items: { num: number; label: string }[] = [
+    { num: coursesCount, label: coursesCount === 1 ? 'CURSO DISPONIBLE' : 'CURSOS DISPONIBLES' },
+    { num: freeCount, label: freeCount === 1 ? 'CURSO GRATIS' : 'CURSOS GRATIS' },
+    { num: instructorsCount, label: instructorsCount === 1 ? 'INSTRUCTOR' : 'INSTRUCTORES' },
+    { num: vivencialCount, label: vivencialCount === 1 ? 'VIVENCIAL ACTIVO' : 'VIVENCIALES ACTIVOS' },
+  ]
+
   return (
     <section className="proof-strip">
       <div className="container">
         <div className="proof-grid">
-          <div className="proof-item">
-            <div className="proof-num">{SAMPLE_ASESORES}</div>
-            <div className="proof-label">ASESORES FORMADOS</div>
-          </div>
-          <div className="proof-item">
-            <div className="proof-num"><span className="gold">{SAMPLE_RATING}</span> / 5</div>
-            <div className="proof-label">RATING PROMEDIO</div>
-          </div>
-          <div className="proof-item">
-            <div className="proof-num">{dash ?? coursesCount}</div>
-            <div className="proof-label">{coursesCount === 1 ? 'CURSO DISPONIBLE' : 'CURSOS DISPONIBLES'}</div>
-          </div>
-          <div className="proof-item">
-            <div className="proof-num">{dash ?? vivencialCount}</div>
-            <div className="proof-label">{vivencialCount === 1 ? 'VIVENCIAL ACTIVO' : 'VIVENCIALES ACTIVOS'}</div>
-          </div>
+          {items.map((it) => (
+            <div className="proof-item" key={it.label}>
+              <div className="proof-num">{it.num}</div>
+              <div className="proof-label">{it.label}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

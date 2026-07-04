@@ -37,7 +37,9 @@ export default function HomeHero() {
               <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80" alt="" />
               <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&q=80" alt="" />
             </div>
-            <div className="trust-text"><b>867 asesores</b> ya se están formando<br />con Travexa Academy</div>
+            {/* Sin número inventado de "asesores formados": no hay conteo real
+                público todavía (RLS). Mensaje honesto, no-numérico. */}
+            <div className="trust-text">Formación hecha por y para <b>asesores de viajes</b><br />de toda Argentina</div>
           </div>
         </div>
       </div>

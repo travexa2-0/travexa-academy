@@ -20,14 +20,18 @@ import '@/components/home/home.css'
 export default function Home() {
   const { data: courses = [], isLoading } = useCourses()
 
-  const { formacion, vivencial, coursesCount, vivencialCount } = useMemo(() => {
+  const { formacion, vivencial, coursesCount, vivencialCount, freeCount, instructorsCount } = useMemo(() => {
     const vivenciales = courses.filter(c => c.tipo === 'vivencial')
     const formacionList = courses.filter(c => c.tipo !== 'vivencial')
+    const free = formacionList.filter(c => c.tipo_acceso === 'gratuito' || c.precio_ars === 0)
+    const instructorIds = new Set(courses.map(c => c.instructor_id).filter(Boolean))
     return {
       formacion: formacionList,
       vivencial: vivenciales[0] ?? null,
       coursesCount: formacionList.length,
       vivencialCount: vivenciales.length,
+      freeCount: free.length,
+      instructorsCount: instructorIds.size,
     }
   }, [courses])
 
@@ -35,7 +39,13 @@ export default function Home() {
     <div className="home-root">
       <Header />
       <HomeHero />
-      <ProofStrip coursesCount={coursesCount} vivencialCount={vivencialCount} loading={isLoading} />
+      <ProofStrip
+        coursesCount={coursesCount}
+        vivencialCount={vivencialCount}
+        freeCount={freeCount}
+        instructorsCount={instructorsCount}
+        loading={isLoading}
+      />
       <ValuePropsGrid coursesCount={coursesCount} />
       <FeaturedCoursesMarquee courses={formacion} loading={isLoading} />
       <VivencialHighlight vivencial={vivencial} loading={isLoading} />

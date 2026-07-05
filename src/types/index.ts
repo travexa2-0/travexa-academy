@@ -120,6 +120,14 @@ export interface Category {
 }
 
 // ── academy_instructors ──
+export interface InstructorRedes {
+  whatsapp?: string
+  instagram?: string
+  tiktok?: string
+  web?: string
+  [key: string]: string | undefined
+}
+
 export interface Instructor {
   id: string
   nombre: string
@@ -128,6 +136,51 @@ export interface Instructor {
   user_id: string | null
   revenue_share_pct: number
   activo: boolean
+  especialidad?: string | null
+  redes?: InstructorRedes | null
+  email?: string | null
+  telefono?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+// ── academy_benefits ──
+export type BenefitTipo = 'curso_gratis' | 'descuento_pct' | 'descuento_fijo' | 'sorteo_vivencial' | 'otro'
+
+export interface Benefit {
+  id: string
+  titulo: string
+  descripcion: string | null
+  tipo: BenefitTipo
+  imagen_url: string | null
+  costo_creditos: number
+  course_id: string | null
+  descuento_valor: number | null
+  cupo_maximo: number | null
+  cupo_usado: number
+  fecha_inicio: string | null
+  fecha_vencimiento: string | null
+  publicado: boolean
+  archivado: boolean
+  ganador_user_id: string | null
+  ganador_anunciado_at: string | null
+  created_at: string
+  updated_at: string
+  // join opcional
+  course?: { id: string; titulo: string; slug: string; tipo: string } | null
+}
+
+// ── academy_credit_redemptions (canje de un beneficio) ──
+export interface BenefitRedemption {
+  id: string
+  user_id: string
+  benefit_id: string | null
+  tipo: string
+  creditos_consumidos: number
+  referencia_id: string | null
+  descripcion: string | null
+  created_at: string | null
+  profile?: { id: string; nombre: string | null; apellido: string | null; email: string | null; avatar_url: string | null }
 }
 
 // ── Itinerario day (vivencial) ──

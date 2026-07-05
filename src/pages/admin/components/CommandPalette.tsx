@@ -29,6 +29,8 @@ export default function CommandPalette({ open, onClose, onOpenSettings }: Props)
           <div className="cmdk-group">Acciones rápidas</div>
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/cursos?nuevo=1')}><PlusIcon />Nuevo curso</button>
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/vivenciales?nuevo=1')}><PlusIcon />Nuevo vivencial</button>
+          <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/instructores?nuevo=1')}><PlusIcon />Nuevo instructor</button>
+          <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/beneficios?nuevo=1')}><PlusIcon />Nuevo beneficio</button>
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => { onClose(); onOpenSettings() }}>
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.34 1.87" /></svg>
             Abrir configuración
@@ -37,6 +39,8 @@ export default function CommandPalette({ open, onClose, onOpenSettings }: Props)
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/resumen')}>Resumen</button>
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/cursos')}>Cursos</button>
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/vivenciales')}>Vivenciales</button>
+          <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/instructores')}>Instructores</button>
+          <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/beneficios')}>Beneficios</button>
           <button className="btn btn-ghost btn-block" style={{ justifyContent: 'flex-start', gap: 11 }} onClick={() => go('/admin/metricas')}>Métricas</button>
         </div>
       </div>

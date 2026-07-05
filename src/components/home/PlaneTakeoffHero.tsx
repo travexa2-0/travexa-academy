@@ -12,12 +12,13 @@ import { Link } from 'react-router-dom'
 
 // ── constantes tuneables ──
 const TOTAL_FRAMES = 116          // frames extraídos de avion.mov (fps=15)
-// Alto del track. Corto a propósito: el track largo dejaba, al terminar los
-// frames, un hueco enorme entre el video (que sube con el scrub) y la sección
-// siguiente. Con ~125vh el desfase es chico y la sección de abajo entra apenas
-// termina el video (el hueco = 0.58 · (track − alto card), crece con el track).
-const TRACK_VH_DESKTOP = 125      // alto del track de scroll (desktop)
-const TRACK_VH_MOBILE = 120       // alto del track de scroll (mobile)
+// Alto del track = cuánto scroll dura el scrub de los 116 frames. Con la curva
+// de aceleración (g'(1)=1) la card iguala la velocidad de scroll al final, así
+// que un track largo NO deja hueco con la sección siguiente. Lo dimensionamos
+// para que el ÚLTIMO frame caiga justo cuando la primera sección está por salir
+// del viewport (progress=1 en scroll ≈ track − alto card ≈ next section top).
+const TRACK_VH_DESKTOP = 200      // alto del track de scroll (desktop)
+const TRACK_VH_MOBILE = 175       // alto del track de scroll (mobile)
 // Movimiento de la card durante el scrub. En vez de una velocidad constante
 // (se sentía estática al final y después "saltaba" al soltar), usamos una
 // curva: arranca lenta (START_SPEED del scroll, se siente pinneada mientras el
@@ -25,6 +26,13 @@ const TRACK_VH_MOBILE = 120       // alto del track de scroll (mobile)
 // track — así el traspaso a la sección siguiente es continuo, sin salto, y para
 // el final la card ya subió lo suficiente como para dejar ver lo que viene.
 const START_SPEED = 0.16
+const SCRUB_K = 1 - START_SPEED   // pendiente de la curva de scrub
+// Espacio muerto que deja el holdback del translateY al final del track: la card
+// termina su recorrido a 0.42·scrollable del piso del track (translateY final =
+// SCRUB_K/2·scrollable), dejando (1 − SCRUB_K/2)·scrollable de track vacío antes
+// de la sección siguiente. Lo compensamos con un margin-bottom negativo del track
+// para que la sección de abajo quede pegada, sin perder el scrub lento.
+const DEAD_TAIL_FACTOR = 1 - SCRUB_K / 2
 // Umbral de progress a partir del cual el video se funde a oscuro, y opacidad
 // máxima del velo: NO llega a negro total (si no, la card parece un hueco vacío
 // al final); se oscurece lo justo para leer "el video está terminando".
@@ -91,15 +99,28 @@ export default function PlaneTakeoffHero() {
       canvas.width  = Math.max(1, Math.round(r.width * dpr))
       canvas.height = Math.max(1, Math.round(r.height * dpr))
     }
-    const drawFrame = (idx: number) => {
+    // Recorta el espacio muerto del final del track (ver DEAD_TAIL_FACTOR) con un
+    // margin-bottom negativo, así la sección siguiente arranca justo donde la card
+    // termina su recorrido y queda alineada, sin el hueco enorme.
+    const trimTrackTail = () => {
+      const scrollable = track.offsetHeight - sticky.offsetHeight
+      const dead = Math.max(0, scrollable * DEAD_TAIL_FACTOR)
+      track.style.marginBottom = `-${dead}px`
+    }
+    // Devuelve true solo si llegó a dibujar. Clave para el frame 0: si el primer
+    // render corre antes de que la imagen esté decodificada, NO queremos marcar
+    // ese idx como "ya dibujado" (si no, el render posterior al decode se saltea
+    // y el canvas queda en blanco hasta el primer scroll).
+    const drawFrame = (idx: number): boolean => {
       const img = frames[idx]
-      if (!img || !img.complete || img.naturalWidth === 0) return
+      if (!img || !img.complete || img.naturalWidth === 0) return false
       const cw = canvas.width, ch = canvas.height
       const iw = img.naturalWidth, ih = img.naturalHeight
       const scale = Math.max(cw / iw, ch / ih)   // cover
       const dw = iw * scale, dh = ih * scale
       ctx.clearRect(0, 0, cw, ch)
       ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh)
+      return true
     }
     const render = () => {
       const scrollable = track.offsetHeight - sticky.offsetHeight
@@ -108,7 +129,7 @@ export default function PlaneTakeoffHero() {
       // translateY = scrollable·(k·p − k/2·p²) con k = 1−START_SPEED. La card
       // sube lento al principio (g'(0)=START_SPEED) y acelera hasta igualar el
       // scroll al final (g'(1)=1): traspaso continuo, sin salto al soltar el track.
-      const k = 1 - START_SPEED
+      const k = SCRUB_K
       const translateY = scrollable * (k * progress - (k / 2) * progress * progress)
       const tf = `translate3d(0, ${translateY}px, 0)`
       sticky.style.transform = tf
@@ -121,16 +142,24 @@ export default function PlaneTakeoffHero() {
         fade.style.opacity = String(f * FADE_MAX)
       }
       const idx = Math.round(progress * (TOTAL_FRAMES - 1))
-      if (idx !== lastFrame.current) { drawFrame(idx); lastFrame.current = idx }
+      // Solo avanzamos lastFrame si drawFrame realmente dibujó: así el frame 0 se
+      // reintenta en el próximo render (o en el .finally del decode) si la imagen
+      // todavía no estaba lista, en vez de quedar el canvas en blanco.
+      if (idx !== lastFrame.current && drawFrame(idx)) lastFrame.current = idx
     }
     const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(render) }
-    const onResize = () => { sizeCanvas(); lastFrame.current = -1; render() }
+    const onResize = () => { sizeCanvas(); trimTrackTail(); lastFrame.current = -1; render() }
+
+    // El margin negativo depende de las alturas reales (track vs card): lo
+    // aplicamos ya en el mount, antes de que se vea el hueco.
+    trimTrackTail()
 
     // Primer frame decodificado → mostramos y dibujamos (no dejar canvas en blanco).
     frames[0].decode?.().catch(() => {}).finally(() => {
       if (cancelled) return
       setReady(true)
       sizeCanvas()
+      trimTrackTail()
       render()
     })
 

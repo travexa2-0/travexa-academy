@@ -54,7 +54,6 @@ export default function HowItWorks() {
                   <div className="ticket-label">Pase de acceso</div>
                   <h5>Operatoria turística argentina</h5>
                 </div>
-                <span className="ticket-badge">Gratis</span>
               </div>
               <div className="ticket-dash" />
               <div className="ticket-grid">

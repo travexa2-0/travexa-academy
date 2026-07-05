@@ -288,8 +288,8 @@ export default function Catalog() {
         <div aria-hidden style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, pointerEvents: 'none', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
 
         <div
-          className="w-full max-w-[1200px] mx-auto px-[22px] grid gap-10 items-center"
-          style={{ position: 'relative', zIndex: 1, gridTemplateColumns: 'minmax(0,1fr)' }}
+          className="w-full max-w-[1200px] mx-auto px-[22px] grid gap-10 items-center lg:grid-cols-[minmax(0,1fr)_480px] xl:grid-cols-[minmax(0,1fr)_600px]"
+          style={{ position: 'relative', zIndex: 1 }}
         >
           {/* left column */}
           <div style={{ maxWidth: 640 }}>
@@ -366,14 +366,13 @@ export default function Catalog() {
           {/* right column — imagen flotante */}
           <motion.div
             className="hidden lg:flex items-center justify-center"
-            style={{ position: 'absolute', right: 22, top: '50%', transform: 'translateY(-50%)', width: 340 }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.9, ease: [0.23, 1, 0.32, 1], delay: 0.4 }}
           >
-            <div style={{ position: 'relative' }}>
-              <div aria-hidden style={{ position: 'absolute', inset: '-14%', background: 'radial-gradient(ellipse at center, rgba(0,229,200,.20), transparent 70%)', filter: 'blur(34px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <div aria-hidden style={{ position: 'absolute', inset: '-16%', background: 'radial-gradient(ellipse at center, rgba(0,229,200,.20), transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
               <div
                 className="academy-float"
-                style={{ position: 'relative', width: 340, borderRadius: 20, overflow: 'hidden', border: '1px solid var(--line-s)', boxShadow: '0 40px 80px -24px rgba(0,0,0,.65), 0 0 60px rgba(0,229,200,.10)' }}
+                style={{ position: 'relative', width: '100%', borderRadius: 24, overflow: 'hidden', border: '1px solid var(--line-s)', boxShadow: '0 48px 96px -28px rgba(0,0,0,.7), 0 0 72px rgba(0,229,200,.12)' }}
               >
                 <img
                   src="/hero-formacion.png"

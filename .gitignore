@@ -25,3 +25,6 @@ dist-ssr
 
 # Video fuente del hero (no se commitea — binario pesado; frames van a public/)
 assets/source/
+
+# imágenes de referencia locales (no versionar)
+_ref/

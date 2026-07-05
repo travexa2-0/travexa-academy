@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ChevronDown, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
@@ -204,6 +204,13 @@ export default function Catalog() {
   const [search, setSearch]                 = useState('')
   const [searchDisplay, setSearchDisplay]   = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const resultsRef = useRef<HTMLElement>(null)
+
+  const scrollToResults = useCallback(() => {
+    const el = resultsRef.current
+    if (!el) return
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' })
+  }, [])
 
   const { data: courses = [], isLoading } = useCourses()
   const { data: categories = [] }         = useCategories()
@@ -242,7 +249,8 @@ export default function Catalog() {
   }, [courses, selectedTipo, selectedCat, search, sort])
 
   const liveCount      = courses.filter(c => c.tipo === 'en_vivo').length
-  const vivencialCount = courses.filter(c => c.tipo === 'vivencial').length
+  const freeCount      = courses.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito').length
+  const ritmoCount     = courses.filter(c => c.tipo === 'grabado').length
   const totalCount     = courses.length
 
   const categoryNames = ['all', ...categories.map(c => c.nombre)]
@@ -251,80 +259,136 @@ export default function Catalog() {
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <Header />
 
-      {/* ── White page header ── */}
+      {/* ── HERO (estilo Vivencial: dark + grid + dos columnas) ── */}
       <section
-        className="relative overflow-hidden"
-        style={{ background: '#fff', padding: '42px 0 38px' }}
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          background: `
+            radial-gradient(ellipse 1100px 620px at 22% 0%, rgba(0,229,200,.16), transparent 62%),
+            radial-gradient(ellipse 700px 460px at 100% 10%, rgba(14,107,92,.22), transparent 58%),
+            linear-gradient(180deg, #0D2A38 0%, var(--bg) 46%, #0D2230 100%)
+          `,
+          overflow: 'hidden',
+          padding: '96px 0 52px',
+        }}
       >
-        {/* Background photo */}
-        <img
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ objectPosition: 'center 35%', opacity: 0.09 }}
-          src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1400&q=70"
-          alt=""
+        {/* Grid pattern */}
+        <div
           aria-hidden
-          onError={e => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden' }}
+          style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none', opacity: .6,
+            backgroundImage: 'linear-gradient(rgba(245,243,236,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(245,243,236,.06) 1px,transparent 1px)',
+            backgroundSize: '56px 56px',
+            maskImage: 'radial-gradient(ellipse 1000px 560px at 18% 0%, black, transparent 72%)',
+          }}
         />
-        {/* Dot grid */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle,rgba(14,107,92,.08) 1px,transparent 1px)', backgroundSize: '26px 26px' }}
-        />
-        {/* Horizontal fade */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(90deg,#fff 0%,transparent 18%,transparent 82%,#fff 100%)' }}
-        />
-        {/* Bottom fade */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[38px] pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom,transparent,rgba(255,255,255,.75))' }}
-        />
+        {/* Bottom fade to page bg */}
+        <div aria-hidden style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, pointerEvents: 'none', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
 
-        {/* Content */}
-        <div className="relative z-10 max-w-[1200px] mx-auto px-[22px]">
-          <div className="flex items-center gap-[7px] mb-[9px]">
-            <span className="eyebrow-dot w-[5px] h-[5px] rounded-full shrink-0" style={{ background: 'var(--primary)' }} />
-            <span className="font-mono text-[10px] tracking-[.18em] uppercase" style={{ color: 'var(--primary)' }}>
-              Trade turístico argentino
-            </span>
+        <div
+          className="w-full max-w-[1200px] mx-auto px-[22px] grid gap-10 items-center"
+          style={{ position: 'relative', zIndex: 1, gridTemplateColumns: 'minmax(0,1fr)' }}
+        >
+          {/* left column */}
+          <div style={{ maxWidth: 640 }}>
+            <motion.p
+              className="font-mono uppercase flex items-center gap-2"
+              style={{ fontSize: 10, letterSpacing: '.18em', color: 'var(--neon)', marginBottom: 18 }}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
+            >
+              <span className="eyebrow-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--neon)', boxShadow: '0 0 0 4px var(--neon-dim)', display: 'inline-block' }} />
+              Travexa Academy · Formación
+            </motion.p>
+
+            <motion.h1
+              className="font-display font-bold"
+              style={{ fontSize: 'clamp(2.4rem,6vw,4.4rem)', lineHeight: 1.03, letterSpacing: '-.025em' }}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.22 }}
+            >
+              <span style={{ color: 'var(--text-1)', display: 'block' }}>Formación práctica para</span>
+              <span style={{ color: 'var(--neon)', textShadow: '0 0 48px var(--neon-glow)', display: 'block' }}>vender más y mejor.</span>
+            </motion.h1>
+
+            <motion.p
+              style={{ maxWidth: 520, marginTop: 22, fontSize: 'clamp(.95rem,1.8vw,1.1rem)', color: 'var(--text-3)', lineHeight: 1.7 }}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.42 }}
+            >
+              Cursos grabados y en vivo dictados por Yesica e instructores del sector. A tu ritmo, con certificado — aplicás lo que aprendés desde la primera semana.
+            </motion.p>
+
+            <motion.div
+              className="flex items-center gap-3 flex-wrap"
+              style={{ marginTop: 32 }}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.54 }}
+            >
+              <motion.button
+                className="font-display font-bold rounded-[10px] inline-flex items-center justify-center"
+                style={{ background: 'var(--neon)', color: '#0A1E29', fontSize: '14.5px', padding: '12px 24px', minHeight: 48 }}
+                onClick={scrollToResults}
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ boxShadow: '0 0 24px var(--neon-glow), 0 4px 16px rgba(0,0,0,.25)' }}
+              >
+                Ver cursos
+              </motion.button>
+              <motion.button
+                className="font-display font-bold rounded-[10px] border inline-flex items-center"
+                style={{ background: 'transparent', borderColor: 'var(--line-s)', color: 'var(--text-2)', fontSize: '14.5px', padding: '12px 24px', minHeight: 48 }}
+                onClick={() => { setSelectedTipo('gratis'); scrollToResults() }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Cursos gratis
+              </motion.button>
+            </motion.div>
+
+            <motion.div
+              className="flex items-center gap-6 flex-wrap"
+              style={{ marginTop: 30 }}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.66 }}
+            >
+              {[
+                { n: totalCount, l: 'Cursos' },
+                { n: liveCount, l: 'En vivo' },
+                { n: ritmoCount || freeCount, l: ritmoCount ? 'A tu ritmo' : 'Gratis' },
+              ].map((s, i) => (
+                <div key={s.l} className="flex items-center gap-6">
+                  {i > 0 && <div style={{ width: 1, height: 36, background: 'rgba(245,243,236,.11)' }} />}
+                  <div className="flex flex-col gap-[2px]">
+                    <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>{isLoading ? '—' : s.n}</span>
+                    <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>{s.l}</span>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
           </div>
-          <h1 className="font-display font-bold tracking-[-0.02em]" style={{ fontSize: 'clamp(1.75rem,4vw,2.7rem)', color: '#0A1E29' }}>
-            Todos los cursos
-          </h1>
-          <p style={{ fontSize: '.92rem', color: '#4A6373', marginTop: '5px' }}>
-            Formación práctica para asesores y agencias de viajes
-          </p>
-          <div className="flex items-center gap-4 mt-[14px] flex-wrap">
-            {liveCount > 0 && (
-              <div className="font-mono flex items-center gap-[6px] text-[9.5px] tracking-[.06em] uppercase" style={{ color: '#5C7A87' }}>
-                <span className="live-stat-dot w-[7px] h-[7px] rounded-full shrink-0" style={{ background: '#EF4444', boxShadow: '0 0 0 3px rgba(239,68,68,.18)' }} />
-                {liveCount} en vivo
+
+          {/* right column — imagen flotante */}
+          <motion.div
+            className="hidden lg:flex items-center justify-center"
+            style={{ position: 'absolute', right: 22, top: '50%', transform: 'translateY(-50%)', width: 340 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.9, ease: [0.23, 1, 0.32, 1], delay: 0.4 }}
+          >
+            <div style={{ position: 'relative' }}>
+              <div aria-hidden style={{ position: 'absolute', inset: '-14%', background: 'radial-gradient(ellipse at center, rgba(0,229,200,.20), transparent 70%)', filter: 'blur(34px)', pointerEvents: 'none' }} />
+              <div
+                className="academy-float"
+                style={{ position: 'relative', width: 340, borderRadius: 20, overflow: 'hidden', border: '1px solid var(--line-s)', boxShadow: '0 40px 80px -24px rgba(0,0,0,.65), 0 0 60px rgba(0,229,200,.10)' }}
+              >
+                <img
+                  src="/hero-formacion.png"
+                  alt="Asesora de viajes trabajando frente a una ventana con un avión despegando"
+                  style={{ width: '100%', display: 'block', aspectRatio: '4/5', objectFit: 'cover' }}
+                  loading="eager"
+                />
               </div>
-            )}
-            {vivencialCount > 0 && (
-              <div className="font-mono flex items-center gap-[6px] text-[9.5px] tracking-[.06em] uppercase" style={{ color: '#5C7A87' }}>
-                <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: '#C99A3A' }} />
-                {vivencialCount} vivenciales
-              </div>
-            )}
-            {totalCount > 0 && (
-              <div className="font-mono flex items-center gap-[6px] text-[9.5px] tracking-[.06em] uppercase" style={{ color: '#5C7A87' }}>
-                <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: 'var(--primary)' }} />
-                {totalCount} cursos en total
-              </div>
-            )}
-          </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Fade strip: white → navy */}
-      <div
-        style={{ height: '84px', background: 'linear-gradient(to bottom,#ffffff,#0A1E29)', marginTop: '-1px' }}
-      />
-
       {/* ── Main content ── */}
-      <main className="max-w-[1200px] mx-auto px-[22px]">
+      <main ref={resultsRef} className="max-w-[1200px] mx-auto px-[22px]">
 
         {/* Controls: search + sort */}
         <div

@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast'
 import {
   Users, MapPin, Calendar, Clock, Link as LinkIcon,
   X, Lock, Upload, ChevronDown, Info, Loader2, Play, Copy, Camera,
+  BookOpen, CheckCircle2, Layers,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { useAuth } from '@/contexts/AuthContext'
@@ -691,37 +692,84 @@ function ResumenTab({ nombre, creditos, cursos, vivenciales, lastBadge, onGoLogr
 }
 
 // ── MIS CURSOS TAB ────────────────────────────────────────────────────
+type CursoFilter = 'all' | 'prog' | 'done'
+
+const CURSO_FILTERS: { value: CursoFilter; label: string; icon: React.ReactNode }[] = [
+  { value: 'all',  label: 'Todos',       icon: <Layers className="h-3.5 w-3.5" /> },
+  { value: 'prog', label: 'En progreso', icon: <Play className="h-3.5 w-3.5" /> },
+  { value: 'done', label: 'Completados', icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+]
+
+const CURSO_EMPTY: Record<CursoFilter, { icon: React.ReactNode; title: string; desc: string }> = {
+  all:  { icon: <BookOpen className="h-10 w-10" />,     title: 'No hay cursos acá',                    desc: 'Explorá el catálogo y sumá tu primer curso.' },
+  prog: { icon: <Play className="h-10 w-10" />,         title: 'No hay cursos en progreso',            desc: 'Explorá el catálogo y empezá a aprender.' },
+  done: { icon: <CheckCircle2 className="h-10 w-10" />, title: 'Todavía no completaste ningún curso',  desc: 'Seguí aprendiendo, ¡ya estás cerca!' },
+}
+
 function MisCursosTab({ cursos, loading, reviewedSet, onCert, onReviewed, onExplore }: {
   cursos: Enrollment[]; loading: boolean; reviewedSet: Set<string>
   onCert: (e: Enrollment) => void; onReviewed: () => void; onExplore: () => void
 }) {
-  const [filter, setFilter] = useState<'all' | 'prog' | 'done'>('all')
+  const [filter, setFilter] = useState<CursoFilter>('all')
   const list = cursos.filter(e => filter === 'all' ? true : filter === 'prog' ? !e.completado : e.completado)
+
+  const counts: Record<CursoFilter, number> = {
+    all:  cursos.length,
+    prog: cursos.filter(e => !e.completado).length,
+    done: cursos.filter(e => e.completado).length,
+  }
 
   return (
     <div>
-      <div className="flex gap-1.5 flex-wrap mb-5">
-        {([['all', 'Todos'], ['prog', 'En progreso'], ['done', 'Completados']] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setFilter(k)} className="font-mono text-[9.5px] tracking-wide uppercase px-3 py-1.5 rounded-full border"
-            style={filter === k
-              ? { background: 'var(--neon-dim)', color: NEON, borderColor: 'rgba(0,229,200,.35)', fontWeight: 600 }
-              : { color: 'var(--text-3)', borderColor: 'var(--line)' }}>{l}</button>
-        ))}
+      {/* Segmented control */}
+      <div className="flex gap-1 p-1 rounded-xl mb-8" style={{ background: 'var(--bg-2)' }}>
+        {CURSO_FILTERS.map(f => {
+          const active = filter === f.value
+          const count  = counts[f.value]
+          return (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className="relative flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: active ? 'var(--bg)' : 'transparent',
+                color:      active ? 'var(--text-1)' : 'var(--text-3)',
+                boxShadow:  active ? '0 1px 3px rgba(0,0,0,.3)' : 'none',
+              }}
+            >
+              {f.icon}
+              <span className="hidden sm:inline">{f.label}</span>
+              {count > 0 && (
+                <span
+                  className="font-mono text-[10px] px-1.5 py-0.5 rounded-full"
+                  style={{ background: active ? 'var(--primary-s)' : 'var(--card)', color: active ? 'var(--primary-l)' : 'var(--text-3)' }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
+
       {loading ? (
         <div className="grid grid-cols-1 min-[640px]:grid-cols-2 gap-4">
           {[0, 1].map(i => <div key={i} className="rounded-2xl border animate-pulse" style={{ height: 300, background: 'var(--bg-2)', borderColor: 'var(--line)' }} />)}
         </div>
       ) : list.length === 0 ? (
-        <Empty icon="📚" title="No hay cursos acá" desc="Explorá el catálogo y sumá tu primer curso." />
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-4" style={{ color: 'var(--text-3)' }}>{CURSO_EMPTY[filter].icon}</div>
+          <h3 className="font-display font-semibold text-lg mb-1" style={{ color: 'var(--text-2)' }}>{CURSO_EMPTY[filter].title}</h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-3)' }}>{CURSO_EMPTY[filter].desc}</p>
+          <button onClick={onExplore} className="text-sm font-medium px-4 py-2 rounded-xl" style={{ background: 'var(--primary)', color: 'var(--text-1)' }}>
+            Ver catálogo
+          </button>
+        </div>
       ) : (
         <motion.div variants={container} initial="initial" animate="animate" className="grid grid-cols-1 min-[640px]:grid-cols-2 gap-4">
           {list.map(e => <CourseCard key={e.id} e={e} reviewed={reviewedSet.has(e.course?.id ?? '')} onCert={onCert} onReviewed={onReviewed} />)}
         </motion.div>
       )}
-      <div className="mt-8">
-        <button onClick={onExplore} className="text-sm font-medium" style={{ color: NEON }}>Ver catálogo completo →</button>
-      </div>
     </div>
   )
 }

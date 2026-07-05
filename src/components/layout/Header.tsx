@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BookOpen, LogOut, User, Menu, X, Bell, LayoutDashboard, Library, Globe, Home } from 'lucide-react'
+import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
@@ -101,10 +101,6 @@ export default function Header() {
               { to: '/',           label: 'Inicio',     icon: Home },
               { to: '/cursos',     label: 'Formación',  icon: Library },
               { to: '/vivencial',  label: 'Vivencial',  icon: Globe },
-              ...(user ? [
-                { to: '/dashboard',  label: 'Mi panel',   icon: LayoutDashboard },
-                { to: '/mis-cursos', label: 'Mis cursos', icon: BookOpen },
-              ] : []),
             ].map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
@@ -239,12 +235,6 @@ export default function Header() {
             </Link>
             {user ? (
               <>
-                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
-                  <LayoutDashboard className="h-4 w-4" /> Mi panel
-                </Link>
-                <Link to="/mis-cursos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
-                  <BookOpen className="h-4 w-4" /> Mis cursos
-                </Link>
                 <Link to="/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
                   <User className="h-4 w-4" /> Mi perfil
                 </Link>

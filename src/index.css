@@ -215,19 +215,8 @@
     30%  { opacity: 1; }
     100% { background-position: -40% 0; opacity: 0; }
   }
-  /* Flotar suave — imagen del hero de Formación */
-  .academy-float {
-    animation: academy-float 6.5s ease-in-out infinite;
-    will-change: transform;
-  }
-  @keyframes academy-float {
-    0%, 100% { transform: translateY(0) rotate(-1.4deg); }
-    50%      { transform: translateY(-16px) rotate(1.4deg); }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .academy-fold-sheen { animation: none; display: none; }
-    .academy-float { animation: none; }
     .live-pulse, .live-ring, .badge-live-blink, .eyebrow-dot, .live-stat-dot, .shimmer, .badge-viv-sweep, .sk-sweep { animation: none; }
   }
 

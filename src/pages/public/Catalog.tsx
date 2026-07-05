@@ -371,7 +371,6 @@ export default function Catalog() {
             <div style={{ position: 'relative', width: '100%' }}>
               <div aria-hidden style={{ position: 'absolute', inset: '-16%', background: 'radial-gradient(ellipse at center, rgba(0,229,200,.20), transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
               <div
-                className="academy-float"
                 style={{ position: 'relative', width: '100%', borderRadius: 24, overflow: 'hidden', border: '1px solid var(--line-s)', boxShadow: '0 48px 96px -28px rgba(0,0,0,.7), 0 0 72px rgba(0,229,200,.12)' }}
               >
                 <img

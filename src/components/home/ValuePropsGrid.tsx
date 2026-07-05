@@ -1,13 +1,24 @@
+import { motion } from 'framer-motion'
 import { Reveal, RevealGroup, MotionLink } from './Reveal'
 import { revealItem } from './revealVariants'
 
 interface Pilar {
-  to: string
+  to?: string        // navegación SPA a otra página
+  anchor?: string    // o scroll a una sección de esta misma Home (ej. '#gamificacion')
   photo: string
   icon: React.ReactNode
   title: string
   desc: string
   tag: string
+}
+
+// Scroll suave a una sección de la propia Home, descontando el header fijo vía
+// scroll-margin-top (definido en home.css sobre el target).
+function scrollToAnchor(e: React.MouseEvent<HTMLAnchorElement>, anchor: string) {
+  const el = document.querySelector(anchor)
+  if (!el) return
+  e.preventDefault()
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 interface Props {
@@ -24,7 +35,7 @@ export default function ValuePropsGrid({ coursesCount }: Props) {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>,
       title: 'Formación',
       desc: 'Cursos grabados por Yesica e instructores del rubro. A tu ritmo, con certificado.',
-      tag: coursesCount > 0 ? `${coursesCount} ${coursesCount === 1 ? 'curso' : 'cursos'}` : 'Próximamente',
+      tag: coursesCount > 0 ? `${coursesCount} ${coursesCount === 1 ? 'curso' : 'cursos'}` : 'Conocer más',
     },
     {
       to: '/vivencial',
@@ -43,12 +54,12 @@ export default function ValuePropsGrid({ coursesCount }: Props) {
       tag: 'En vivo',
     },
     {
-      to: '/cursos',
+      anchor: '#gamificacion',
       photo: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&q=70',
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
       title: 'Comunidad',
       desc: 'Feed, directorio de asesores y gamificación. Crecé acompañado, no solo.',
-      tag: 'En construcción',
+      tag: 'Ver progreso',
     },
   ]
 
@@ -64,15 +75,33 @@ export default function ValuePropsGrid({ coursesCount }: Props) {
         <Reveal delay={0.05}><h2 className="section-title">Cuatro formas de crecer, un solo lugar</h2></Reveal>
 
         <RevealGroup className="pilar-grid">
-          {pilares.map((p) => (
-            <MotionLink key={p.title} to={p.to} className="pilar-card" variants={revealItem}>
-              <div className="pilar-photo" style={{ backgroundImage: `url('${p.photo}')` }} />
-              <div className="pilar-icon">{p.icon}</div>
-              <h3>{p.title}</h3>
-              <p>{p.desc}</p>
-              <span className="pilar-tag">{p.tag}</span>
-            </MotionLink>
-          ))}
+          {pilares.map((p) => {
+            const inner = (
+              <>
+                <div className="pilar-photo" style={{ backgroundImage: `url('${p.photo}')` }} />
+                <div className="pilar-icon">{p.icon}</div>
+                <h3>{p.title}</h3>
+                <p>{p.desc}</p>
+                <span className="pilar-tag">{p.tag}</span>
+              </>
+            )
+            // Card con anchor → scroll dentro de la misma Home (no navega).
+            return p.anchor ? (
+              <motion.a
+                key={p.title}
+                href={p.anchor}
+                onClick={(e) => scrollToAnchor(e, p.anchor!)}
+                className="pilar-card"
+                variants={revealItem}
+              >
+                {inner}
+              </motion.a>
+            ) : (
+              <MotionLink key={p.title} to={p.to!} className="pilar-card" variants={revealItem}>
+                {inner}
+              </MotionLink>
+            )
+          })}
         </RevealGroup>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseWrite } from '@/lib/supabase'
 import type { Course, Category, Instructor, Enrollment, Module, Review } from '@/types'
 
 type CourseRow = Omit<Course, 'category' | 'instructor' | 'modules'> & {
@@ -147,16 +147,17 @@ export function useWishlist(userId: string | undefined) {
   })
 }
 
+const REVIEW_SELECT = '*, profile:profiles(id, nombre, apellido, avatar_url)'
+
 async function fetchReviews(courseId: string): Promise<Review[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('academy_reviews')
-    .select('*')
+    .select(REVIEW_SELECT)
     .eq('course_id', courseId)
     .eq('publicado', true)
     .order('created_at', { ascending: false })
   if (error) return []
-  return (data ?? []) as Review[]
+  return (data ?? []) as unknown as Review[]
 }
 
 export function useReviews(courseId: string | undefined) {
@@ -165,6 +166,45 @@ export function useReviews(courseId: string | undefined) {
     queryFn:  () => fetchReviews(courseId!),
     staleTime: 1000 * 60 * 5,
     enabled:  !!courseId,
+  })
+}
+
+// La reseña propia del usuario para un curso (puede estar pendiente de publicación).
+async function fetchMyReview(userId: string, courseId: string): Promise<Review | null> {
+  const { data, error } = await supabase
+    .from('academy_reviews')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle()
+  if (error) return null
+  return (data ?? null) as unknown as Review | null
+}
+
+export function useMyReview(userId: string | undefined, courseId: string | undefined) {
+  return useQuery({
+    queryKey: ['my-review', userId, courseId],
+    queryFn:  () => fetchMyReview(userId!, courseId!),
+    enabled:  !!userId && !!courseId,
+    staleTime: 1000 * 60,
+  })
+}
+
+// Inserta la reseña obligatoria de cierre de curso. RLS exige enrollment.completado=true.
+// El backend valida el mínimo de 5 palabras; validamos también en el cliente antes de llamar.
+export function useSubmitReview(userId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ courseId, rating, comentario }: { courseId: string; rating: number; comentario: string }) => {
+      const { error } = await supabaseWrite
+        .from('academy_reviews')
+        .insert({ user_id: userId, course_id: courseId, rating, comentario: comentario.trim() })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: (_r, { courseId }) => {
+      void qc.invalidateQueries({ queryKey: ['my-review', userId, courseId] })
+      void qc.invalidateQueries({ queryKey: ['reviews', courseId] })
+    },
   })
 }
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, supabaseWrite } from '@/lib/supabase'
-import type { Course, Category, Instructor, Module, TipoCurso } from '@/types'
+import type { Course, Category, Instructor, Module, TipoCurso, LessonRecurso } from '@/types'
 
 type CourseRow = Omit<Course, 'category' | 'instructor' | 'modules'> & {
   category: Category | null
@@ -15,7 +15,7 @@ export interface LessonInput {
   video_url: string | null
   duracion_segundos: number | null
   es_preview: boolean
-  recursos: Record<string, unknown> | null
+  recursos: LessonRecurso[] | Record<string, unknown> | null
 }
 export interface ModuleInput {
   id?: string

@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 3 Julio 2026 — Sesión 10**
+**Actualizado: 5 Julio 2026 — Sesión 12**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -55,6 +55,7 @@ El usuario paga por lo que consume:
 | Sesión 7 | Prototipos `/vivencial` y `/perfil` diseñados y aprobados. Sistema dual XP/Créditos, niveles, referidos definidos |
 | Sesión 8 | `Profile.tsx` implementado (6 tabs, 7 modales). Header actualizado ("Formación" / "Mi perfil") |
 | Sesión 9 | Onboarding obligatorio de 3 pasos, gate real contra DB, referidos vía trigger, `award-points`/`check-badges` deployadas, Google OAuth activado y probado en local, badges client-side corregidos |
+| Sesión 12 | **Player rebuild + comunidad + ebooks** (rama `feat/academy-player-comments-reviews-ebooks`). Player nuevo: header con ruta de vuelo horizontal (waypoints navegables), sidebar retráctil "ruta del curso" con boarding-pass tab + fold-sweep tipo mapa, navegación libre, gate simple. Visor de PDF en canvas con `react-pdf`/`pdfjs-dist` (`PdfCanvas`, reutilizado por lecciones y ebooks; nunca link descargable). Estados de clase en vivo inferidos (`liveLessonState`: programada / grabación pendiente / grabada). Bloque desplegable "Preguntas de esta clase" por lección (alumno→Yesica, publica al responder vía trigger). Reseña **obligatoria** al completar curso (modal "Llegaste al destino" con gate: estrellas + textarea, validación cliente 5 palabras). Tab Reseñas del detalle ahora accordion con promedio + respuestas reales. Nuevo tipo `ebook`: `EbookReader` a pantalla completa (paginado, secciones desde outline del PDF, marcar leído, progreso en `academy_ebook_progress`), tab "Biblioteca" en `/mis-cursos`, chip Ebooks en catálogo. Backoffice `/admin/comentarios` (bandeja de moderación con tabs Preguntas/Reseñas, pendientes primero, responder/borrar, badge de pendientes en el nav). Token `--live`, animación `academy-fold-sheen` con guarda `prefers-reduced-motion`. **Foto de perfil:** avatar con iniciales + color determinístico del `id` como fallback, botón de cámara sobre el avatar en `/perfil`, validación cliente (tipo + 5MB), recorte circular con zoom/arrastre (`AvatarCropModal`, sin dependencias nuevas), sube a `academy-media/{user_id}/avatar-{ts}.jpg`, actualiza `profiles.avatar_url`, limpia avatares viejos (preserva `certificates/`) e invalida `profiles-row`. |
 | Sesión 10 | **Backoffice `/admin/*`** (Resumen, Cursos, Vivenciales, Métricas) conectado a Supabase. Migración `backoffice_admin_rls` (función `is_academy_admin()` + policies admin CRUD/lectura). `AdminGate` + redirect admin post-login salteando onboarding. Wizards de 5 pasos (curso/vivencial) con react-hook-form/zod, TAG_SUGGESTIONS, upload a `academy-media`, currículum, itinerario con renumeración, preview reusando `CourseDetail` (`?preview=1`), inscripción manual con decremento de cupo, drawer de settings (`academy_settings`), command palette ⌘K. Catálogo público endurecido a `publicado=true AND archivado=false` (RLS + query). Fix latente: `tipo_acceso` legacy `'free'`→valores reales de la DB (`gratuito`…) |
 
 ### ✅ Infraestructura lista
@@ -175,7 +176,8 @@ academy_categories    → nombre, slug, icon, color, orden, activo
 academy_instructors   → nombre, bio, avatar_url, user_id, revenue_share_pct, activo
 academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
                         category_id, instructor_id, nivel, tipo_acceso,
-                        tipo ('grabado'|'en_vivo'|'vivencial'),
+                        tipo ('grabado'|'en_vivo'|'vivencial'|'ebook'),
+                        pdf_url, total_paginas (solo ebook),
                         precio_usd, precio_ars, publicado, destacado, total_alumnos,
                         rating_avg, rating_count, duracion_total_minutos, total_lecciones,
                         live_date, live_url, live_duration_minutes, fotos (JSONB),
@@ -188,8 +190,33 @@ academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
                         vivencial_whatsapp_url
 academy_modules       → course_id, titulo, orden
 academy_lessons       → module_id, course_id, titulo, video_url, duracion_segundos,
-                        orden, es_preview (bool), recursos (JSONB)
+                        orden, es_preview (bool), recursos (JSONB),
+                        fecha_vivo, live_url (clases en vivo con grabación)
 ```
+
+**Comunidad / lectura (Sesión 12 — ya aplicadas por MCP, NO re-crear):**
+```
+academy_lesson_comments → lesson_id, course_id, user_id, comentario, respuesta,
+                          respondido_at, publicado, created_at, updated_at
+                          (alumno→Yesica; trigger publica al completar respuesta)
+academy_reviews (+cols)  → respuesta, respondido_at; unicidad (user_id, course_id);
+                          CHECK comentario ≥ 5 palabras; publica al responder (trigger)
+academy_ebook_progress   → user_id, course_id, ultima_pagina, completado, completado_at
+                          (RLS: cada usuario la suya; requiere enrollment.activo=true)
+```
+
+⚠️ Estado de clase en vivo: no hay campo explícito. Se infiere con `liveLessonState()` en
+`src/types`: `video_url` presente → grabada; sin video + `fecha_vivo` futura → programada;
+sin video + `fecha_vivo` pasada → grabación pendiente.
+
+**Migraciones aplicadas en Sesión 12 (vía MCP, además de lo que ya venía):**
+- `academy_sync_course_progress(uuid)` — RPC `SECURITY DEFINER`. Recalcula `progreso_pct` y
+  marca `completado=true` cuando el alumno terminó todas las lecciones. El player la llama en
+  cada "marcar completa". Existe porque el UPDATE directo de `academy_enrollments` es admin-only
+  por RLS, y la reseña obligatoria de cierre exige `enrollment.completado=true`. Sólo toca campos
+  de progreso (nunca de pago).
+- FK `academy_lesson_comments_user_id_profiles_fkey` (`user_id → profiles.id`) para poder embeber
+  el autor con `profile:profiles(...)` en PostgREST, igual que `academy_reviews`.
 
 **Gamificación:**
 ```
@@ -222,7 +249,7 @@ academy_payments          → user_id, tipo, course_id, monto_ars, monto_usd, mp
 **Reglas canónicas:**
 - Acceso a curso: `academy_enrollments` con `activo = true` O `lesson.es_preview = true`
 - `external_reference` siempre: `ACAD-COURSE-{userId}-{courseId}`
-- Tipo de curso: `'grabado'` | `'en_vivo'` | `'vivencial'`
+- Tipo de curso: `'grabado'` | `'en_vivo'` | `'vivencial'` | `'ebook'` (ebook = pago único, se lee en canvas, sin descarga)
 - `tipo_acceso`: `'gratuito'` | `'pago'` | `'suscripcion'` | `'b2b_incluido'`
 
 ---
@@ -326,6 +353,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - `/admin/resumen` — KPIs, gráfico de ingresos, alertas accionables, actividad reciente, estados vacíos reales
 - `/admin/cursos` — lista con filtros client-side, wizard 5 pasos, preview, publicar/archivar/eliminar (0 inscriptos)
 - `/admin/vivenciales` — mismo motor filtrado por `tipo='vivencial'`, itinerario, inscriptos + inscripción manual (decrementa cupo)
+- `/admin/comentarios` — bandeja de moderación (Sesión 12): tabs Preguntas de clase / Reseñas de curso, pendientes primero, responder (publica vía trigger) o borrar. Badge de pendientes en el nav
 - `/admin/metricas` — ingresos, rentabilidad por instructor, compradores, uso/funnel derivado, ROI marketing
 - Gate: `AdminGate` (RLS + `profiles.es_admin`); admin aterriza en `/admin/resumen` salteando `OnboardingGate`
 

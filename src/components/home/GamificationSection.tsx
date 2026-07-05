@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 // pantalla gracias a los espaciados apretados en home.css (no se recorta copy).
 export default function GamificationSection() {
   return (
-    <section className="gami">
+    <section className="gami" id="gamificacion">
       <div className="glow-orb" aria-hidden="true" />
       <div className="container">
         <div className="gami-top-text">

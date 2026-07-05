@@ -9,6 +9,7 @@ import { useCourseDetail, useReviews } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCoursePayment } from '@/hooks/usePayment'
 import { cupoEstado } from '@/lib/cupo'
+import { displayName } from '@/lib/utils'
 import type { ItinerarioDia } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -625,7 +626,8 @@ export default function VivencialDetail() {
                           </div>
                           {/* List */}
                           {reviews.map(r => {
-                            const initials = r.nombre.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+                            const nombre = displayName(r.profile)
+                            const initials = nombre.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
                             return (
                               <div key={r.id} style={{ background: 'rgba(0,0,0,.025)', border: '1px solid rgba(0,0,0,.08)', borderRadius: 11, padding: 16, marginBottom: 9 }}>
                                 <div className="flex items-center gap-[9px] mb-[9px]">
@@ -636,7 +638,7 @@ export default function VivencialDetail() {
                                     {initials}
                                   </div>
                                   <div>
-                                    <p style={{ fontWeight: 600, fontSize: '.84rem', color: '#0A1E29' }}>{r.nombre}</p>
+                                    <p style={{ fontWeight: 600, fontSize: '.84rem', color: '#0A1E29' }}>{nombre}</p>
                                     <p style={{ color: 'var(--gold)', fontSize: 11, letterSpacing: 1 }}>
                                       {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
                                     </p>

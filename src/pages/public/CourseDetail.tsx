@@ -7,9 +7,10 @@ import {
   Loader2, Heart,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
-import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments } from '@/hooks/useCourses'
+import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments, useReviews } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCoursePayment } from '@/hooks/usePayment'
+import { displayName } from '@/lib/utils'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -257,30 +258,83 @@ function LessonRow({ lesson, isFirst }: { lesson: Lesson; isFirst: boolean }) {
   )
 }
 
-// ── Reviews (static placeholder) ─────────────────────────────────
+// ── Reviews (reseñas reales, desplegable con promedio) ───────────
 
-function Reviews() {
-  const revs = [
-    { initials: 'MG', color: 'var(--primary)', name: 'María García', stars: 5, text: 'Empecé sin saber nada y terminé aplicando las técnicas desde la primera semana. Muy recomendado.' },
-    { initials: 'LM', color: 'var(--bg-deep)', name: 'Lucas Martínez', stars: 5, text: 'Yesica explica con ejemplos reales. Cambió completamente cómo trabajo con los pasajeros.' },
-    { initials: 'CP', color: '#8B6AC2', name: 'Carolina Paz', stars: 4, text: 'Muy buen contenido. Hubiera querido más ejemplos pero el framework aplica perfecto.' },
-  ]
+function initialsOf(name: string): string {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('') || 'A'
+}
+
+function Reviews({ course }: { course: Course }) {
+  const { data: reviews = [], isLoading } = useReviews(course.id)
+  const [open, setOpen] = useState(true)
+  const avg = course.rating_avg || 0
+  const count = course.rating_count || reviews.length
+
+  if (!isLoading && reviews.length === 0) {
+    return (
+      <p className="text-sm" style={{ color: 'var(--text-3)' }}>
+        Todavía no hay reseñas publicadas. Sé la primera persona en dejar la tuya al completar el curso.
+      </p>
+    )
+  }
+
   return (
-    <div className="space-y-[9px]">
-      {revs.map(r => (
-        <div key={r.initials} className="rounded-[11px] border p-4" style={{ background: 'rgba(0,0,0,.03)', borderColor: '#E2EAEC' }}>
-          <div className="flex items-center gap-[9px] mb-[9px]">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center font-display font-bold text-[11px] shrink-0" style={{ background: r.color, color: '#0A1E29' }}>
-              {r.initials}
-            </div>
-            <div>
-              <div className="font-semibold text-sm" style={{ color: '#0A1E29' }}>{r.name}</div>
-              <div style={{ color: 'var(--gold)', fontSize: '11px' }}>{'★'.repeat(r.stars)}</div>
+    <div>
+      {/* Resumen desplegable */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between rounded-[11px] border px-4 py-3 mb-[9px]"
+        style={{ borderColor: '#E2EAEC', background: 'rgba(0,0,0,.02)' }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="font-display font-bold text-2xl" style={{ color: '#0A1E29' }}>{avg.toFixed(1)}</span>
+          <div className="text-left">
+            <div style={{ color: 'var(--gold)', fontSize: '13px' }}>{'★'.repeat(Math.round(avg))}<span style={{ color: '#C5D4D8' }}>{'★'.repeat(5 - Math.round(avg))}</span></div>
+            <div className="font-mono text-[10px] tracking-[.05em] uppercase" style={{ color: 'var(--text-3)' }}>
+              {count} {count === 1 ? 'reseña' : 'reseñas'}
             </div>
           </div>
-          <p className="text-sm leading-[1.65]" style={{ color: '#1A3040' }}>{r.text}</p>
         </div>
-      ))}
+        <ChevronIcon open={open} />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-[9px] pt-1">
+              {reviews.map(r => {
+                const name = displayName(r.profile)
+                return (
+                  <div key={r.id} className="rounded-[11px] border p-4" style={{ background: 'rgba(0,0,0,.03)', borderColor: '#E2EAEC' }}>
+                    <div className="flex items-center gap-[9px] mb-[9px]">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-display font-bold text-[11px] shrink-0" style={{ background: 'var(--primary)', color: '#0A1E29' }}>
+                        {initialsOf(name)}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm" style={{ color: '#0A1E29' }}>{name}</div>
+                        <div style={{ color: 'var(--gold)', fontSize: '11px' }}>{'★'.repeat(r.rating)}</div>
+                      </div>
+                    </div>
+                    {r.comentario && <p className="text-sm leading-[1.65]" style={{ color: '#1A3040' }}>{r.comentario}</p>}
+                    {r.respuesta && (
+                      <div className="mt-3 pl-3 border-l-2" style={{ borderColor: 'var(--primary)' }}>
+                        <div className="font-semibold text-xs mb-0.5" style={{ color: 'var(--primary)' }}>Respuesta de Yesica</div>
+                        <p className="text-sm leading-[1.6]" style={{ color: '#1A3040' }}>{r.respuesta}</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -859,7 +913,7 @@ export default function CourseDetail() {
                     )}
 
                     {/* Reseñas */}
-                    {activeTab === 'revs' && <Reviews />}
+                    {activeTab === 'revs' && <Reviews course={course} />}
 
                     {/* Trailer */}
                     {activeTab === 'trl' && course.trailer_url && (

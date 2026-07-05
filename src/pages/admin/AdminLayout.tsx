@@ -6,11 +6,13 @@ import SettingsDrawer from './components/SettingsDrawer'
 import CommandPalette from './components/CommandPalette'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAdminCourses } from '@/hooks/admin/useAdminCourses'
+import { useModerationPendingCount } from '@/hooks/admin/useModeration'
 
 const CRUMBS: Record<string, string> = {
   '/admin/resumen': 'Resumen',
   '/admin/cursos': 'Cursos',
   '/admin/vivenciales': 'Vivenciales',
+  '/admin/comentarios': 'Moderación',
   '/admin/metricas': 'Métricas',
 }
 
@@ -19,6 +21,7 @@ function NavIcon({ name }: { name: string }) {
     case 'resumen': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>
     case 'cursos': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H12v16H5.5A1.5 1.5 0 014 18.5v-13z" /><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H12v16h6.5a1.5 1.5 0 001.5-1.5v-13z" /></svg>
     case 'vivenciales': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 11l18-7-7 18-2.5-7L3 11z" strokeLinejoin="round" /></svg>
+    case 'comentarios': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinejoin="round" /></svg>
     case 'metricas': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 20V10M12 20V4M20 20v-7" /></svg>
     default: return null
   }
@@ -33,6 +36,7 @@ export default function AdminLayout() {
 
   const { data: cursos } = useAdminCourses(['grabado', 'en_vivo'])
   const { data: vivenciales } = useAdminCourses(['vivencial'])
+  const { data: pendingModeration } = useModerationPendingCount()
 
   // ⌘K / Ctrl+K opens the command palette.
   useEffect(() => {
@@ -89,6 +93,8 @@ export default function AdminLayout() {
               <div className="nav-section-label">Contenido</div>
               {navItem('cursos', 'Cursos', cursos?.length ?? 0)}
               {navItem('vivenciales', 'Vivenciales', vivenciales?.length ?? 0)}
+              <div className="nav-section-label">Comunidad</div>
+              {navItem('comentarios', 'Moderación', pendingModeration || undefined)}
               <div className="nav-section-label">Negocio</div>
               {navItem('metricas', 'Métricas')}
             </nav>

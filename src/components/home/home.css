@@ -227,12 +227,14 @@
   .chip-level{ font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; text-transform:uppercase; color:var(--content-ink-soft); background:#EDF1EF; padding:4px 8px; border-radius:6px; }
   .catalogo-foot{ margin-top:26px; text-align:center; }
   /* estado vacío del marquee (DB sin cursos publicados) */
-  .catalogo-empty{ margin-top:36px; padding:52px 28px; text-align:center; border:1px dashed var(--content-line); border-radius:18px; background:var(--content-white); }
-  .catalogo-empty h4{ font-family:var(--font-display); font-weight:600; font-size:1.1rem; color:var(--content-ink); }
-  .catalogo-empty p{ margin-top:8px; font-size:0.92rem; color:var(--content-ink-soft); max-width:420px; margin-left:auto; margin-right:auto; }
+  /* Estado vacío ~2× (más alto y con más presencia respecto al espacio libre de
+     la sección): padding y tipografía duplicados, con min-height para que ocupe. */
+  .catalogo-empty{ margin-top:44px; padding:104px 56px; min-height:360px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:1px dashed var(--content-line); border-radius:24px; background:var(--content-white); }
+  .catalogo-empty h4{ font-family:var(--font-display); font-weight:600; font-size:1.6rem; color:var(--content-ink); }
+  .catalogo-empty p{ margin-top:14px; font-size:1.05rem; color:var(--content-ink-soft); max-width:560px; margin-left:auto; margin-right:auto; }
 
   /* ============ VIVENCIAL HEADLINER ============ */
-  .vivencial-hl{ padding:0 0 100px; background:var(--content-bg); }
+  .vivencial-hl{ padding:96px 0 100px; background:var(--content-bg); }
   .vivencial-card{ position:relative; overflow:hidden; border-radius:26px; background:linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%); min-height:460px; display:flex; align-items:stretch; box-shadow:0 30px 70px -30px rgba(10,30,41,0.4); }
   .vivencial-card::before{ content:''; position:absolute; inset:0; background-image:linear-gradient(var(--line-soft) 1px, transparent 1px), linear-gradient(90deg, var(--line-soft) 1px, transparent 1px); background-size:44px 44px; mask-image:radial-gradient(ellipse 520px 320px at 0% 0%, black, transparent 72%); -webkit-mask-image:radial-gradient(ellipse 520px 320px at 0% 0%, black, transparent 72%); }
   .vivencial-text{ position:relative; z-index:1; flex:1; padding:52px 46px; display:flex; flex-direction:column; justify-content:center; }
@@ -383,7 +385,9 @@
 
   /* ============ GLOW ORBS ============ */
   .glow-orb{ position:absolute; border-radius:50%; pointer-events:none; z-index:0; filter:blur(40px); }
-  .gami .glow-orb{ width:560px; height:420px; right:-140px; top:-110px; background:radial-gradient(ellipse at center, rgba(201,154,58,0.24), transparent 68%); animation:home-glowMoveB 19s ease-in-out infinite; }
+  /* Mismo glow que el CTA final "Empezá a formarte hoy" (teal + home-glowMoveA),
+     solo cambia la posición: arriba a la derecha en vez de centrado. */
+  .gami .glow-orb{ width:640px; height:480px; right:-160px; top:-160px; background:radial-gradient(ellipse at center, rgba(78,205,184,0.28), transparent 68%); animation:home-glowMoveA 15s ease-in-out infinite; }
 
   /* ============ CTA FINAL ============ */
   .cta-final{ padding:110px 0 120px; position:relative; overflow:hidden; background:linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%); }
@@ -419,6 +423,14 @@
     min-height:100dvh;
     display:flex; flex-direction:column; justify-content:center;
   }
+  /* Formación y Vivencial: mientras están casi vacías, el header (título +
+     bajada) va ARRIBA y el estado vacío debajo — mismo criterio que cuando
+     haya cards reales, no centrado en el medio de la pantalla. */
+  & > .catalogo,
+  & > .vivencial-hl{ justify-content:flex-start; }
+  /* target del anchor "Ver progreso" de la card Comunidad: descuenta el header
+     fijo (--hdr) al hacer scroll a la sección. */
+  & > .gami{ scroll-margin-top:var(--hdr); }
 
   /* ============ RESPONSIVE ============ */
   @media (max-width:1250px){ .testi-photo-pos{ width:360px; height:430px; right:20px; } }

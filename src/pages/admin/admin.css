@@ -363,17 +363,6 @@
     max-width:520px;
   }
 
-  .demo-banner{
-    display:flex; align-items:center; gap:11px;
-    padding:10px 32px;
-    background:var(--gold-soft);
-    border-bottom:1px solid #EBDCB2;
-    font-size:12.4px;
-    color:#6B4E17;
-  }
-  .demo-banner svg{width:15px; height:15px; flex-shrink:0; color:var(--gold-deep);}
-  .demo-banner b{font-weight:700;}
-
   /* ============ BUTTONS ============ */
   .btn{
     display:inline-flex;

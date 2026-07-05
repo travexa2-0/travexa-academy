@@ -3,7 +3,7 @@ import { supabase, supabaseWrite } from '@/lib/supabase'
 import type { AcademySetting, AdminSettings } from '@/types'
 
 const DEFAULTS: AdminSettings = {
-  tipo_cambio_usd_ars: 1450,
+  tipo_cambio_usd_ars: 1500,
   comision_mp_pct: 5.5,
   meta_ingresos_mensual_ars: 0,
   inversion_marketing_mensual_ars: 0,

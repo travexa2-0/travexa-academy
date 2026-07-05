@@ -61,7 +61,7 @@ function ModItemCard({
 
       {answered ? (
         <div style={{ marginTop: 12, paddingLeft: 12, borderLeft: '2px solid var(--teal)' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--teal-deep)', marginBottom: 2 }}>Respuesta de Yesica</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--teal-deep)', marginBottom: 2 }}>Respuesta del equipo</div>
           <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-soft)', whiteSpace: 'pre-wrap' }}>{respuesta}</p>
           <button
             className="btn btn-danger btn-sm"

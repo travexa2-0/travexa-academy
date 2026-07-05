@@ -12,7 +12,9 @@ async function fetchSummary(): Promise<AdminSummaryKpis> {
 
   const [payRes, profRes, courseRes] = await Promise.all([
     supabase.from('academy_payments').select('monto_ars, estado, created_at').eq('estado', 'aprobado').gte('created_at', startISO),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', startISO),
+    // Alumnos nuevos: contamos desde academy_profiles (la misma fuente que usa
+    // el funnel de Métricas), así ambas pantallas muestran el mismo número.
+    supabase.from('academy_profiles').select('id', { count: 'exact', head: true }).gte('created_at', startISO),
     supabase.from('academy_courses').select('publicado, archivado, tipo, vivencial_cupo_disponible'),
   ])
 

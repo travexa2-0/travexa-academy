@@ -29,6 +29,7 @@ const AdminResumen      = lazy(() => import('@/pages/admin/Resumen'))
 const AdminCursos       = lazy(() => import('@/pages/admin/Cursos'))
 const AdminVivenciales  = lazy(() => import('@/pages/admin/Vivenciales'))
 const AdminMetricas     = lazy(() => import('@/pages/admin/Metricas'))
+const AdminComentarios  = lazy(() => import('@/pages/admin/Comentarios'))
 
 function PageLoader() {
   return (
@@ -108,6 +109,7 @@ export default function App() {
                     <Route path="resumen" element={<AdminResumen />} />
                     <Route path="cursos" element={<AdminCursos />} />
                     <Route path="vivenciales" element={<AdminVivenciales />} />
+                    <Route path="comentarios" element={<AdminComentarios />} />
                     <Route path="metricas" element={<AdminMetricas />} />
                   </Route>
                 </Route>

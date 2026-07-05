@@ -37,24 +37,56 @@ export function useUpdateProfile(userId: string | undefined) {
 
 // ── Avatar upload ────────────────────────────────────────────────
 
-export async function uploadAvatar(userId: string, file: File): Promise<string | null> {
-  const path = `${userId}/avatar.jpg`
+export const AVATAR_MAX_BYTES = 5 * 1024 * 1024
+const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+// Validación cliente antes de subir (además del bucket): tipo + tamaño.
+export function validateAvatarFile(file: File): string | null {
+  if (!AVATAR_TYPES.includes(file.type)) return 'Formato no válido. Usá JPG, PNG, WEBP o GIF.'
+  if (file.size > AVATAR_MAX_BYTES) return 'La imagen supera los 5 MB. Elegí una más liviana.'
+  return null
+}
+
+// Sube el recorte (blob JPEG) a academy-media/{user_id}/avatar-{ts}.jpg.
+// El path DEBE empezar con {user_id}/ porque las policies de update/delete exigen
+// foldername(name)[1] = auth.uid(). Después limpia avatares viejos de la carpeta
+// (solo archivos avatar-*/avatar.jpg — nunca toca la subcarpeta certificates/).
+async function uploadAvatarBlob(userId: string, blob: Blob): Promise<string> {
+  const path = `${userId}/avatar-${Date.now()}.jpg`
+  const newName = path.split('/').pop()!
 
   const { error: uploadError } = await supabase.storage
     .from('academy-media')
-    .upload(path, file, { upsert: true, contentType: file.type })
-
-  if (uploadError) return null
+    .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+  if (uploadError) throw new Error(uploadError.message)
 
   const { data } = supabase.storage.from('academy-media').getPublicUrl(path)
-  // Cache buster: el path es fijo, sin ?t el browser sirve la imagen vieja
-  const publicUrl = `${data.publicUrl}?t=${Date.now()}`
+  const publicUrl = data.publicUrl
 
-  // Guardar en profiles.avatar_url (tabla compartida con Travexa Core)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('profiles').update({ avatar_url: publicUrl }).eq('id', userId)
+  const { error: updErr } = await (supabase as any)
+    .from('profiles').update({ avatar_url: publicUrl }).eq('id', userId)
+  if (updErr) throw new Error(updErr.message)
+
+  // Limpieza de huérfanos: borra avatares anteriores, preserva todo lo demás.
+  const { data: files } = await supabase.storage.from('academy-media').list(userId, { limit: 100 })
+  const stale = (files ?? [])
+    .filter(f => /^avatar[-.]/.test(f.name) && f.name !== newName)
+    .map(f => `${userId}/${f.name}`)
+  if (stale.length) await supabase.storage.from('academy-media').remove(stale)
 
   return publicUrl
+}
+
+export function useUploadAvatar(userId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (blob: Blob) => uploadAvatarBlob(userId!, blob),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['profiles-row', userId] })
+      void qc.invalidateQueries({ queryKey: ['academy-profile', userId] })
+    },
+  })
 }
 
 // ── Badges ───────────────────────────────────────────────────────

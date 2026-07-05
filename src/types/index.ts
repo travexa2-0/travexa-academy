@@ -6,7 +6,7 @@ export type TipoCuenta = 'asesor' | 'agencia' | 'instructor' | 'externo'
 // Valores reales del CHECK de academy_courses.tipo_acceso.
 export type TipoAcceso = 'gratuito' | 'pago' | 'suscripcion' | 'b2b_incluido'
 export type NivelCurso = 'principiante' | 'intermedio' | 'avanzado'
-export type TipoCurso = 'grabado' | 'en_vivo' | 'vivencial'
+export type TipoCurso = 'grabado' | 'en_vivo' | 'vivencial' | 'ebook'
 export type TipoPunto = 'ganado' | 'canjeado'
 export type NivelUsuario = 'Explorador' | 'Asesor' | 'Experto' | 'Embajador'
 
@@ -137,16 +137,59 @@ export interface ItinerarioDia {
   descripcion: string
 }
 
+// ── Perfil resumido embebido en joins (reseñas, comentarios) ──
+export interface ProfileMini {
+  id: string
+  nombre: string | null
+  apellido: string | null
+  avatar_url: string | null
+}
+
 // ── academy_reviews ──
+// Se publica solo cuando Yesica responde (trigger en DB setea publicado=true al completar respuesta).
+// Constraint en DB: comentario con mínimo 5 palabras. Unicidad (user_id, course_id).
 export interface Review {
   id: string
   course_id: string
   user_id: string | null
-  nombre: string
   rating: number
   comentario: string | null
   publicado: boolean
+  respuesta: string | null
+  respondido_at: string | null
   created_at: string
+  // joined
+  profile?: ProfileMini | null
+}
+
+// ── academy_lesson_comments ──
+// Pregunta del alumno bajo una lección. Solo alumno→Yesica (no foro entre alumnos).
+// Se publica automáticamente vía trigger en DB cuando se completa `respuesta`.
+export interface LessonComment {
+  id: string
+  lesson_id: string
+  course_id: string
+  user_id: string
+  comentario: string
+  respuesta: string | null
+  respondido_at: string | null
+  publicado: boolean
+  created_at: string
+  updated_at: string
+  // joined
+  profile?: ProfileMini | null
+}
+
+// ── academy_ebook_progress ──
+export interface EbookProgress {
+  id: string
+  user_id: string
+  course_id: string
+  ultima_pagina: number
+  completado: boolean
+  completado_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 // ── academy_courses ──
@@ -179,6 +222,9 @@ export interface Course {
   live_date: string | null
   live_url: string | null
   live_duration_minutes: number | null
+  // ebook (solo cuando tipo='ebook')
+  pdf_url: string | null
+  total_paginas: number | null
   fotos: string[]
   incluye: string[]
   no_incluye: string[]
@@ -225,7 +271,28 @@ export interface Lesson {
   duracion_segundos: number | null
   orden: number
   es_preview: boolean
-  recursos: Record<string, unknown> | null
+  recursos: LessonRecurso[] | Record<string, unknown> | null
+  // clases en vivo con grabación
+  fecha_vivo: string | null
+  live_url: string | null
+}
+
+// Recurso adjunto a una lección (PDF, link, etc.). Los PDFs se leen en canvas, nunca se descargan.
+export interface LessonRecurso {
+  tipo?: string
+  titulo?: string
+  url: string
+}
+
+// Estado inferido de una lección en vivo (no hay campo explícito en DB).
+export type LiveLessonState = 'programada' | 'grabacion_pendiente' | 'grabada' | 'sin_video'
+
+export function liveLessonState(lesson: Pick<Lesson, 'video_url' | 'fecha_vivo'>): LiveLessonState {
+  if (lesson.video_url) return 'grabada'
+  if (lesson.fecha_vivo) {
+    return new Date(lesson.fecha_vivo).getTime() > Date.now() ? 'programada' : 'grabacion_pendiente'
+  }
+  return 'sin_video'
 }
 
 // ── academy_enrollments ──
@@ -527,9 +594,21 @@ export interface Database {
         Relationships: []
       }
       academy_reviews: {
-        Row: Review
-        Insert: Omit<Review, 'id' | 'created_at'>
-        Update: Partial<Omit<Review, 'id' | 'created_at'>>
+        Row: Omit<Review, 'profile'>
+        Insert: Omit<Review, 'id' | 'created_at' | 'publicado' | 'respuesta' | 'respondido_at' | 'profile'>
+        Update: Partial<Omit<Review, 'id' | 'created_at' | 'profile'>>
+        Relationships: []
+      }
+      academy_lesson_comments: {
+        Row: Omit<LessonComment, 'profile'>
+        Insert: Omit<LessonComment, 'id' | 'created_at' | 'updated_at' | 'publicado' | 'respuesta' | 'respondido_at' | 'profile'>
+        Update: Partial<Omit<LessonComment, 'id' | 'created_at' | 'profile'>>
+        Relationships: []
+      }
+      academy_ebook_progress: {
+        Row: EbookProgress
+        Insert: Omit<EbookProgress, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<EbookProgress, 'id' | 'user_id' | 'course_id' | 'created_at'>>
         Relationships: []
       }
       academy_settings: {

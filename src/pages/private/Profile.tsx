@@ -5,11 +5,13 @@ import confetti from 'canvas-confetti'
 import { toast } from 'react-hot-toast'
 import {
   Users, MapPin, Calendar, Clock, Link as LinkIcon,
-  X, Lock, Upload, ChevronDown, Info, Loader2, Play, Copy,
+  X, Lock, Upload, ChevronDown, Info, Loader2, Play, Copy, Camera,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { useAuth } from '@/contexts/AuthContext'
-import { useAcademyProfile, useBadges, useCertificates, useReferrals } from '@/hooks/useProfile'
+import { useAcademyProfile, useBadges, useCertificates, useReferrals, validateAvatarFile } from '@/hooks/useProfile'
+import AvatarCropModal from '@/components/profile/AvatarCropModal'
+import { initialsFrom, avatarGradient } from '@/lib/avatar'
 import { useMyEnrollments } from '@/hooks/useCourses'
 import {
   useProfilesRow, useWishlistFull, useRemoveWishlist, usePointsTransactions,
@@ -275,6 +277,8 @@ export default function Profile() {
   const [showRanking, setShowRanking] = useState(false)
   const [showUpload, setShowUpload]   = useState(false)
   const [showLevels, setShowLevels]   = useState(false)
+  const [cropFile, setCropFile]       = useState<File | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const enrollments = useMemo(() => (enrollmentsQ.data ?? []).filter(e => e.activo !== false), [enrollmentsQ.data])
   const cursos      = useMemo(() => enrollments.filter(e => e.course?.tipo !== 'vivencial'), [enrollments])
@@ -288,7 +292,16 @@ export default function Profile() {
   const nombre   = prow?.nombre   ?? (user?.user_metadata as { nombre?: string })?.nombre ?? ''
   const apellido = prow?.apellido ?? (user?.user_metadata as { apellido?: string })?.apellido ?? ''
   const email    = user?.email ?? prow?.email ?? ''
-  const inicial  = (nombre?.[0] ?? email?.[0] ?? '?').toUpperCase()
+  const iniciales = initialsFrom(nombre, apellido, email)
+
+  const handleAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // permite re-elegir el mismo archivo
+    if (!file) return
+    const err = validateAvatarFile(file)
+    if (err) { toast.error(err); return }
+    setCropFile(file)
+  }
 
   const referralCode = ap?.referral_code ?? ''
   const referralUrl  = `${window.location.origin}/registro?ref=${referralCode}`
@@ -340,9 +353,27 @@ export default function Profile() {
                   transition={{ type: 'spring', stiffness: 80, damping: 20, delay: 0.5 }} />
               </svg>
               <div className="w-24 h-24 rounded-full flex items-center justify-center font-display font-bold text-3xl overflow-hidden"
-                style={{ background: 'linear-gradient(135deg,var(--bg-3),var(--bg-4))', border: '2px solid var(--line-s)', color: 'var(--text-1)' }}>
-                {prow?.avatar_url ? <img src={prow.avatar_url} alt={nombre} className="w-full h-full object-cover" /> : inicial}
+                style={{ background: prow?.avatar_url ? 'var(--bg-3)' : avatarGradient(uid), border: '2px solid var(--line-s)', color: 'var(--text-1)' }}>
+                {prow?.avatar_url ? <img src={prow.avatar_url} alt={nombre} className="w-full h-full object-cover" /> : iniciales}
               </div>
+              {/* Cámara: abre el selector de archivo (esquina inferior izq. para no pisar el badge de nivel) */}
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute -bottom-0.5 -left-0.5 w-[26px] h-[26px] rounded-full flex items-center justify-center"
+                style={{ background: 'var(--primary-l)', color: '#0A1E29', border: '2px solid var(--bg)', boxShadow: '0 2px 8px rgba(0,0,0,.35)' }}
+                aria-label="Cambiar foto de perfil"
+                title="Cambiar foto"
+              >
+                <Camera className="h-[13px] w-[13px]" />
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAvatarPick}
+              />
               <div className="absolute -bottom-0.5 -right-0.5 w-[26px] h-[26px] rounded-full flex items-center justify-center font-display font-bold text-[11px]"
                 style={{ background: NEON, color: '#0A1E29', border: '2px solid var(--bg)', boxShadow: '0 0 12px var(--neon-glow)' }}>
                 {nInfo.actual.n}
@@ -491,6 +522,18 @@ export default function Profile() {
       <RankingModal open={showRanking} onClose={() => setShowRanking(false)} />
       <UploadModal open={showUpload} uid={uid} onClose={() => setShowUpload(false)} />
       <LevelsModal open={showLevels} currentN={nInfo.actual.n} onClose={() => setShowLevels(false)} />
+
+      {/* ── AVATAR CROP MODAL ── */}
+      <AnimatePresence>
+        {cropFile && (
+          <AvatarCropModal
+            file={cropFile}
+            userId={uid}
+            onClose={() => setCropFile(null)}
+            onUploaded={() => setCropFile(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── LEVEL-UP OVERLAY ── */}
       <AnimatePresence>

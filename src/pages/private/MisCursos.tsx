@@ -1,19 +1,21 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, CheckCircle2, Plane, Radio, Play, Share2, Award, CreditCard, MapPin } from 'lucide-react'
+import { BookOpen, CheckCircle2, Plane, Radio, Play, Share2, Award, CreditCard, MapPin, Library, FileText } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMyEnrollments } from '@/hooks/useCourses'
-import type { Enrollment } from '@/types'
+import { useMyEbookProgress } from '@/hooks/useEbook'
+import type { Enrollment, EbookProgress } from '@/types'
 import { staggerContainer, staggerItem, EASE_OUT } from '@/lib/motion'
 
-type Tab = 'progreso' | 'completados' | 'vivenciales' | 'en_vivo'
+type Tab = 'progreso' | 'completados' | 'vivenciales' | 'en_vivo' | 'biblioteca'
 
 const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
   { value: 'progreso',    label: 'En progreso', icon: <Play className="h-3.5 w-3.5" /> },
   { value: 'completados', label: 'Completados', icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+  { value: 'biblioteca',  label: 'Biblioteca',  icon: <Library className="h-3.5 w-3.5" /> },
   { value: 'vivenciales', label: 'Vivenciales', icon: <Plane className="h-3.5 w-3.5" /> },
   { value: 'en_vivo',     label: 'En Vivo',     icon: <Radio className="h-3.5 w-3.5" /> },
 ]
@@ -232,10 +234,61 @@ function VivencialCard({ enrollment }: { enrollment: Enrollment }) {
   )
 }
 
+function EbookCard({ enrollment, progress }: { enrollment: Enrollment; progress: EbookProgress | undefined }) {
+  const course = enrollment.course
+  if (!course) return null
+
+  const total = course.total_paginas ?? 0
+  const pagina = progress?.ultima_pagina ?? 0
+  const completado = progress?.completado ?? false
+  const pct = total > 0 ? Math.round((Math.min(pagina, total) / total) * 100) : 0
+  const ultima = progress?.updated_at ? new Date(progress.updated_at) : null
+
+  return (
+    <motion.div variants={staggerItem}>
+      <Link to={`/cursos/${course.slug}/aprender`} className="group block">
+        <div className="flex gap-4 p-4 rounded-2xl border transition-all" style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}>
+          <div className="w-16 h-24 rounded-lg overflow-hidden shrink-0" style={{ boxShadow: '0 6px 16px rgba(0,0,0,.35)' }}>
+            {course.thumbnail_url ? (
+              <img src={course.thumbnail_url} alt={course.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--card-solid)' }}>
+                <FileText className="h-5 w-5" style={{ color: 'var(--primary-l)' }} />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0 flex flex-col">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-[9px] tracking-[.06em] uppercase px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-s)', color: 'var(--primary-l)' }}>Ebook</span>
+              {completado && <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--success)' }} />}
+            </div>
+            <h3 className="font-display font-semibold text-sm leading-snug line-clamp-1" style={{ color: 'var(--text-1)' }}>{course.titulo}</h3>
+            <p className="text-xs mt-0.5 mb-2" style={{ color: 'var(--text-3)' }}>{course.instructor?.nombre}</p>
+
+            <div className="mt-auto">
+              <div className="flex items-center gap-3">
+                <ProgressBar pct={completado ? 100 : pct} />
+                <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-3)' }}>
+                  {total > 0 ? `${Math.min(pagina, total) || 0}/${total}` : `${pct}%`}
+                </span>
+              </div>
+              <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-3)' }}>
+                {completado ? 'Leído' : ultima ? `Última lectura: ${ultima.toLocaleDateString('es-AR')}` : 'Sin empezar'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
+
 function EmptyState({ tab }: { tab: Tab }) {
   const msgs: Record<Tab, { icon: React.ReactNode; title: string; desc: string }> = {
     progreso:    { icon: <BookOpen className="h-10 w-10" />, title: 'No hay cursos en progreso', desc: 'Explorá el catálogo y empezá a aprender.' },
     completados: { icon: <CheckCircle2 className="h-10 w-10" />, title: 'Todavía no completaste ningún curso', desc: 'Seguí aprendiendo, ¡ya estás cerca!' },
+    biblioteca:  { icon: <Library className="h-10 w-10" />, title: 'Tu biblioteca está vacía', desc: 'Sumá ebooks del catálogo y leelos cuando quieras.' },
     vivenciales: { icon: <Plane className="h-10 w-10" />, title: 'No estás inscripto en ningún viaje', desc: 'Descubrí nuestros fam trips exclusivos.' },
     en_vivo:     { icon: <Radio className="h-10 w-10" />, title: 'No tenés lives agendados', desc: 'Mirá los próximos cursos en vivo.' },
   }
@@ -261,15 +314,20 @@ export default function MisCursos() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('progreso')
   const { data: enrollments = [], isLoading } = useMyEnrollments(user?.id)
+  const { data: ebookProgress = [] } = useMyEbookProgress(user?.id)
+
+  const progressByCourse = new Map(ebookProgress.map(p => [p.course_id, p]))
 
   const inProgreso   = enrollments.filter(e => !e.completado && e.course?.tipo === 'grabado')
-  const completados  = enrollments.filter(e => e.completado)
+  const completados  = enrollments.filter(e => e.completado && e.course?.tipo !== 'ebook')
+  const biblioteca   = enrollments.filter(e => e.course?.tipo === 'ebook')
   const vivenciales  = enrollments.filter(e => e.course?.tipo === 'vivencial')
   const enVivo       = enrollments.filter(e => e.course?.tipo === 'en_vivo')
 
   const counts: Record<Tab, number> = {
     progreso:    inProgreso.length,
     completados: completados.length,
+    biblioteca:  biblioteca.length,
     vivenciales: vivenciales.length,
     en_vivo:     enVivo.length,
   }
@@ -277,6 +335,7 @@ export default function MisCursos() {
   const currentList: Record<Tab, Enrollment[]> = {
     progreso:    inProgreso,
     completados: completados,
+    biblioteca:  biblioteca,
     vivenciales: vivenciales,
     en_vivo:     enVivo,
   }
@@ -345,10 +404,11 @@ export default function MisCursos() {
                 variants={staggerContainer}
                 initial="initial"
                 animate="animate"
-                className={activeTab === 'vivenciales' ? 'grid grid-cols-1 sm:grid-cols-2 gap-5' : 'space-y-4'}
+                className={activeTab === 'vivenciales' || activeTab === 'biblioteca' ? 'grid grid-cols-1 sm:grid-cols-2 gap-5' : 'space-y-4'}
               >
                 {activeTab === 'progreso' && currentList.progreso.map(e => <CourseProgressCard key={e.id} enrollment={e} />)}
                 {activeTab === 'completados' && currentList.completados.map(e => <CompletedCard key={e.id} enrollment={e} />)}
+                {activeTab === 'biblioteca' && currentList.biblioteca.map(e => <EbookCard key={e.id} enrollment={e} progress={progressByCourse.get(e.course_id)} />)}
                 {activeTab === 'vivenciales' && currentList.vivenciales.map(e => <VivencialCard key={e.id} enrollment={e} />)}
                 {activeTab === 'en_vivo' && currentList.en_vivo.map(e => <CourseProgressCard key={e.id} enrollment={e} />)}
               </motion.div>

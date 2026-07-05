@@ -26,6 +26,7 @@ const TIPO_OPTIONS: { value: TipoFilter; label: string; icon?: string }[] = [
   { value: 'grabado',   label: 'A tu ritmo' },
   { value: 'en_vivo',   label: 'En Vivo' },
   { value: 'vivencial', label: '✈ Vivencial' },
+  { value: 'ebook',     label: 'Ebooks' },
   { value: 'gratis',    label: 'Gratis' },
 ]
 
@@ -225,6 +226,7 @@ export default function Catalog() {
     if (selectedTipo === 'grabado')   list = list.filter(c => c.tipo === 'grabado')
     else if (selectedTipo === 'en_vivo')   list = list.filter(c => c.tipo === 'en_vivo')
     else if (selectedTipo === 'vivencial') list = list.filter(c => c.tipo === 'vivencial')
+    else if (selectedTipo === 'ebook')     list = list.filter(c => c.tipo === 'ebook')
     else if (selectedTipo === 'gratis')    list = list.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito')
 
     if (selectedCat !== 'all') list = list.filter(c => c.category?.nombre === selectedCat)

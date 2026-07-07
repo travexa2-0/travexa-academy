@@ -7,6 +7,7 @@ import CommandPalette from './components/CommandPalette'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAdminCourses } from '@/hooks/admin/useAdminCourses'
 import { useModerationPendingCount } from '@/hooks/admin/useModeration'
+import { useVivencialPendingCount } from '@/hooks/admin/useAdminVivencialPayments'
 import { useAdminBenefits } from '@/hooks/admin/useAdminBenefits'
 import { useInstructorsFull } from '@/hooks/admin/useAdminInstructorsFull'
 
@@ -43,6 +44,7 @@ export default function AdminLayout() {
   const { data: cursos } = useAdminCourses(['grabado', 'en_vivo'])
   const { data: vivenciales } = useAdminCourses(['vivencial'])
   const { data: pendingModeration } = useModerationPendingCount()
+  const { data: pendingVivencial } = useVivencialPendingCount()
   const { data: benefits } = useAdminBenefits()
   const { data: instructores } = useInstructorsFull()
 
@@ -68,11 +70,14 @@ export default function AdminLayout() {
   const userName = user?.email ?? 'Admin'
   const initials = (user?.email ?? 'A').slice(0, 2).toUpperCase()
 
-  const navItem = (page: string, label: string, count?: number) => (
+  const navItem = (page: string, label: string, count?: number, alert?: number) => (
     <NavLink to={`/admin/${page}`} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} title={label}>
       <NavIcon name={page} />
       <span className="nav-label">{label}</span>
-      {count !== undefined && <span className="nav-count">{count}</span>}
+      {alert !== undefined && alert > 0 && (
+        <span className="nav-count" style={{ background: 'var(--clay)', color: '#fff', marginLeft: 'auto' }} title={`${alert} comprobante(s) pendiente(s)`}>{alert}</span>
+      )}
+      {count !== undefined && <span className="nav-count" style={alert ? { marginLeft: 6 } : undefined}>{count}</span>}
     </NavLink>
   )
 
@@ -100,7 +105,7 @@ export default function AdminLayout() {
               {navItem('resumen', 'Resumen')}
               <div className="nav-section-label">Contenido</div>
               {navItem('cursos', 'Cursos', cursos?.length ?? 0)}
-              {navItem('vivenciales', 'Vivenciales', vivenciales?.length ?? 0)}
+              {navItem('vivenciales', 'Vivenciales', vivenciales?.length ?? 0, pendingVivencial)}
               {navItem('instructores', 'Instructores', instructores?.length ?? 0)}
               {navItem('beneficios', 'Beneficios', benefits?.length ?? 0)}
               <div className="nav-section-label">Comunidad</div>

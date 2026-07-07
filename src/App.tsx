@@ -11,6 +11,8 @@ import { useIsAdmin } from '@/hooks/useIsAdmin'
 const Home                = lazy(() => import('@/pages/Home'))
 const Login               = lazy(() => import('@/pages/public/Login'))
 const Registro            = lazy(() => import('@/pages/public/Registro'))
+const RecuperarContrasena = lazy(() => import('@/pages/public/RecuperarContrasena'))
+const ActualizarContrasena = lazy(() => import('@/pages/public/ActualizarContrasena'))
 const Catalog             = lazy(() => import('@/pages/public/Catalog'))
 const CourseDetail        = lazy(() => import('@/pages/public/CourseDetail'))
 const VivencialCatalog    = lazy(() => import('@/pages/public/VivencialCatalog'))
@@ -80,6 +82,8 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/registro" element={<Registro />} />
+              <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
+              <Route path="/actualizar-contrasena" element={<ActualizarContrasena />} />
               <Route path="/cursos" element={<Catalog />} />
               <Route path="/cursos/:slug" element={<CourseDetail />} />
               <Route path="/vivencial" element={<VivencialCatalog />} />

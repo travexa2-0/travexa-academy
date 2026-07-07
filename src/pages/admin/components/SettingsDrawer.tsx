@@ -23,6 +23,9 @@ export default function SettingsDrawer({ open, onClose }: Props) {
   const [comision, setComision] = useState('')
   const [meta, setMeta] = useState('')
   const [marketing, setMarketing] = useState('')
+  const [minCuotas, setMinCuotas] = useState('')
+  const [diasLimite, setDiasLimite] = useState('')
+  const [whatsappBusiness, setWhatsappBusiness] = useState('')
 
   useEffect(() => {
     if (settings) {
@@ -30,6 +33,9 @@ export default function SettingsDrawer({ open, onClose }: Props) {
       setComision(String(settings.comision_mp_pct))
       setMeta(String(settings.meta_ingresos_mensual_ars))
       setMarketing(String(settings.inversion_marketing_mensual_ars))
+      setMinCuotas(String(settings.mp_monto_minimo_cuotas_ars))
+      setDiasLimite(String(settings.dias_limite_pago_vivencial))
+      setWhatsappBusiness(settings.travexa_whatsapp_business)
     }
   }, [settings])
 
@@ -40,6 +46,9 @@ export default function SettingsDrawer({ open, onClose }: Props) {
         comision_mp_pct: Number(comision) || 0,
         meta_ingresos_mensual_ars: Number(meta) || 0,
         inversion_marketing_mensual_ars: Number(marketing) || 0,
+        mp_monto_minimo_cuotas_ars: Number(minCuotas) || 0,
+        dias_limite_pago_vivencial: Number(diasLimite) || 0,
+        travexa_whatsapp_business: whatsappBusiness.trim(),
       })
       toast.success('Configuración guardada')
       onClose()
@@ -105,6 +114,31 @@ export default function SettingsDrawer({ open, onClose }: Props) {
               <input className="input" type="number" placeholder="0" value={marketing} onChange={e => setMarketing(e.target.value)} />
             </div>
             <div className="f-hint">Se usa para calcular el ROI de marketing en Métricas.</div>
+          </div>
+
+          <div style={{ marginTop: 26, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+            <label className="f-label" style={{ fontWeight: 600 }}>Vivenciales — contacto y reglas</label>
+            <div className="f-hint" style={{ marginBottom: 12 }}>Número por el que se cierran las ventas de vivenciales y reglas de pago.</div>
+
+            <div className="field">
+              <label className="f-label">WhatsApp Business</label>
+              <input className="input" type="text" placeholder="+54 9 11 5697-4099" value={whatsappBusiness} onChange={e => setWhatsappBusiness(e.target.value)} />
+              <div className="f-hint">Es el número al que llega el botón “Quiero anotarme” de cada vivencial.</div>
+            </div>
+            <div className="field-row cols-2">
+              <div className="field">
+                <label className="f-label">Monto mínimo para habilitar cuotas</label>
+                <div className="input-prefix-wrap"><span className="input-prefix">$</span>
+                  <input className="input" type="number" value={minCuotas} onChange={e => setMinCuotas(e.target.value)} />
+                </div>
+                <div className="f-hint">Referencia interna de financiación.</div>
+              </div>
+              <div className="field">
+                <label className="f-label">Días límite para completar el pago</label>
+                <input className="input" type="number" value={diasLimite} onChange={e => setDiasLimite(e.target.value)} />
+                <div className="f-hint">Antes de la fecha de salida. Default 7.</div>
+              </div>
+            </div>
           </div>
 
           <div className="field" style={{ marginTop: 26, paddingTop: 20, borderTop: '1px solid var(--line)' }}>

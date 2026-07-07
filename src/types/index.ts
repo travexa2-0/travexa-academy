@@ -298,6 +298,8 @@ export interface Course {
   vivencial_hotel: string | null
   vivencial_precio_seña_ars: number | null
   vivencial_precio_seña_usd: number | null
+  vivencial_precio_cuotas_ars: number | null
+  vivencial_precio_cuotas_usd: number | null
   vivencial_whatsapp_url: string | null
   // joined
   category?: Category
@@ -364,8 +366,31 @@ export interface Enrollment {
   monto_total_ars: number | null
   monto_señado_ars: number | null
   monto_pendiente_ars: number | null
+  pago_completado: boolean
+  fecha_limite_pago: string | null
   // joined
   course?: Course
+}
+
+// ── academy_vivencial_payments ──
+export type VivencialPaymentEstado = 'pendiente' | 'aprobado' | 'rechazado'
+export type VivencialPaymentTipo = 'sena' | 'transferencia'
+
+export interface VivencialPayment {
+  id: string
+  enrollment_id: string
+  user_id: string
+  tipo: VivencialPaymentTipo
+  monto_declarado_ars: number
+  monto_aprobado_ars: number | null
+  comprobante_url: string
+  fecha_declarada: string
+  estado: VivencialPaymentEstado
+  notas_admin: string | null
+  revisado_por: string | null
+  revisado_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 // ── academy_lesson_progress ──
@@ -382,12 +407,14 @@ export interface LessonProgress {
 export interface Payment {
   id: string
   user_id: string
-  tipo: 'curso' | 'suscripcion'
+  tipo: 'curso' | 'suscripcion' | 'vivencial_cuotas'
   course_id: string | null
+  enrollment_id: string | null
   plan_name: PlanName | null
   monto_ars: number | null
   monto_usd: number | null
   mp_payment_id: string | null
+  mp_preference_id: string | null
   mp_external_reference: string | null
   mp_status: string | null
   estado: string
@@ -506,6 +533,9 @@ export interface AdminSettings {
   comision_mp_pct: number
   meta_ingresos_mensual_ars: number
   inversion_marketing_mensual_ars: number
+  mp_monto_minimo_cuotas_ars: number
+  dias_limite_pago_vivencial: number
+  travexa_whatsapp_business: string
 }
 
 // Inscripción con el perfil del alumno resuelto (para la tabla de inscriptos)

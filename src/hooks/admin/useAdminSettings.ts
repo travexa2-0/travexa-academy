@@ -7,6 +7,9 @@ const DEFAULTS: AdminSettings = {
   comision_mp_pct: 5.5,
   meta_ingresos_mensual_ars: 0,
   inversion_marketing_mensual_ars: 0,
+  mp_monto_minimo_cuotas_ars: 50000,
+  dias_limite_pago_vivencial: 7,
+  travexa_whatsapp_business: '',
 }
 
 function toNumber(value: unknown, fallback: number): number {
@@ -24,13 +27,16 @@ async function fetchSettings(): Promise<AdminSettings> {
     comision_mp_pct:                toNumber(map.get('comision_mp_pct'), DEFAULTS.comision_mp_pct),
     meta_ingresos_mensual_ars:      toNumber(map.get('meta_ingresos_mensual_ars'), DEFAULTS.meta_ingresos_mensual_ars),
     inversion_marketing_mensual_ars: toNumber(map.get('inversion_marketing_mensual_ars'), DEFAULTS.inversion_marketing_mensual_ars),
+    mp_monto_minimo_cuotas_ars:     toNumber(map.get('mp_monto_minimo_cuotas_ars'), DEFAULTS.mp_monto_minimo_cuotas_ars),
+    dias_limite_pago_vivencial:     toNumber(map.get('dias_limite_pago_vivencial'), DEFAULTS.dias_limite_pago_vivencial),
+    travexa_whatsapp_business:      typeof map.get('travexa_whatsapp_business') === 'string' ? map.get('travexa_whatsapp_business') as string : DEFAULTS.travexa_whatsapp_business,
   }
 }
 
 async function upsertSettings(patch: Partial<AdminSettings>): Promise<void> {
   const rows: AcademySetting[] = Object.entries(patch)
     .filter(([, v]) => v !== undefined)
-    .map(([key, value]) => ({ key, value: value as number }))
+    .map(([key, value]) => ({ key, value }))
 
   if (rows.length === 0) return
   const { error } = await supabaseWrite.from('academy_settings').upsert(rows, { onConflict: 'key' })

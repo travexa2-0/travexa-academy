@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X, ChevronDown, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import VivencialCard from '@/components/courses/VivencialCard'
 import SkeletonCard from '@/components/shared/SkeletonCard'
@@ -37,12 +37,97 @@ const DUR_OPTIONS: { value: DurBucket; label: string }[] = [
 
 // ── Hero rotating phrases ─────────────────────────────────────────
 
+// IMPORTANTE: toda frase del rotador DEBE entrar en 2 líneas a cada breakpoint.
+// El contenedor reserva alto para 2 líneas (min-height 2.05em) y recorta lo que
+// sobre (overflow hidden). Si una frase nueva no entra en 2 líneas, se va a ver
+// visualmente cortada en QA — eso es a propósito, para que no pase desapercibido.
 const PHRASES = [
   'viajan para vender mejor.',
   'conocen el destino primero.',
   'aprenden viajando, no mirando.',
   'venden con experiencia real.',
 ]
+
+// ── Salida date formatting (filtro "Fecha de salida") ─────────────
+
+const MONTHS_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+
+// ── FilterSelect (mismo patrón visual que el SortDropdown de /cursos) ──
+
+function FilterSelect({
+  value, options, onChange, minWidth = 170,
+}: {
+  value: string
+  options: { value: string; label: string }[]
+  onChange: (v: string) => void
+  minWidth?: number
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const label = options.find(o => o.value === value)?.label ?? options[0]?.label ?? ''
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between gap-[7px] h-11 px-[13px] rounded-[10px] border font-medium transition-colors"
+        style={{
+          background:   'var(--card)',
+          borderColor:  open ? 'var(--line-s)' : 'var(--line)',
+          color:        'var(--text-2)',
+          fontSize:     '12.5px',
+          minWidth,
+        }}
+      >
+        <span>{label}</span>
+        <ChevronDown
+          className="w-[14px] h-[14px] shrink-0 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: .97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: .97 }}
+            transition={{ duration: 0.17, ease: [0.23, 1, 0.32, 1] }}
+            className="absolute top-[calc(100%+5px)] left-0 right-0 z-50 rounded-xl border overflow-hidden max-h-[280px] overflow-y-auto"
+            style={{ background: '#0C1E2C', borderColor: 'var(--line-s)', boxShadow: '0 16px 40px rgba(0,0,0,.5)' }}
+          >
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setOpen(false) }}
+                className="w-full flex items-center justify-between px-[14px] py-[10px] text-left transition-colors"
+                style={{
+                  fontSize:   '12.5px',
+                  color:      value === opt.value ? 'var(--neon)' : 'var(--text-2)',
+                  background: value === opt.value ? 'var(--neon-dim)' : 'transparent',
+                }}
+              >
+                {opt.label}
+                {value === opt.value && <Check className="w-[10px] h-[10px]" style={{ color: 'var(--neon)' }} />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 // ── InfoModal (¿Qué es un vivencial?) ────────────────────────────
 
@@ -114,8 +199,10 @@ export default function VivencialCatalog() {
   const { data: wishlist = [] } = useWishlist(user?.id)
   const toggleWishlist = useToggleWishlist(user?.id)
 
-  const [activeRegion, setActiveRegion] = useState<string>('all')
-  const [activeDur,    setActiveDur]    = useState<DurBucket>('all')
+  const [activeRegion,  setActiveRegion]  = useState<string>('all')
+  const [activeDur,     setActiveDur]     = useState<DurBucket>('all')
+  const [activeDestino, setActiveDestino] = useState<string>('all')
+  const [activeFecha,   setActiveFecha]   = useState<string>('all')
   const [showModal,    setShowModal]    = useState(false)
   const [phraseIdx,    setPhraseIdx]    = useState(0)
   const [phraseOut,    setPhraseOut]    = useState(false)
@@ -153,13 +240,48 @@ export default function VivencialCatalog() {
     return opts
   }, [vivenciales])
 
-  // Filtered list
+  // Destino options — DISTINCT vivencial_pais de los vivenciales publicados.
+  // Nunca hardcodeado: si no hay vivenciales con país, el array queda vacío y el
+  // select no se renderiza (integridad de datos).
+  const destinoOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const opts: string[] = []
+    vivenciales.forEach(v => {
+      const pais = v.vivencial_pais?.trim()
+      if (pais && !seen.has(pais)) {
+        seen.add(pais)
+        opts.push(pais)
+      }
+    })
+    return opts.sort((a, b) => a.localeCompare(b, 'es'))
+  }, [vivenciales])
+
+  // Fecha de salida options — DISTINCT por mes/año de vivencial_fecha_salida,
+  // orden cronológico, formateado legible ("Octubre 2026"). Value = 'YYYY-MM'.
+  const fechaOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const opts: { value: string; label: string }[] = []
+    vivenciales.forEach(v => {
+      const f = v.vivencial_fecha_salida
+      if (!f) return
+      const key = f.slice(0, 7) // YYYY-MM
+      if (seen.has(key)) return
+      seen.add(key)
+      const [y, m] = key.split('-').map(Number)
+      opts.push({ value: key, label: `${MONTHS_ES[m - 1]} ${y}` })
+    })
+    return opts.sort((a, b) => a.value.localeCompare(b.value))
+  }, [vivenciales])
+
+  // Filtered list — Región, Duración, Destino y Fecha se combinan con AND.
   const filtered = useMemo(() => {
     let list = vivenciales
-    if (activeRegion !== 'all') list = list.filter(v => v.category?.slug === activeRegion)
-    if (activeDur !== 'all')   list = list.filter(v => durBucket(calcDias(v)) === activeDur)
+    if (activeRegion !== 'all')  list = list.filter(v => v.category?.slug === activeRegion)
+    if (activeDur !== 'all')     list = list.filter(v => durBucket(calcDias(v)) === activeDur)
+    if (activeDestino !== 'all') list = list.filter(v => v.vivencial_pais?.trim() === activeDestino)
+    if (activeFecha !== 'all')   list = list.filter(v => v.vivencial_fecha_salida?.slice(0, 7) === activeFecha)
     return list
-  }, [vivenciales, activeRegion, activeDur])
+  }, [vivenciales, activeRegion, activeDur, activeDestino, activeFecha])
 
   // Hero stats by year
   const statCounts = useMemo(() => {
@@ -230,15 +352,21 @@ export default function VivencialCatalog() {
           </motion.p>
 
           {/* Title */}
+          {/* Floor del clamp bajado a 1.9rem (desde 2.6rem) para que la frase más
+              larga del rotador entre en 2 líneas también en mobile (~375px). El
+              desktop no cambia: sigue tope en 5rem. */}
           <motion.h1
             className="font-display font-bold"
-            style={{ fontSize: 'clamp(2.6rem,7vw,5rem)', lineHeight: 1.02, letterSpacing: '-.025em' }}
+            style={{ fontSize: 'clamp(1.9rem,7vw,5rem)', lineHeight: 1.02, letterSpacing: '-.025em' }}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.22 }}
           >
             <span style={{ color: 'var(--text-1)', display: 'block' }}>Formación para asesores que</span>
-            <span style={{ display: 'block', minHeight: '1.05em', position: 'relative', overflow: 'hidden', lineHeight: 1.02 }}>
+            {/* min-height 2.05em = alto reservado para 2 líneas (em-based, escala a cada
+                breakpoint). La frase va en position:absolute para que su cantidad de
+                líneas nunca empuje el layout → sin salto al rotar entre frases. */}
+            <span style={{ display: 'block', minHeight: '2.05em', position: 'relative', overflow: 'hidden', lineHeight: 1.02 }}>
               <span
                 style={{
                   color: 'var(--neon)',
@@ -246,7 +374,10 @@ export default function VivencialCatalog() {
                   transition: 'opacity 260ms ease, transform 260ms cubic-bezier(0.23,1,0.32,1)',
                   opacity: phraseOut ? 0 : 1,
                   transform: phraseOut ? 'translateY(-10px)' : 'none',
-                  display: 'block',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
                 }}
               >
                 {PHRASES[phraseIdx]}
@@ -412,6 +543,34 @@ export default function VivencialCatalog() {
               })}
             </div>
           </div>
+
+          {/* Row 3: Destino + Fecha de salida (selects, mismo patrón que /cursos).
+              Cada select se muestra solo si hay valores reales en la DB; con la DB
+              de vivenciales vacía no se renderiza ninguno. */}
+          {(destinoOptions.length > 0 || fechaOptions.length > 0) && (
+            <div className="flex items-center gap-[10px] mt-[12px] flex-wrap">
+              {destinoOptions.length > 0 && (
+                <FilterSelect
+                  value={activeDestino}
+                  onChange={setActiveDestino}
+                  options={[
+                    { value: 'all', label: 'Todos los destinos' },
+                    ...destinoOptions.map(p => ({ value: p, label: p })),
+                  ]}
+                />
+              )}
+              {fechaOptions.length > 0 && (
+                <FilterSelect
+                  value={activeFecha}
+                  onChange={setActiveFecha}
+                  options={[
+                    { value: 'all', label: 'Cualquier fecha' },
+                    ...fechaOptions,
+                  ]}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
 

@@ -135,6 +135,9 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         vivencial_hotel: form.hotel || null,
         vivencial_precio_seña_usd: Number(form.sena_usd) || 0,
         vivencial_precio_seña_ars: Math.round(senaArs),
+        // Cuotas retiradas del flujo; se preservan valores previos sin borrarlos.
+        vivencial_precio_cuotas_usd: initial?.vivencial_precio_cuotas_usd ?? null,
+        vivencial_precio_cuotas_ars: initial?.vivencial_precio_cuotas_ars ?? null,
         vivencial_whatsapp_url: form.whatsapp || null,
         vivencial_itinerario: form.itinerario,
       }
@@ -219,7 +222,12 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                 <div className="field"><label className="f-label">Seña (USD)</label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="number" value={form.sena_usd} onChange={e => set('sena_usd', e.target.value)} /></div></div>
                 <div className="field"><label className="f-label">Equivalente ARS</label><div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="text" value={formatArs(senaArs).replace('$', '')} disabled style={{ color: 'var(--ink-faint)' }} /></div></div>
               </div>
-              <div className="field"><label className="f-label">WhatsApp de contacto para consultas</label><input className="input" type="text" placeholder="+54 9 11…" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} /></div>
+              <div className="f-hint" style={{ marginTop: 4 }}>La seña es solo de referencia: la ve Yesica para mencionarla por WhatsApp. No dispara ningún cobro automático.</div>
+              <div className="field" style={{ marginTop: 18 }}>
+                <label className="f-label">Link del grupo de WhatsApp del viaje</label>
+                <input className="input" type="text" placeholder="https://chat.whatsapp.com/…" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
+                <div className="f-hint">Es el grupo del viaje al que se suman los inscriptos. No es el número de consultas (ese sale del botón “Quiero anotarme”, que va al WhatsApp Business global).</div>
+              </div>
             </div>
           )}
 

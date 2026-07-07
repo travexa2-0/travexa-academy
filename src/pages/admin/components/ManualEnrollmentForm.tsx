@@ -20,8 +20,6 @@ export default function ManualEnrollmentForm({ course, open, onClose }: Props) {
   const [email, setEmail] = useState('')
   const [tipoAcceso, setTipoAcceso] = useState<TipoAccesoEnrollment>('pago')
   const [montoTotal, setMontoTotal] = useState(isViv && course.precio_ars ? String(course.precio_ars) : '')
-  const [montoSena, setMontoSena] = useState(isViv && course.vivencial_precio_seña_ars ? String(course.vivencial_precio_seña_ars) : '')
-  const [senaPagada, setSenaPagada] = useState(false)
 
   const submit = async () => {
     const mail = email.trim().toLowerCase()
@@ -36,8 +34,6 @@ export default function ManualEnrollmentForm({ course, open, onClose }: Props) {
         tipoAcceso,
         isVivencial: isViv,
         montoTotalArs: montoTotal ? Number(montoTotal) : null,
-        montoSeñadoArs: montoSena ? Number(montoSena) : null,
-        señaPagada: senaPagada,
       })
       toast.success('Inscripción cargada' + (isViv ? ' · cupo actualizado' : ''))
       onClose()
@@ -64,21 +60,11 @@ export default function ManualEnrollmentForm({ course, open, onClose }: Props) {
             </select>
           </div>
           {isViv && (
-            <div className="field-row cols-2">
-              <div className="field">
-                <label className="f-label">Monto total (ARS)</label>
-                <div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="number" value={montoTotal} onChange={e => setMontoTotal(e.target.value)} /></div>
-              </div>
-              <div className="field">
-                <label className="f-label">Seña (ARS)</label>
-                <div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="number" value={montoSena} onChange={e => setMontoSena(e.target.value)} /></div>
-              </div>
+            <div className="field">
+              <label className="f-label">Monto total (ARS)</label>
+              <div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="number" value={montoTotal} onChange={e => setMontoTotal(e.target.value)} /></div>
+              <div className="f-hint">La seña y los pagos se cargan después, con comprobante, desde la ficha del inscripto.</div>
             </div>
-          )}
-          {isViv && (
-            <label className="row-flex" style={{ fontSize: 13, cursor: 'pointer' }}>
-              <input type="checkbox" checked={senaPagada} onChange={e => setSenaPagada(e.target.checked)} /> Seña ya pagada
-            </label>
           )}
         </div>
         <div className="modal-foot">

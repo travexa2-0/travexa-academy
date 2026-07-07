@@ -2,6 +2,7 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import Overlay from './Overlay'
 import ManualEnrollmentForm from './ManualEnrollmentForm'
+import VivencialInscriptoRow from './VivencialInscriptoRow'
 import { formatArs, formatDate } from '../format'
 import { secondsToDuration } from './wizardData'
 import { useAdminCourse, useTogglePublish, useArchiveCourse, useHardDeleteCourse } from '@/hooks/admin/useAdminCourses'
@@ -157,18 +158,17 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
               )}
               {(enrollments ?? []).length === 0
                 ? <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Todavía no hay inscriptos.</div>
-                : (enrollments ?? []).map(e => (
-                    <div key={e.id} className="row-flex" style={{ padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 7 }}>
-                      <div className="tbl-avatar">{(e.profile?.nombre ?? e.profile?.email ?? '?').slice(0, 2).toUpperCase()}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.8 }}>{[e.profile?.nombre, e.profile?.apellido].filter(Boolean).join(' ') || e.profile?.email || e.user_id.slice(0, 8)}</div>
-                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{e.tipo_acceso}{e.seña_pagada ? ' · seña pagada' : ''}</div>
+                : isViv
+                  ? (enrollments ?? []).map(e => <VivencialInscriptoRow key={e.id} e={e} courseId={c.id} />)
+                  : (enrollments ?? []).map(e => (
+                      <div key={e.id} className="row-flex" style={{ padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 7 }}>
+                        <div className="tbl-avatar">{(e.profile?.nombre ?? e.profile?.email ?? '?').slice(0, 2).toUpperCase()}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12.8 }}>{[e.profile?.nombre, e.profile?.apellido].filter(Boolean).join(' ') || e.profile?.email || e.user_id.slice(0, 8)}</div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{e.tipo_acceso}{e.seña_pagada ? ' · seña pagada' : ''}</div>
+                        </div>
                       </div>
-                      {isViv && e.monto_total_ars != null && (
-                        <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{formatArs(e.monto_señado_ars)} / {formatArs(e.monto_total_ars)}</span>
-                      )}
-                    </div>
-                  ))}
+                    ))}
             </div>
           )}
         </div>

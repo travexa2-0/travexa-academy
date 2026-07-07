@@ -1,10 +1,11 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home } from 'lucide-react'
+import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home, LayoutDashboard } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 import NotificationsDrawer from './NotificationsDrawer'
 
 // 3 states:
@@ -23,6 +24,7 @@ export default function Header() {
   const lastY = useRef(0)
 
   const { unreadCount } = useNotifications(user?.id)
+  const { isAdmin } = useIsAdmin()
 
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, 'change', (y) => {
@@ -151,6 +153,14 @@ export default function Header() {
                     Mi perfil
                   </Button>
                 </Link>
+                {isAdmin && (
+                  <Link to="/admin/resumen">
+                    <Button variant="ghost" size="sm" className="gap-1.5 text-sm h-9" style={{ color: 'var(--gold)' }}>
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                      Backoffice
+                    </Button>
+                  </Link>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -238,6 +248,11 @@ export default function Header() {
                 <Link to="/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
                   <User className="h-4 w-4" /> Mi perfil
                 </Link>
+                {isAdmin && (
+                  <Link to="/admin/resumen" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--gold)' }}>
+                    <LayoutDashboard className="h-4 w-4" /> Backoffice
+                  </Link>
+                )}
                 <button onClick={() => { void handleSignOut() }} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-left" style={{ color: 'var(--text-3)' }}>
                   <LogOut className="h-4 w-4" /> Cerrar sesión
                 </button>

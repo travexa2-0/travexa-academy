@@ -48,10 +48,13 @@ export interface ManualEnrollmentInput {
 
 // Creates a manual enrollment. For vivenciales it also decrements the available
 // seat count by 1 (floored at 0), since that seat is now taken.
+// Los pagos (seña / saldo) se cargan después como comprobantes aprobados; el
+// trigger recalcula señado/pendiente. Acá solo fijamos el total y el pendiente
+// inicial = total.
 async function createManualEnrollment(input: ManualEnrollmentInput): Promise<void> {
   const montoTotal = input.montoTotalArs ?? null
   const montoSeñado = input.montoSeñadoArs ?? null
-  const pendiente = montoTotal != null && montoSeñado != null ? Math.max(0, montoTotal - montoSeñado) : null
+  const pendiente = montoTotal != null ? Math.max(0, montoTotal - (montoSeñado ?? 0)) : null
 
   const { error } = await supabaseWrite.from('academy_enrollments').insert({
     user_id: input.userId,

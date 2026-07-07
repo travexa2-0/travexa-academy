@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Label used below
-
 import { EASE_OUT, shakeX } from '@/lib/motion'
 
 const HERO_QUOTES = [
@@ -24,6 +22,8 @@ export default function Login() {
   // Sin destino explícito, pasamos por /auth/callback: es el único punto que decide
   // admin (→ /admin/resumen) vs alumno (→ /cursos, luego OnboardingGate si falta onboarding).
   const from = (location.state as { from?: string } | null)?.from ?? '/auth/callback'
+  // Llega true tras completar /actualizar-contrasena; mostramos un aviso de éxito.
+  const passwordReset = (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
   const shouldReduce = useReducedMotion()
 
   const [email, setEmail] = useState('')
@@ -127,6 +127,13 @@ export default function Login() {
           <h1 className="font-display font-bold text-2xl text-text-1 mb-1">Ingresá a tu cuenta</h1>
           <p className="text-text-3 text-sm mb-8">Tu formación en turismo continúa acá.</p>
 
+          {passwordReset && (
+            <div className="flex items-start gap-2 text-sm text-primary-l bg-primary/10 border border-primary/20 rounded-lg px-3 py-2.5 mb-6">
+              <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>Tu contraseña se actualizó. Ingresá con la nueva contraseña.</span>
+            </div>
+          )}
+
           {/* Google Button */}
           <motion.button
             onClick={() => { void handleGoogle() }}
@@ -191,6 +198,14 @@ export default function Login() {
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
+              </div>
+              <div className="flex justify-end">
+                <Link
+                  to="/recuperar-contrasena"
+                  className="text-xs text-text-3 hover:text-text-2 transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -12,6 +13,7 @@ import Header from '@/components/layout/Header'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAcademyProfile, useBadges, useCertificates, useReferrals, validateAvatarFile } from '@/hooks/useProfile'
 import AvatarCropModal from '@/components/profile/AvatarCropModal'
+import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
 import { initialsFrom, avatarGradient } from '@/lib/avatar'
 import { useMyEnrollments } from '@/hooks/useCourses'
 import {
@@ -254,6 +256,7 @@ function FavCard({ w, onRemove }: { w: WishlistItem; onRemove: (id: string) => v
 export default function Profile() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const uid = user?.id
 
   const { data: ap }            = useAcademyProfile(uid)
@@ -490,7 +493,7 @@ export default function Profile() {
 
             {/* ─────────── TAB 3: VIVENCIALES ─────────── */}
             {tab === 3 && (
-              <VivencialesTab vivenciales={vivenciales} reviewedSet={reviewedSet} onDetail={setVivFor} onCert={setCertFor} onExplore={() => navigate('/vivencial')} />
+              <VivencialesTab vivenciales={vivenciales} reviewedSet={reviewedSet} uid={uid} onChanged={() => void queryClient.invalidateQueries({ queryKey: ['enrollments', uid] })} onDetail={setVivFor} onCert={setCertFor} onExplore={() => navigate('/vivencial')} />
             )}
 
             {/* ─────────── TAB 4: LOGROS ─────────── */}
@@ -775,8 +778,8 @@ function MisCursosTab({ cursos, loading, reviewedSet, onCert, onReviewed, onExpl
 }
 
 // ── VIVENCIALES TAB ───────────────────────────────────────────────────
-function VivencialesTab({ vivenciales, reviewedSet, onDetail, onCert, onExplore }: {
-  vivenciales: Enrollment[]; reviewedSet: Set<string>
+function VivencialesTab({ vivenciales, reviewedSet, uid, onChanged, onDetail, onCert, onExplore }: {
+  vivenciales: Enrollment[]; reviewedSet: Set<string>; uid?: string; onChanged: () => void
   onDetail: (e: Enrollment) => void; onCert: (e: Enrollment) => void; onExplore: () => void
 }) {
   const prox = vivenciales.filter(e => e.course?.vivencial_fecha_salida && daysUntil(e.course.vivencial_fecha_salida) >= 0)
@@ -829,6 +832,10 @@ function VivencialesTab({ vivenciales, reviewedSet, onDetail, onCert, onExplore 
                   </div>
                   {pendiente > 0 && <div className="text-[.78rem]" style={{ color: 'var(--text-3)' }}>Saldo: <strong style={{ color: 'var(--urg)' }}>{money(pendiente)}</strong></div>}
                 </div>
+              </div>
+              {/* CTA de pago con estados (subir comprobante / comprobante en revisión / pagado) */}
+              <div className="mt-3">
+                <VivencialPagoCTA course={c} enrollment={e} userId={uid} variant="perfil" onChanged={onChanged} />
               </div>
               <div className="flex gap-2 mt-3">
                 <button onClick={() => onDetail(e)} className="flex-1 py-2.5 rounded-[9px] text-[12.5px] font-bold" style={{ background: NEON, color: '#0A1E29' }}>Ver detalles del viaje</button>

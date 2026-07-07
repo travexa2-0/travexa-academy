@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft, MapPin, Hotel, CalendarDays, Users, CreditCard,
+  ArrowLeft, MapPin, Hotel, CalendarDays, Users,
   MessageCircle, ExternalLink, CheckCircle2, Circle, Plane,
   Clock, Copy, Check,
 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Header from '@/components/layout/Header'
+import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
 import type { Course, Enrollment } from '@/types'
 import { staggerContainer, staggerItem, EASE_OUT } from '@/lib/motion'
 
@@ -75,7 +76,7 @@ async function fetchVivencialData(userId: string, slug: string) {
 
 // ── Boarding pass header ──────────────────────────────────────────
 
-function BoardingPass({ course, enrollment }: { course: Course; enrollment: Enrollment | null }) {
+function BoardingPass({ course, enrollment, userId, onChanged }: { course: Course; enrollment: Enrollment | null; userId?: string; onChanged?: () => void }) {
   const totalPago  = enrollment?.monto_total_ars ?? course.precio_ars ?? 0
   const señado     = enrollment?.monto_señado_ars ?? 0
   const pendiente  = enrollment?.monto_pendiente_ars ?? (totalPago - señado)
@@ -177,16 +178,8 @@ function BoardingPass({ course, enrollment }: { course: Course; enrollment: Enro
           </div>
         )}
 
-        {/* CTA pago si hay pendiente */}
-        {pendiente > 0 && enrollment !== null && (
-          <button
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm"
-            style={{ background: 'var(--primary)', color: 'var(--text-1)' }}
-          >
-            <CreditCard className="h-4 w-4" />
-            Completar pago — {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(pendiente)}
-          </button>
-        )}
+        {/* CTA pago con estados (seña / transferir saldo / cuotas / pagado) */}
+        <VivencialPagoCTA course={course} enrollment={enrollment} userId={userId} variant="boarding" onChanged={onChanged} />
       </div>
     </div>
   )
@@ -198,6 +191,7 @@ export default function VivencialDetalle() {
   const { slug } = useParams<{ slug: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [copiedLink, setCopiedLink] = useState(false)
 
   const { data, isLoading } = useQuery({
@@ -254,7 +248,12 @@ export default function VivencialDetalle() {
 
       <div className="max-w-4xl mx-auto px-4 pb-16 space-y-8">
         {/* Boarding pass */}
-        <BoardingPass course={course} enrollment={enrollment ?? null} />
+        <BoardingPass
+          course={course}
+          enrollment={enrollment ?? null}
+          userId={user?.id}
+          onChanged={() => void queryClient.invalidateQueries({ queryKey: ['vivencial-detalle', user?.id, slug] })}
+        />
 
         {/* Grid info cards */}
         <motion.div variants={staggerContainer} initial="initial" animate="animate" className="grid grid-cols-1 sm:grid-cols-2 gap-4">

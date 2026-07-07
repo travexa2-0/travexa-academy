@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 5 Julio 2026 — Sesión 12**
+**Actualizado: 6 Julio 2026 — Sesión 15**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -19,7 +19,7 @@ Sos el CTO de desarrollo de **Travexa Academy**. Trabajás junto a Nicolás Beli
 
 ## QUÉ ES TRAVEXA ACADEMY
 
-Plataforma de formación del trade turístico argentino. URL destino: `academy.travexa.com.ar`.
+Plataforma de formación del trade turístico argentino. URL destino: `academy.travexa.com.ar`. Producción actual: `https://travexa-academy.vercel.app`.
 
 **Los 4 pilares:**
 1. **Formación** — Cursos grabados por Yesica e instructores/influencers del sector
@@ -42,6 +42,24 @@ El usuario paga por lo que consume:
 
 ---
 
+## PRINCIPIO NO NEGOCIABLE — INTEGRIDAD DE DATOS EN PRODUCCIÓN (Sesión 14)
+
+Establecido al llevar la Home pública a producción, aplica a toda la plataforma de acá en adelante:
+
+**Ninguna estadística, testimonio, rating o cara de usuario que se muestre como prueba social puede ser inventada.** Se conecta a datos reales de la base, o la sección/elemento se oculta por completo (feature flag, `display:none` efectivo, lo que corresponda) hasta que exista el dato real.
+
+- **No alcanza con marcarlo como "muestra" o "demo" visible al usuario.** Un visitante real viendo un rating con la etiqueta "contenido de muestra" es peor que no ver rating — comunica que la prueba social del sitio es falsa.
+- Esto incluye fotos de stock de personas presentadas junto a texto que sugiere que son usuarios/asesores reales, **aunque no lleven nombre ni cifra asociada** — un cluster de avatares de gente real bajo "Formación hecha por y para asesores de viajes" también viola el principio. Usar avatares genéricos (ícono/iniciales) para cualquier elemento decorativo de este tipo.
+- Cuando la DB esté vacía (ej. cero cursos publicados), la sección correspondiente muestra un estado vacío diseñado explícitamente para ese caso — nunca cards fantasma ni ceros crudos sin contexto.
+
+---
+
+## PRINCIPIO NO NEGOCIABLE — SCROLL LIBRE (Sesión 14)
+
+No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque al usuario el control del scroll, salvo que esté explícitamente pedido y acotado (ej. el scrub del hero animado, que sí es scroll-driven pero por diseño). Si se agrega algo así "de más" para resolver otro problema (p.ej. hacer que las secciones midan una pantalla), se revierte — el alto de sección se resuelve con CSS (`100dvh`), no secuestrando el scroll.
+
+---
+
 ## ESTADO ACTUAL DEL PROYECTO
 
 ### ✅ Completado
@@ -55,66 +73,137 @@ El usuario paga por lo que consume:
 | Sesión 7 | Prototipos `/vivencial` y `/perfil` diseñados y aprobados. Sistema dual XP/Créditos, niveles, referidos definidos |
 | Sesión 8 | `Profile.tsx` implementado (6 tabs, 7 modales). Header actualizado ("Formación" / "Mi perfil") |
 | Sesión 9 | Onboarding obligatorio de 3 pasos, gate real contra DB, referidos vía trigger, `award-points`/`check-badges` deployadas, Google OAuth activado y probado en local, badges client-side corregidos |
-| Sesión 12 | **Player rebuild + comunidad + ebooks** (rama `feat/academy-player-comments-reviews-ebooks`). Player nuevo: header con ruta de vuelo horizontal (waypoints navegables), sidebar retráctil "ruta del curso" con boarding-pass tab + fold-sweep tipo mapa, navegación libre, gate simple. Visor de PDF en canvas con `react-pdf`/`pdfjs-dist` (`PdfCanvas`, reutilizado por lecciones y ebooks; nunca link descargable). Estados de clase en vivo inferidos (`liveLessonState`: programada / grabación pendiente / grabada). Bloque desplegable "Preguntas de esta clase" por lección (alumno→Yesica, publica al responder vía trigger). Reseña **obligatoria** al completar curso (modal "Llegaste al destino" con gate: estrellas + textarea, validación cliente 5 palabras). Tab Reseñas del detalle ahora accordion con promedio + respuestas reales. Nuevo tipo `ebook`: `EbookReader` a pantalla completa (paginado, secciones desde outline del PDF, marcar leído, progreso en `academy_ebook_progress`), tab "Biblioteca" en `/mis-cursos`, chip Ebooks en catálogo. Backoffice `/admin/comentarios` (bandeja de moderación con tabs Preguntas/Reseñas, pendientes primero, responder/borrar, badge de pendientes en el nav). Token `--live`, animación `academy-fold-sheen` con guarda `prefers-reduced-motion`. **(Rediseño Player):** ahora replica `academy_player_proto.html` (agregado a la raíz por el usuario): shell CSS grid con sidebar retráctil 380px↔76px (rail compacto con nodos + boarding-pass tab + fold-sweep), header con barra de progreso y avión que viaja según el %, content-frame decorativo, gate por frontera (primera lección no completada; posteriores con lock-overlay, navegación libre), route-track de módulos plegables, bottom-bar con dots. CSS portado a `src/pages/private/player.css` scopeado bajo `.player-root` (tokens propios `--pl-*`, keyframes `pl-*`), manteniendo react-pdf, estados en vivo, comentarios y modal de reseña. **Foto de perfil:** avatar con iniciales + color determinístico del `id` como fallback, botón de cámara sobre el avatar en `/perfil`, validación cliente (tipo + 5MB), recorte circular con zoom/arrastre (`AvatarCropModal`, sin dependencias nuevas), sube a `academy-media/{user_id}/avatar-{ts}.jpg`, actualiza `profiles.avatar_url`, limpia avatares viejos (preserva `certificates/`) e invalida `profiles-row`. **Hero de Formación (`/cursos`):** el header blanco se reemplazó por un hero oscuro estilo Vivencial (grid navy, eyebrow teal, título a dos tonos, subtítulo, botones neon, stats reales) + imagen `public/hero-formacion.png` flotando a la derecha (`.academy-float`, guarda reduced-motion); la grilla de cursos debajo queda igual. |
-| Sesión 10 | **Backoffice `/admin/*`** (Resumen, Cursos, Vivenciales, Métricas) conectado a Supabase. Migración `backoffice_admin_rls` (función `is_academy_admin()` + policies admin CRUD/lectura). `AdminGate` + redirect admin post-login salteando onboarding. Wizards de 5 pasos (curso/vivencial) con react-hook-form/zod, TAG_SUGGESTIONS, upload a `academy-media`, currículum, itinerario con renumeración, preview reusando `CourseDetail` (`?preview=1`), inscripción manual con decremento de cupo, drawer de settings (`academy_settings`), command palette ⌘K. Catálogo público endurecido a `publicado=true AND archivado=false` (RLS + query). Fix latente: `tipo_acceso` legacy `'free'`→valores reales de la DB (`gratuito`…) |
+| Sesión 10 | Backoffice `/admin/*` (Resumen, Cursos, Vivenciales, Métricas) conectado a Supabase, con RLS admin y wizards de 5 pasos |
+| Sesión 12 | Player rebuild + comunidad + ebooks + rediseño con ruta de vuelo horizontal + foto de perfil |
+| Sesión 13 | Bugfixes de auth/infra en producción (Site URL, `vercel.json`, Realtime) + auditoría de mocks + `/admin/beneficios` y `/admin/instructores` |
+| **Sesión 14** | **Home pública (`/`) diseñada, implementada y en producción**, con hero animado de scroll-scrub en curso (Fase 2, rama aparte). Ver detalle completo más abajo |
+| **Sesión 15** | **Vivenciales dejan de cobrarse dentro de la plataforma — cierre de venta por WhatsApp con Yesica.** Ver sección dedicada más abajo |
 
 ### ✅ Infraestructura lista
 
 - Supabase `fvrwtqhkskbaixqbxami` creada, schema completo con RLS y todas las migraciones
 - 7 edge functions deployadas y ACTIVE (las 3 de pagos + `award-points` + `check-badges`, más las 2 originales de MP)
 - Bucket `academy-media` creado en Storage (avatars, fotos de cursos)
-- Datos seed cargados: 8 cursos, 3 instructores, 5 categorías, 7 badges
-- Onboarding obligatorio en producción: `academy_profiles.onboarding_completo` gatea todas las rutas privadas (`OnboardingGate`), sin depender de localStorage ni de la config de Redirect URLs
+- Onboarding obligatorio en producción
+- **Home pública (`/`) en producción**, ver Sesión 14
 
 ### 🔴 Acción manual pendiente
 
 - `MP_ACCESS_TOKEN` → cargar en `supabase.com/dashboard/project/fvrwtqhkskbaixqbxami/settings/functions`
-- Google OAuth en producción → funciona en local; falta agregar el dominio de Vercel prod (no preview) a Redirect URLs de Supabase + Authorized redirect URIs de Google Cloud Console
 - Test users de Google OAuth → mientras el OAuth Client esté en modo "Testing", solo loguean cuentas agregadas a mano en Google Cloud Console
 - Volver a activar "Confirm email" en Supabase (se apagó para testear sin rate limit)
 - SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real
 
 ### 🟡 Próximos pasos
 
-1. Badge `top10_monthly` ("Top Learner") — única condición de badge sin implementar, es ranking-based, necesita lógica propia contra `get_academy_ranking()`
-2. Auditar `academy_badges.condicion` completo contra la DB real por si hay condiciones cargadas que nada cubre todavía
-3. `/beneficios` — página de canje de créditos
-4. Backoffice: módulos/días desde el panel
+1. **Ajustes finales de Home (Sesión 14, pendiente de aplicar):** ver checklist en la sección de la Home más abajo
+2. **Fase 2 del hero (avión con scroll-scrub):** implementada en rama `feat/plane-takeoff-hero`, pendiente de mergear a `main` una vez aplicados los ajustes finales
+3. Badge `top10_monthly` — única condición de badge sin implementar, es ranking-based, necesita lógica propia contra `get_academy_ranking()`
+4. `/beneficios` — página de canje de créditos
+5. Testimonios reales para `TestimonialsSection` (hoy feature-flagged off)
+
+---
+
+## HOME PÚBLICA (`/`) — Sesión 14
+
+### Qué es y por qué existe
+
+Hasta esta sesión, Academy no tenía una landing pública propia — `/cursos` cumplía ese rol de facto. La Home nueva es la puerta de entrada real del producto, pensada específicamente para adquisición (conversión de visitante anónimo a registro gratuito).
+
+**Decisión de producto:** `/` es la home pública. El post-login **sigue aterrizando en `/cursos` sin cambios** — no se tocó ese flujo. Menor riesgo, y evita tener que condicionar los CTAs de Home según si hay sesión activa o no.
+
+### Prototipo visual
+
+`academy_home.html`, en la raíz del proyecto junto a los demás prototipos aprobados (`academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`). Mismo estatus: fuente de verdad visual, replicar tal cual.
+
+### Estructura
+
+Hero (con o sin animación de avión, ver Fase 2 abajo) → proof strip (stats reales) → 4 pilares ("Cuatro formas de crecer") → catálogo destacado (marquee de cursos) → vivencial headliner → "Cómo funciona" ("Elegís, pagás una vez, es tuyo") → testimonios (hoy oculto, ver abajo) → gamificación ("Tu nivel acá es tu reputación en Travexa Marketplace") → CTA final → footer.
+
+Componentes bajo `src/components/home/`, orquestados en `src/pages/Home.tsx`.
+
+### Datos reales vs. placeholder — IMPORTANTE
+
+El prototipo HTML tenía números y testimonios inventados para mostrar el diseño (867 asesores, 4.7/5, reseñas con nombre y foto). Se resolvió así en producción, aplicando el principio de integridad de datos (ver arriba):
+
+| Elemento | Estado en producción |
+|---|---|
+| Proof strip (cantidad de cursos, vivenciales, instructores) | Conectado a `useCourses()`, datos reales. Si la DB da todo en cero, la tira completa se oculta en vez de mostrar ceros |
+| Catálogo destacado / vivencial headliner | Conectados a `academy_courses` real (`publicado=true AND archivado=false`), con estado vacío diseñado explícitamente mientras la DB esté en cero |
+| Testimonios (5 reseñas con nombre/foto, rating 4.8/5, "+300 reseñas") | **`TestimonialsSection` feature-flagged off (`SHOW_TESTIMONIALS = false`)**. No hay reseñas reales todavía. Todo el markup/data queda en el archivo, comentado/detrás del flag, para activar cuando existan reseñas reales |
+| Avatares del hero (cluster de 4 fotos bajo "Formación hecha por y para asesores de viajes") | Reemplazados por avatares genéricos (ícono, no fotos de stock de personas reales) |
+| Cards de sincronización Academy↔Marketplace en gamificación ("Marina Sosa") | Reemplazadas por "Tu perfil" + avatar genérico — es un mockup de feature, no un testimonio, pero llevaba foto de una persona real y se corrigió igual |
+
+### Header y WhatsApp flotante
+
+Reusados de los componentes ya existentes en el proyecto (los que ya usan `/cursos`, `/vivencial`, etc.) — no se recrearon desde el HTML del prototipo, que trae su propio header inline solo para verse completo como mockup standalone.
+
+### Fase 2 — Hero animado (avión con scroll-scrub)
+
+En rama `feat/plane-takeoff-hero`, no mergeada a `main` todavía (pendiente de los ajustes finales, ver checklist).
+
+**Técnica:** frame-sequence + `<canvas>`, no `video.currentTime` (seek de video no es frame-accurate ni fluido cross-browser). 116 frames extraídos de `avion.mov` (ubicado en `assets/source/`, gitignored — no referenciar rutas de `~/Downloads`) vía `ffmpeg` + `cwebp`.
+
+**Layout:** dos columnas. Texto a la izquierda con **ancho fijo** (no proporcional/`fr`) para garantizar que el video nunca lo tape. Columna de video contenida a la derecha, nunca full-bleed. Texto y video en `position: sticky` sincronizados al mismo valor de progreso de scroll (0→1) — deben moverse en lockstep, sin desfasarse.
+
+**Fallback:** `prefers-reduced-motion` y conexiones lentas muestran el frame final estático, sin scroll-jacking.
+
+**Bugs encontrados y corregidos durante el QA de esta fase:**
+- Header roto por una regla de `scroll-snap` que interfería con la detección de dirección de scroll de framer-motion (`useScroll`) — no era un bug del propio Header, era el snap.
+- Secciones que no medían exactamente `100dvh` (se colaba un pedacito de la sección anterior arriba).
+- `scroll-snap-type`/`scroll-snap-align` agregados sin haber sido pedidos, y rompían la llegada al final real de la página (el usuario no podía ver el CTA final completo) — eliminados por completo. Ver principio de "scroll libre" arriba.
+- Sección de gamificación partida en dos pantallas para que "entrara" en una pantalla cada una, y luego reunificada en una sola ajustando espaciados (padding, gaps) en vez de recortar contenido.
+- Texto y video del hero desincronizados al final del scrub (el video subía, el título se quedaba fijo) — corregido aplicando el mismo `translateY` calculado por scroll a ambas columnas.
+
+**Checklist de ajustes finales pendientes (Sesión 14, prompt ya redactado):**
+1. Tags de los 4 pilares: "Formación" → "Conocer más" (link a `/cursos`); "Comunidad" → texto que refleje que lleva a gamificación + link/scroll a esa sección dentro de la misma Home.
+2. Headers de las secciones vacías de Formación y Vivenciales: reposicionar arriba de la sección (hoy están centrados en el medio); cards de estado vacío al doble de tamaño.
+3. Sacar el tag "GRATIS" de la card de ejemplo "Operatoria turística argentina" en "Elegís, pagás una vez, es tuyo".
+4. Color del glow de fondo de la sección de gamificación: debe coincidir con el glow (color + animación) ya usado en la sección CTA final, no un color nuevo.
+
+---
+
+## VIVENCIALES SIN COBRO EN PLATAFORMA (`Sesión 15`) — CRÍTICO
+
+Cambio de modelo: **los vivenciales ya no se facturan ni se cobran dentro de la app.** Todo el cierre de venta pasa por WhatsApp con Yesica. La plataforma solo muestra la propuesta, registra inscriptos y guarda comprobantes; no inicia ningún cobro automático.
+
+**Cambios de DB (aplicados por Claude IA vía MCP, NO correr migraciones):**
+- Policy de admin en `academy_vivencial_payments` (`Admin crea comprobante` INSERT, además de las de UPDATE/SELECT que ya estaban).
+- Trigger `trg_academy_vivencial_payment_change` extendido a INSERT: si el pago entra en `estado='aprobado'`, dispara `academy_recalc_vivencial_balance()` que recalcula `monto_señado_ars` / `monto_pendiente_ars` / `seña_pagada` / `pago_completado` del enrollment (suma de `monto_aprobado_ars` de pagos aprobados + cuotas MP aprobadas). El total base es `academy_enrollments.monto_total_ars`.
+- Nuevo setting `academy_settings.travexa_whatsapp_business` (jsonb string, hoy `"+54 9 11 5697-4099"`) — número global al que va el botón "Quiero anotarme".
+
+**Frontend:**
+- **`VivencialPagoCTA`** (compartido por `/viaje/:slug`, `/vivencial/:slug` y perfil): sin enrollment muestra 2 tags informativos (Transferencia en un pago / Cuotas cómoda) + tag de seña sugerida + botón **"Quiero anotarme"** → WhatsApp Business global. Con enrollment activo: resumen Total/Pagado/Pendiente + **"Subir comprobante"** (abre `TransferModal`). **Se quitó el botón "Pagar en cuotas (MP)" de todos lados.** La edge function `create-vivencial-cuotas-payment` queda deployada pero sin invocación (no borrar).
+- **Link "Quiero anotarme":** `buildAnotarmeWaUrl()` en `useVivencialPago.ts`. Limpia el número a dígitos, arma `wa.me/<num>?text=...`. Mensaje "Hola! Estoy {interesado/a} en ser parte del vivencial {nombre}", donde interesado/a depende de `academy_profiles.genero` (`Femenino`→interesada, `Masculino`→interesado, resto/sin sesión→interesado/a).
+- **`TransferModal`:** ya no muestra CBU/alias/titular (Yesica los pasa por WhatsApp). Solo monto + fecha + comprobante. Acepta `enrollmentId`: si viene, NO llama `academy_reserve_vivencial_spot` (usa el enrollment que creó Yesica); el RPC queda solo como fallback defensivo. El INSERT del viajero sigue entrando en `estado='pendiente'` (espera aprobación en backoffice).
+- **Backoffice (`VivencialInscriptoRow`):** botón "+ Cargar pago" por inscripto → sube comprobante al bucket `academy-comprobantes` e inserta en `academy_vivencial_payments` con `estado='aprobado'`, `monto_declarado_ars=monto_aprobado_ars`, `revisado_por=auth.uid()`, `revisado_at=now()`. El trigger recalcula el saldo. Se pueden cargar varios pagos en el tiempo. El historial distingue pendientes del viajero (card de aprobar/rechazar) de los aprobados/históricos.
+- **`ManualEnrollmentForm`:** solo pide email + tipo de acceso + monto total. La seña y los pagos se cargan después como comprobantes (ya no hay campos de seña acá).
+- **`SettingsDrawer`:** se sacó la sección "Datos de transferencia" (CBU/alias/titular/banco). Se agregó campo **"WhatsApp Business"** (→ `travexa_whatsapp_business`).
+- **`VivencialWizard`:** se sacó "Precio en cuotas". La seña queda como referencia (no dispara cobro). El campo WhatsApp se relabeló a **"Link del grupo de WhatsApp del viaje"** (→ `vivencial_whatsapp_url`, es el grupo del viaje, NO el número de consultas).
+- **`vivencial_whatsapp_url` cambió de significado:** ahora es el **grupo de WhatsApp del viaje** (botón "Unirme al grupo"), no un contacto de consultas. Las consultas y el "Quiero anotarme" van al número global `travexa_whatsapp_business`.
 
 ---
 
 ## PROTOTIPOS HTML APROBADOS
 
-Los prototipos viven en la **raíz del proyecto** (no en `docs/proto/` pese a lo que digan versiones viejas de este documento): `academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`. Son la **fuente de verdad visual**. Claude Code debe replicar ese diseño exactamente en React, no reinterpretarlo.
+Los prototipos viven en la **raíz del proyecto**: `academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`, `academy_home.html`, `travexa_academy_backoffice.html`. Son la **fuente de verdad visual**. Claude Code debe replicar ese diseño exactamente en React, no reinterpretarlo.
 
-**`academy_catalogo.html`** — referencia de `/cursos` y `/cursos/:slug`:
-- Header liquid glass pill (iOS behavior: desaparece al scrollear abajo, reaparece al subir)
-- Page header blanco con foto de fondo + esfumado blanco→navy
-- Filtros en 2 filas: **Modalidad** (Todos / A tu ritmo / En Vivo / Vivencial / Gratis) + **Categoría**
-- Sort dropdown (5 opciones)
-- Cards con DirectionAwareHover: overlay entra desde la dirección del mouse
-- Badge EN VIVO pulsante con ring animado, Badge VIVENCIAL con shimmer gold
-- Skeleton shimmer loading antes de que carguen las cards
-- Wishlist heart con micro-bounce
-- Detalle: hero cinematográfico + tabs (Descripción / Contenido / Instructor / Reseñas / Trailer opcional)
-- Sliding indicator animado en tabs
-- Fondo blanco en área de contenido del detalle (texto oscuro)
-- CTA card dark flotante con sombra prominente
-- Botones: Comprar / Regalar / Preguntas frecuentes (abre modal)
-- FAQ modal con accordion
-- Copiar link en hero del detalle
-- WhatsApp flotante bottom-right (siempre visible)
-- Mobile responsive: barra CTA fija en bottom en mobile
+**`academy_home.html`** (Sesión 14) — referencia de `/`:
+- Hero con headline orientado a resultado ("La formación que se nota en tus ventas"), CTA único "Empezar gratis", trust cluster de avatares genéricos.
+- 4 pilares con hover y tags/links a sus páginas correspondientes.
+- Catálogo y vivencial destacados en marquee horizontal con loop infinito y hover-reveal de descripción, con estado vacío diseñado.
+- "Cómo funciona" con card tipo "pase de embarque" mostrando un ejemplo de acceso.
+- Testimonios en marquee (hoy oculto en producción, ver Regla de integridad de datos).
+- Gamificación con diagrama de sincronización Academy↔Marketplace, value props y stepper de niveles.
+- Glows animados (radial-gradient + transform) reutilizados en hero, gamificación y CTA final — mismo color/técnica en los tres lugares.
 
-**`academy_onboarding_proto.html`** — referencia de `/onboarding` (implementado Sesión 9):
-- Stepper de 3 pasos con línea punteada tipo ruta de vuelo, avioncito indicador de progreso
-- Paso 3: código de referido en formato "pase de embarque" (tarjeta troquelada, shimmer antes de mostrar el código)
-- Gold solo en el logo y en el bloque de recompensa de créditos — en ningún otro lugar
-- Sin botón de "omitir": el onboarding es obligatorio
+**`academy_catalogo.html`** — referencia de `/cursos` y `/cursos/:slug`: (sin cambios respecto a la versión anterior de este documento)
+
+**`academy_onboarding_proto.html`** — referencia de `/onboarding`: (sin cambios)
 
 ---
 
-## IDENTIDAD VISUAL — COMBINADA (ACTUALIZADA SESIÓN 5)
+## IDENTIDAD VISUAL — COMBINADA
 
 ### Enfoque "combinado"
 - **Base dark navy** (cinematic, Academy) + **teal como primario** (Travexa Core) + **cards blancas en áreas de contenido**
@@ -151,6 +240,7 @@ IBM Plex Mono 400 → badges, datos, timestamps
 - **Motion:** Emil Kowalski — `cubic-bezier(0.23,1,0.32,1)`, stagger 60ms, `scale(0.97)` en :active
 - **No spinners** — shimmer skeleton siempre
 - **Mobile first** — 375px funciona antes que desktop
+- **Ningún control de scroll fuera del pedido explícitamente** (ver principio no negociable arriba)
 
 ---
 
@@ -173,7 +263,9 @@ academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referra
 **Catálogo:**
 ```
 academy_categories    → nombre, slug, icon, color, orden, activo
-academy_instructors   → nombre, bio, avatar_url, user_id, revenue_share_pct, activo
+academy_instructors   → nombre, bio, avatar_url, user_id (opcional — instructor externo/influencer
+                        sin cuenta), especialidad, redes (JSONB: instagram/tiktok/web/whatsapp,
+                        solo claves no vacías), revenue_share_pct, activo, email, telefono
 academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
                         category_id, instructor_id, nivel, tipo_acceso,
                         tipo ('grabado'|'en_vivo'|'vivencial'|'ebook'),
@@ -194,29 +286,14 @@ academy_lessons       → module_id, course_id, titulo, video_url, duracion_segu
                         fecha_vivo, live_url (clases en vivo con grabación)
 ```
 
-**Comunidad / lectura (Sesión 12 — ya aplicadas por MCP, NO re-crear):**
+**Comunidad / lectura:**
 ```
 academy_lesson_comments → lesson_id, course_id, user_id, comentario, respuesta,
                           respondido_at, publicado, created_at, updated_at
-                          (alumno→Yesica; trigger publica al completar respuesta)
 academy_reviews (+cols)  → respuesta, respondido_at; unicidad (user_id, course_id);
                           CHECK comentario ≥ 5 palabras; publica al responder (trigger)
 academy_ebook_progress   → user_id, course_id, ultima_pagina, completado, completado_at
-                          (RLS: cada usuario la suya; requiere enrollment.activo=true)
 ```
-
-⚠️ Estado de clase en vivo: no hay campo explícito. Se infiere con `liveLessonState()` en
-`src/types`: `video_url` presente → grabada; sin video + `fecha_vivo` futura → programada;
-sin video + `fecha_vivo` pasada → grabación pendiente.
-
-**Migraciones aplicadas en Sesión 12 (vía MCP, además de lo que ya venía):**
-- `academy_sync_course_progress(uuid)` — RPC `SECURITY DEFINER`. Recalcula `progreso_pct` y
-  marca `completado=true` cuando el alumno terminó todas las lecciones. El player la llama en
-  cada "marcar completa". Existe porque el UPDATE directo de `academy_enrollments` es admin-only
-  por RLS, y la reseña obligatoria de cierre exige `enrollment.completado=true`. Sólo toca campos
-  de progreso (nunca de pago).
-- FK `academy_lesson_comments_user_id_profiles_fkey` (`user_id → profiles.id`) para poder embeber
-  el autor con `profile:profiles(...)` en PostgREST, igual que `academy_reviews`.
 
 **Gamificación:**
 ```
@@ -224,10 +301,20 @@ academy_points_transactions → user_id, puntos, tipo, motivo, referencia_id, po
 academy_badges              → nombre, descripcion, icono, color, condicion, activo
 academy_user_badges         → user_id, badge_id, earned_at
 academy_certificates        → user_id, course_id, enrollment_id, numero, emitido_at
-academy_credit_redemptions  → user_id, ...(canje de créditos)
+academy_credit_redemptions  → user_id, ...(canje de créditos), benefit_id (→ academy_benefits;
+                              null en canjes históricos previos al catálogo)
 ```
 
-⚠️ Valores reales de `academy_badges.condicion` confirmados contra la DB (Sesión 9): `first_lesson`, `first_review`, `first_vivencial`, `first_referral`, `streak_7`, `streak_100`, `top10_monthly`. Los strings en español (`primera_leccion`, etc.) que aparecían en versiones viejas del código **no existen en la DB** — no reintroducirlos. `top10_monthly` es la única sin lógica implementada todavía (es ranking-based, no evento puntual).
+⚠️ Valores reales de `academy_badges.condicion` confirmados contra la DB: `first_lesson`, `first_review`, `first_vivencial`, `first_referral`, `streak_7`, `streak_100`, `top10_monthly`. `top10_monthly` es la única sin lógica implementada todavía.
+
+**Beneficios (catálogo de canjes con créditos, admin en `/admin/beneficios`):**
+```
+academy_benefits → id, titulo, descripcion, tipo ('curso_gratis'|'descuento_pct'|'descuento_fijo'|
+                   'sorteo_vivencial'|'otro'), imagen_url, costo_creditos, course_id, descuento_valor,
+                   cupo_maximo, cupo_usado, fecha_inicio, fecha_vencimiento, publicado, archivado,
+                   ganador_user_id + ganador_anunciado_at (solo sorteo_vivencial)
+```
+⚠️ `/admin/beneficios` solo administra el catálogo — la tienda pública de canjes (`/beneficios`) todavía no existe.
 
 **Extras:**
 ```
@@ -272,7 +359,7 @@ https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/award-points
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/check-badges
 ```
 
-**Además, en DB:** `handle_new_user()` (trigger sobre `auth.users`) crea `academy_profiles` para cualquier signup — email o Google por igual — copia metadata (nombre/apellido/tipo_cuenta) y, si vino `referral_code`, acredita al referente y al nuevo usuario vía `award_points_and_credits()`. No recrear esta lógica en el frontend ni en una edge function aparte.
+**Además, en DB:** `handle_new_user()` (trigger sobre `auth.users`) crea `academy_profiles` para cualquier signup — email o Google por igual — copia metadata y acredita referidos vía `award_points_and_credits()`. No recrear esta lógica en el frontend ni en una edge function aparte.
 
 ---
 
@@ -288,7 +375,7 @@ Edge Fn:     Deno (Supabase Functions)
 Package mgr: bun (o npm si bun no está disponible)
 Deploy:      Vercel (push a main → deploy automático)
 Pagos:       Mercado Pago (Preference API)
-Video:       YouTube iframe embed nocookie (MVP)
+Video:       YouTube iframe embed nocookie (MVP); canvas + frame-sequence para el hero animado
 Storage:     Supabase Storage — bucket `academy-media` (público, 5MB max, solo imágenes)
 ```
 
@@ -299,10 +386,21 @@ Storage:     Supabase Storage — bucket `academy-media` (público, 5MB max, sol
 ```
 Repo:     github.com/travexa2-0/travexa-academy (público)
 Vercel:   travexa-academy (prj_EVk9I5qgCzTEJ5FAqNODm1t5N8AC)
+Producción: https://travexa-academy.vercel.app
 Supabase: fvrwtqhkskbaixqbxami (São Paulo)
 Local:    /Users/nicolasbelinco/Projects/travexa/travexa-academy
-Proto:    Prototipos HTML en la raíz del proyecto (no docs/proto/) — academy_catalogo.html, academy_perfil.html, academy_vivencial.html, academy_onboarding_proto.html
+Proto:    Prototipos HTML en la raíz del proyecto — academy_catalogo.html, academy_perfil.html,
+          academy_vivencial.html, academy_onboarding_proto.html, academy_home.html,
+          travexa_academy_backoffice.html
+Assets fuente (no commiteados como tal, ver .gitignore): assets/source/avion.mov — video fuente
+          del hero animado, frames extraídos en public/frames/takeoff y public/frames/takeoff-mobile
 ```
+
+**`vercel.json` (raíz del proyecto) — no borrar:**
+```json
+{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+```
+Sin esto, cualquier ruta de React Router accedida directo o refrescada da 404 en Vercel.
 
 **NO confundir con:**
 - `yzzquqseobovorbasogc` → Supabase de Lovable/Travexa B2B — NO TOCAR
@@ -332,45 +430,46 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 ## PÁGINAS
 
 ### Públicas ✅
-- `/cursos` — Catálogo. Es el destino post-onboarding (home actual, no `/dashboard` todavía)
+- **`/` — Home pública (Sesión 14).** Puerta de entrada real del producto, pensada para adquisición. Post-login sigue en `/cursos`, no en `/`
+- `/cursos` — Catálogo
 - `/cursos/:slug` — Detalle de curso
-- `/login` — Login (email + Google OAuth, activo y probado en local)
-- `/registro` — Registro con tipo de cuenta (ya no pide `destinos_principales`, eso quedó en el onboarding)
-- `/auth/callback` — Callback de OAuth, espera resolución de sesión antes de navegar
-- `/pago-confirmado` — Post-pago
-- `/pago-error` — Error de pago
+- `/login` — Login (email + Google OAuth)
+- `/registro` — Registro con tipo de cuenta
+- `/auth/callback` — Callback de OAuth
+- `/pago-confirmado` / `/pago-error`
 - `/u/:username` — Perfil público del alumno
 
 ### Privadas ✅
-- `/onboarding` — Obligatorio, 3 pasos, gateado vía `OnboardingGate` contra `onboarding_completo`. Autoguardado por paso, resume si se corta a mitad de camino
-- `/dashboard` — Home del alumno (existe la ruta, pero el flujo actual no aterriza acá — ver nota arriba)
+- `/onboarding` — Obligatorio, 3 pasos, gateado vía `OnboardingGate`
+- `/dashboard` — Existe la ruta, sin uso en el flujo actual
 - `/mis-cursos` — Cursos enrollados + vivenciales
-- `/cursos/:slug/aprender` — Player con bottom bar fija
-- `/perfil` — Perfil del alumno (badges, certificados, referidos)
-- `/viaje/:slug` — Detalle de vivencial (itinerario, pagos, checklist)
+- `/cursos/:slug/aprender` — Player
+- `/perfil` — Perfil del alumno
+- `/viaje/:slug` — Detalle de vivencial
 
-### Admin ✅ (Sesión 10)
-- `/admin/resumen` — KPIs, gráfico de ingresos, alertas accionables, actividad reciente, estados vacíos reales
-- `/admin/cursos` — lista con filtros client-side, wizard 5 pasos, preview, publicar/archivar/eliminar (0 inscriptos)
-- `/admin/vivenciales` — mismo motor filtrado por `tipo='vivencial'`, itinerario, inscriptos + inscripción manual (decrementa cupo)
-- `/admin/comentarios` — bandeja de moderación (Sesión 12): tabs Preguntas de clase / Reseñas de curso, pendientes primero, responder (publica vía trigger) o borrar. Badge de pendientes en el nav
-- `/admin/metricas` — ingresos, rentabilidad por instructor, compradores, uso/funnel derivado, ROI marketing
-- Gate: `AdminGate` (RLS + `profiles.es_admin`); admin aterriza en `/admin/resumen` salteando `OnboardingGate`
+### Admin ✅
+- `/admin/resumen`, `/admin/cursos`, `/admin/vivenciales`, `/admin/instructores`, `/admin/beneficios`, `/admin/comentarios`, `/admin/metricas`
+- Gate: `AdminGate` (RLS + `profiles.es_admin`)
 
 ### Pendientes
-- Drag-and-drop para reordenar módulos/lecciones e itinerario (hoy el orden es por posición, sin DnD)
+- Tienda pública de canjes (`/beneficios`)
+- Drag-and-drop para reordenar módulos/lecciones e itinerario
 
 ---
 
 ## BACKLOG (NO CONSTRUIR AHORA)
 
-- [x] Backoffice completo: métricas, gestión de cursos, ventas, estadísticas (Sesión 10)
+- [x] Backoffice completo (Sesión 10)
+- [x] Backoffice: instructores y beneficios (Sesión 13)
+- [x] Home pública con hero estático (Sesión 14)
+- [ ] Hero animado (Fase 2) mergeado a `main` — en rama, pendiente de ajustes finales
+- [ ] Testimonios reales para `TestimonialsSection`
+- [ ] Tienda pública de canjes (`/beneficios`)
 - [ ] Certificados PDF auto-generados
 - [ ] Comunidad: feed social + directorio
 - [ ] Eventos: webinars con cards boarding pass
-- [ ] Badge `top10_monthly` (ranking-based, necesita `get_academy_ranking()`)
+- [ ] Badge `top10_monthly`
 - [ ] MP_ACCESS_TOKEN carga en Supabase Secrets
-- [ ] Google OAuth en producción (dominio prod, no preview)
 - [ ] SMTP propio para confirmación de email en volumen real
 
 ---
@@ -384,7 +483,9 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 5. **No re-crear tablas.** Solo `ALTER TABLE`.
 6. **Modelo:** registro gratis, pago por curso/vivencial/evento. Sin suscripciones.
 7. **Diseño:** prototipos HTML en la raíz del proyecto son la fuente de verdad visual.
-8. **Actualizar este archivo** con cada sesión.
+8. **Nunca shippear estadísticas, testimonios o prueba social inventada** (ver principio dedicado arriba, Sesión 14).
+9. **Nunca agregar scroll-snap o scroll-jacking no pedido** (ver principio dedicado arriba, Sesión 14).
+10. **Actualizar este archivo** con cada sesión.
 
 ---
 

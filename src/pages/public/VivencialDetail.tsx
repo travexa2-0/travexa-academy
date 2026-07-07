@@ -4,13 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ChevronDown, Check, X, MapPin, CalendarDays, Clock, Users } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Header from '@/components/layout/Header'
 import { useCourseDetail, useReviews } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCoursePayment } from '@/hooks/usePayment'
+import { supabase } from '@/lib/supabase'
+import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
+import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPago'
 import { cupoEstado } from '@/lib/cupo'
 import { displayName } from '@/lib/utils'
-import type { ItinerarioDia } from '@/types'
+import type { ItinerarioDia, Enrollment } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -50,11 +53,11 @@ type TabKey = typeof TABS[number]['key']
 // ── FAQ data ──────────────────────────────────────────────────────
 
 const FAQ_ITEMS = [
-  { q: '¿Cómo reservo mi lugar?', a: 'Pagás la seña con el botón "Reservar con seña" y confirmás tu cupo al instante. También podés consultarnos por WhatsApp.' },
+  { q: '¿Cómo reservo mi lugar?', a: 'Tocás "Quiero anotarme" y te contactás con nosotros por WhatsApp. Ahí coordinamos la seña y el pago del viaje.' },
   { q: '¿Qué pasa si se llena el cupo?', a: 'El cupo es limitado. Una vez agotado, quedás en lista de espera para la próxima salida del mismo destino.' },
   { q: '¿Puedo cancelar?', a: 'Sí, con reembolso del 100% de la seña si cancelás hasta 30 días antes de la salida. Consultá los términos completos.' },
   { q: '¿Está incluido el vuelo?', a: 'Depende del vivencial. Ver la sección "Qué incluye" para los detalles específicos de este viaje.' },
-  { q: '¿Puedo pagar en cuotas?', a: 'Sí, los pagos se gestionan a través de Mercado Pago con cuotas disponibles según tu banco.' },
+  { q: '¿Cómo se paga el viaje?', a: 'El pago se coordina por WhatsApp: podés abonarlo en un pago por transferencia o en cuotas cómodas, siempre antes de viajar. Te acompañamos en cada paso.' },
 ]
 
 // ── Subcomponents ─────────────────────────────────────────────────
@@ -182,9 +185,28 @@ export default function VivencialDetail() {
   const navigate       = useNavigate()
   const { user }       = useAuth()
 
+  const queryClient    = useQueryClient()
+  const { data: whatsappBusiness } = useWhatsappBusiness()
   const { data: course, isLoading, isError } = useCourseDetail(slug)
   const { data: reviews = [] }               = useReviews(course?.id)
-  const { initiate: initPayment, loading: payLoading } = useCoursePayment()
+
+  const enrollmentKey = ['vivencial-enrollment', user?.id, course?.id] as const
+  const { data: enrollment = null } = useQuery({
+    queryKey: enrollmentKey,
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('academy_enrollments')
+        .select('*')
+        .eq('user_id', user!.id)
+        .eq('course_id', course!.id)
+        .maybeSingle()
+      return (data ?? null) as Enrollment | null
+    },
+    enabled: !!user?.id && !!course?.id,
+    staleTime: 1000 * 30,
+  })
+  const refreshEnrollment = () => void queryClient.invalidateQueries({ queryKey: enrollmentKey })
 
   const [activeTab,   setActiveTab]   = useState<TabKey>('desc')
   const [accOpen,     setAccOpen]     = useState<number>(0)
@@ -252,22 +274,14 @@ export default function VivencialDetail() {
   const ctaPct  = max > 0 ? Math.round((1 - disp / max) * 100) : 0
   const ctaBarColor = estado.cls === 'ok' ? 'var(--primary)' : estado.cls === 'low' ? 'var(--urg)' : '#EF4444'
   const thumb   = course.thumbnail_url ?? course.fotos?.[0] ?? ''
-  const waUrl   = course.vivencial_whatsapp_url
-    ?? `https://wa.me/5491112345678?text=${encodeURIComponent(`Hola! Quiero consultar por el vivencial ${course.titulo} (${fmtDate(course.vivencial_fecha_salida)}). ¿Me pasás más info?`)}`
+  // Consultas siempre al WhatsApp Business global (vivencial_whatsapp_url pasó a
+  // ser el grupo del viaje, no un contacto de consultas).
+  const waDigits = cleanWhatsappNumber(whatsappBusiness ?? '') || '5491112345678'
+  const waUrl   = `https://wa.me/${waDigits}?text=${encodeURIComponent(`Hola! Quiero consultar por el vivencial ${course.titulo} (${fmtDate(course.vivencial_fecha_salida)}). ¿Me pasás más info?`)}`
 
   const ctaFeatures = course.incluye.length > 0
     ? course.incluye.slice(0, 4)
-    : ['Vuelos incluidos desde Buenos Aires', 'Pago en cuotas disponible', 'Certificado Travexa Academy', 'Cancelación con reembolso hasta 30 días antes']
-
-  async function handleReservar() {
-    if (!user) { navigate('/registro'); return }
-    const url = await initPayment(course!.id)
-    if (url) {
-      window.location.href = url
-    } else {
-      showToast('No se pudo iniciar el pago. Consultá por WhatsApp.')
-    }
-  }
+    : ['Cupos limitados por salida', 'Acompañamiento Travexa Academy', 'Certificado Travexa Academy', 'Cierre de venta por WhatsApp']
 
   function handleCopyLink() {
     navigator.clipboard.writeText(window.location.href).catch(() => {})
@@ -716,17 +730,16 @@ export default function VivencialDetail() {
                   </div>
                 )}
 
-                {/* Reserve button */}
-                <motion.button
-                  className="w-full font-display font-bold rounded-[10px] mb-2"
-                  style={{ background: 'var(--neon)', color: '#0A1E29', fontSize: '14.5px', padding: '12px 24px', minHeight: 48, opacity: payLoading ? .7 : 1 }}
-                  onClick={handleReservar}
-                  disabled={payLoading || disp === 0}
-                  whileTap={{ scale: 0.97 }}
-                  whileHover={{ boxShadow: '0 0 24px var(--neon-glow)' }}
-                >
-                  {disp === 0 ? 'Agotado' : payLoading ? 'Procesando…' : 'Reservar con seña'}
-                </motion.button>
+                {/* State-driven CTA (seña / transferir saldo / cuotas / pagado) */}
+                {disp === 0 && !enrollment ? (
+                  <div className="w-full text-center font-display font-bold rounded-[10px] mb-2" style={{ background: 'var(--card)', color: 'var(--text-3)', fontSize: '14.5px', padding: '12px 24px' }}>
+                    Agotado
+                  </div>
+                ) : (
+                  <div className="mb-2">
+                    <VivencialPagoCTA course={course} enrollment={enrollment} userId={user?.id} variant="cta-card" onChanged={refreshEnrollment} />
+                  </div>
+                )}
 
                 {/* Separator */}
                 <div style={{ height: 1, background: 'var(--line)', margin: '14px 0' }} />
@@ -778,7 +791,7 @@ export default function VivencialDetail() {
           paddingBottom: 'max(11px, env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <div className="flex flex-col gap-[1px]">
+        <div className="flex flex-col gap-[1px] shrink-0">
           <span className="font-display font-bold" style={{ fontSize: '1.1rem', color: 'var(--text-1)' }}>
             {fmtARS(course.vivencial_precio_seña_ars)}
           </span>
@@ -786,20 +799,18 @@ export default function VivencialDetail() {
             {disp === 0 ? 'agotado' : `seña · quedan ${disp} lugares`}
           </span>
         </div>
-        <motion.button
-          className="font-display font-bold rounded-[8px] shrink-0"
-          style={{ background: 'var(--neon)', color: '#0A1E29', fontSize: 13, padding: '8px 16px', minHeight: 38 }}
-          onClick={handleReservar}
-          disabled={payLoading || disp === 0}
-          whileTap={{ scale: 0.97 }}
-        >
-          {disp === 0 ? 'Agotado' : 'Reservar lugar'}
-        </motion.button>
+        <div className="flex-1 min-w-0">
+          {disp === 0 && !enrollment ? (
+            <div className="text-center font-display font-bold rounded-[8px]" style={{ background: 'var(--card)', color: 'var(--text-3)', fontSize: 13, padding: '8px 16px' }}>Agotado</div>
+          ) : (
+            <VivencialPagoCTA course={course} enrollment={enrollment} userId={user?.id} variant="cta-card" onChanged={refreshEnrollment} />
+          )}
+        </div>
       </div>
 
       {/* WhatsApp float */}
       <motion.a
-        href="https://wa.me/5491112345678"
+        href={`https://wa.me/${waDigits}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="WhatsApp"

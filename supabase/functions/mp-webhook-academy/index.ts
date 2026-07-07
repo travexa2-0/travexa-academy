@@ -9,6 +9,23 @@ const corsHeaders = {
 
 const MP_API = 'https://api.mercadopago.com'
 
+// El status crudo de MP viene en inglés; la columna `estado` tiene un CHECK que
+// solo acepta español. Mapear siempre antes de escribir en `estado`.
+const ESTADO_MAP: Record<string, string> = {
+  approved: 'aprobado',
+  pending: 'pendiente',
+  in_process: 'pendiente',
+  authorized: 'pendiente',
+  rejected: 'rechazado',
+  cancelled: 'rechazado',
+  refunded: 'rechazado',
+  charged_back: 'rechazado',
+}
+
+function toEstado(mpStatus: string): string {
+  return ESTADO_MAP[mpStatus] ?? 'pendiente'
+}
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -53,6 +70,30 @@ Deno.serve(async (req) => {
       const mpData = await mpRes.json()
       const ref: string = mpData.external_reference ?? ''
 
+      // ── VIVENCIAL — saldo en cuotas ───────────────────────────────
+      if (ref.startsWith('ACAD-VIV-')) {
+        // Mapeo de estado MP → español (el trigger recalcula el balance con 'aprobado')
+        const estado = toEstado(mpData.status)
+
+        const { data: vivPayment } = await supabaseAdmin
+          .from('academy_payments')
+          .select('id, estado')
+          .eq('mp_external_reference', ref)
+          .maybeSingle()
+
+        if (!vivPayment) return json({ ok: true, no_local_payment: true })
+        if (vivPayment.estado === 'aprobado') return json({ ok: true, already_done: true })
+
+        // El trigger academy_trg_payment_change_vivencial recalcula el saldo solo.
+        const { error: vivUpdateError } = await supabaseAdmin
+          .from('academy_payments')
+          .update({ mp_payment_id: String(resourceId), mp_status: mpData.status, estado })
+          .eq('id', vivPayment.id)
+        if (vivUpdateError) console.error('academy_payments update (vivencial) error:', vivUpdateError)
+
+        return json({ ok: true, status: mpData.status, vivencial: true })
+      }
+
       if (!ref.startsWith('ACAD-COURSE-')) return json({ ok: true, ignored: true, reason: 'not_academy_course' })
 
       const { data: localPayment } = await supabaseAdmin
@@ -61,12 +102,13 @@ Deno.serve(async (req) => {
         .eq('mp_external_reference', ref)
         .maybeSingle()
 
-      if (!localPayment || localPayment.estado === 'approved') return json({ ok: true, already_done: true })
+      if (!localPayment || localPayment.estado === 'aprobado') return json({ ok: true, already_done: true })
 
-      await supabaseAdmin
+      const { error: courseUpdateError } = await supabaseAdmin
         .from('academy_payments')
-        .update({ mp_payment_id: String(resourceId), mp_status: mpData.status, estado: mpData.status })
+        .update({ mp_payment_id: String(resourceId), mp_status: mpData.status, estado: toEstado(mpData.status) })
         .eq('id', localPayment.id)
+      if (courseUpdateError) console.error('academy_payments update (curso) error:', courseUpdateError)
 
       if (mpData.status === 'approved') {
         const { data: exists } = await supabaseAdmin

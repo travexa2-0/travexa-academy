@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 6 Julio 2026 — Sesión 15**
+**Actualizado: 7 Julio 2026 — Sesión 15**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -19,7 +19,7 @@ Sos el CTO de desarrollo de **Travexa Academy**. Trabajás junto a Nicolás Beli
 
 ## QUÉ ES TRAVEXA ACADEMY
 
-Plataforma de formación del trade turístico argentino. URL destino: `academy.travexa.com.ar`. Producción actual: `https://travexa-academy.vercel.app`.
+Plataforma de formación del trade turístico argentino. URL destino: `academy.travexa.com.ar`. Producción actual: `https://travexa-academy.vercel.app` (dominio propio pendiente de cutover, ver backlog).
 
 **Los 4 pilares:**
 1. **Formación** — Cursos grabados por Yesica e instructores/influencers del sector
@@ -34,8 +34,8 @@ Plataforma de formación del trade turístico argentino. URL destino: `academy.t
 **El registro es GRATUITO. No hay planes ni suscripciones.**
 
 El usuario paga por lo que consume:
-- **Curso individual** → pago único por curso
-- **Vivencial** → pago único por experiencia (precio en USD, cobrado en ARS)
+- **Curso individual** → pago único por curso, vía Mercado Pago dentro de la plataforma (pendiente de `MP_ACCESS_TOKEN` para cobros reales)
+- **Vivencial** → pago único por experiencia (precio en USD, cobrado en ARS) — **⚠️ desde Sesión 15, NO se cobra dentro de la plataforma.** La venta se cierra por WhatsApp con Yesica, quien registra el pago manualmente en el backoffice (ver sección dedicada más abajo)
 - **Evento pago** → pago único por evento
 
 **No construir nada de planes, membresías ni suscripciones.**
@@ -60,6 +60,19 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 
 ---
 
+## PRINCIPIO NO NEGOCIABLE — VIVENCIALES NO SE COBRAN EN LA PLATAFORMA (Sesión 15)
+
+**Travexa no factura vivenciales.** El cierre de venta es 100% por WhatsApp con Yesica; la plataforma nunca procesa un cobro de vivencial (ni Mercado Pago ni ningún checkout propio). Reglas derivadas:
+
+- El único CTA de pre-compra es "Quiero anotarme", que redirige a WhatsApp. No reintroducir botones de pago propios para vivenciales sin que Yesica/Nico lo pidan explícitamente.
+- Yesica es quien crea la inscripción (alta manual en backoffice) y quien registra los pagos que recibe — ya aprobados, con comprobante y fecha.
+- El viajero puede subir su propio comprobante desde su perfil, pero ese camino queda **pendiente de aprobación** de Yesica (no se auto-aprueba nunca).
+- El saldo pendiente de un vivencial (`monto_pendiente_ars`) **nunca se edita a mano**: lo recalcula automáticamente `academy_recalc_vivencial_balance()` vía trigger de Postgres cuando un pago pasa a `estado='aprobado'` (dispara tanto en INSERT como en UPDATE). El frontend y el backoffice solo *leen* ese campo.
+- `vivencial_whatsapp_url` es el link al **grupo de WhatsApp del viaje** (lo carga Yesica cerca de la fecha de salida, visible solo con inscripción activa) — no confundir con el WhatsApp Business global (`travexa_whatsapp_business`) al que apunta el botón "Quiero anotarme".
+- La edge function `create-vivencial-cuotas-payment` y las columnas/settings relacionados a cuotas por Mercado Pago quedaron construidos de una iteración anterior de esta feature, **deployados pero sin ningún botón que los invoque**. No se usan. Ver backlog para la decisión de retomarlos o darlos de baja.
+
+---
+
 ## ESTADO ACTUAL DEL PROYECTO
 
 ### ✅ Completado
@@ -76,23 +89,26 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 | Sesión 10 | Backoffice `/admin/*` (Resumen, Cursos, Vivenciales, Métricas) conectado a Supabase, con RLS admin y wizards de 5 pasos |
 | Sesión 12 | Player rebuild + comunidad + ebooks + rediseño con ruta de vuelo horizontal + foto de perfil |
 | Sesión 13 | Bugfixes de auth/infra en producción (Site URL, `vercel.json`, Realtime) + auditoría de mocks + `/admin/beneficios` y `/admin/instructores` |
-| **Sesión 14** | **Home pública (`/`) diseñada, implementada y en producción**, con hero animado de scroll-scrub en curso (Fase 2, rama aparte). Ver detalle completo más abajo |
-| **Sesión 15** | **Vivenciales dejan de cobrarse dentro de la plataforma — cierre de venta por WhatsApp con Yesica.** Ver sección dedicada más abajo |
+| Sesión 14 | **Home pública (`/`) diseñada, implementada y en producción**, con hero animado de scroll-scrub en curso (Fase 2, rama aparte). |
+| **Sesión 15** | **Vivenciales: cierre de venta por WhatsApp + carga manual de pagos en backoffice, en producción.** Diseñado, iterado (primero self-service con Mercado Pago, pivotado a modelo manual) y deployado. Bugfix de un bug preexistente en `mp-webhook-academy` (mapeo de estado de pagos de curso). Ver detalle completo más abajo |
 
 ### ✅ Infraestructura lista
 
 - Supabase `fvrwtqhkskbaixqbxami` creada, schema completo con RLS y todas las migraciones
-- 7 edge functions deployadas y ACTIVE (las 3 de pagos + `award-points` + `check-badges`, más las 2 originales de MP)
-- Bucket `academy-media` creado en Storage (avatars, fotos de cursos)
+- 7 edge functions deployadas y ACTIVE (las 3 de pagos + `award-points` + `check-badges`, más las 2 originales de MP), más `create-vivencial-cuotas-payment` (Sesión 15, deployada sin uso — ver backlog)
+- Bucket `academy-media` (público, imágenes) + bucket `academy-comprobantes` (privado, Sesión 15) en Storage
 - Onboarding obligatorio en producción
-- **Home pública (`/`) en producción**, ver Sesión 14
+- Home pública (`/`) en producción, ver Sesión 14
+- Flujo de vivenciales por WhatsApp + backoffice en producción, ver Sesión 15 (commit `67f680c`, deploy `dpl_C8NiJo6f3fKmxW7Vt6A2UDPnur7n`, `READY`)
 
 ### 🔴 Acción manual pendiente
 
-- `MP_ACCESS_TOKEN` → cargar en `supabase.com/dashboard/project/fvrwtqhkskbaixqbxami/settings/functions`
+- `MP_ACCESS_TOKEN` → cargar en `supabase.com/dashboard/project/fvrwtqhkskbaixqbxami/settings/functions`. Bloquea el cobro real de **cursos**. Ya no bloquea nada de vivenciales (esas no usan Mercado Pago, ver Sesión 15)
 - Test users de Google OAuth → mientras el OAuth Client esté en modo "Testing", solo loguean cuentas agregadas a mano en Google Cloud Console
 - Volver a activar "Confirm email" en Supabase (se apagó para testear sin rate limit)
 - SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real
+- **[NUEVO] Dominio propio `academy.travexa.com.ar`** — cutover sin arrancar (alta en Vercel + DNS + Site URL/Redirect de Supabase Auth + Google OAuth origins). Tema de la próxima sesión
+- **[NUEVO] Revisión visual end-to-end del flujo de vivenciales** — deployado y verificado a nivel de código/DB, pero nadie lo probó todavía como usuario real (botón "Quiero anotarme" → WhatsApp, alta + carga de pago en backoffice, subida de comprobante del viajero)
 
 ### 🟡 Próximos pasos
 
@@ -101,6 +117,61 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 3. Badge `top10_monthly` — única condición de badge sin implementar, es ranking-based, necesita lógica propia contra `get_academy_ranking()`
 4. `/beneficios` — página de canje de créditos
 5. Testimonios reales para `TestimonialsSection` (hoy feature-flagged off)
+6. **[NUEVO]** Decidir destino de la feature de cuotas MP para vivenciales (retomar o dar de baja, ver Sesión 15)
+7. **[NUEVO]** Dominio propio y revisión visual del flujo de vivenciales (ver arriba)
+
+---
+
+## VIVENCIALES — CIERRE DE VENTA POR WHATSAPP (Sesión 15)
+
+### Contexto y decisión de negocio
+
+Travexa no factura vivenciales — son montos altos (viajes reales) y, a diferencia de los cursos, no se procesan dentro de la plataforma. La venta se gestiona íntegramente por WhatsApp con Yesica, quien administra la transferencia bancaria (fuera de Mercado Pago) por chat y después registra manualmente en el backoffice lo que cobró.
+
+### Iteración de diseño
+
+Esta feature se diseñó en dos vueltas dentro de la misma sesión:
+
+1. **Primera iteración (self-service):** seña por transferencia + saldo por transferencia (con cola de aprobación de Yesica) + saldo/total pagable en cuotas vía Mercado Pago, con reserva automática de cupo al primer pago y recálculo de saldo vía trigger. Se construyó completa: wizard, settings, 3 botones de pago, 2 edge functions, backoffice con cola de aprobación.
+2. **Pivote:** definido que Travexa no cobra vivenciales, se simplificó el frontend a un solo botón de contacto. La base de datos de la primera iteración (ledger de pagos + trigger de recálculo) se mantuvo intacta y sirve igual para el modelo manual — solo cambiaron las policies de quién puede insertar qué y se agregó un camino de inserción directa (ya aprobada) para el admin.
+
+### Flujo final (en producción)
+
+**Página del vivencial (sin inscripción):**
+- 2-3 tags informativos (no clickeables): "Transferencia en un pago", "Cuotas cómoda — pagás cuando querés, siempre antes de viajar", y opcionalmente "Seña sugerida: $X" si está cargada en el wizard.
+- 1 botón: **"Quiero anotarme"** → abre WhatsApp al número de `travexa_whatsapp_business`, con mensaje pre-armado: *"Hola! Estoy interesado/a en ser parte del vivencial {nombre}"* — el género (interesado/interesada) sale de `academy_profiles.genero` del usuario logueado (Masculino/Femenino confirmados como valores reales en producción); sin sesión o sin género cargado, usa "interesado/a" genérico.
+
+**Gestión de la venta (Yesica, fuera de la plataforma):** cierra la venta por WhatsApp, indica los datos bancarios por chat (ya no se muestran en la plataforma).
+
+**Backoffice — alta + carga de pagos:**
+- "Cargar inscripción manual" (ya existía desde Sesión 10): busca al usuario, crea el enrollment y descuenta cupo. Simplificado en Sesión 15 para pedir solo el monto total — la seña ya no se carga acá, se carga como un pago más.
+- "+ Cargar pago" por inscripto (nuevo, Sesión 15): monto, fecha, comprobante, tipo (Seña/Transferencia). Al guardar, se inserta **ya en `estado='aprobado'`** — sin pasar por ninguna cola — y el trigger recalcula el saldo al instante. Se pueden cargar tantos pagos como haga falta a lo largo del tiempo.
+
+**Página del vivencial (con inscripción activa):**
+- Resumen Total/Pagado/Pendiente (ya construido, sigue igual).
+- Botón "Subir comprobante" → mismo modal de siempre, pero **sin mostrar CBU/alias** (Yesica ya se lo pasó por chat) — solo monto + fecha + archivo. Este camino sigue quedando `pendiente` hasta que Yesica lo apruebe desde el backoffice.
+- Si `vivencial_whatsapp_url` tiene valor (Yesica lo carga más cerca de la fecha de salida): botón/link al **grupo de WhatsApp del viaje**.
+
+**Historial (backoffice + perfil del viajero):** conviven en la misma tabla los pagos que carga Yesica (ya aprobados, sin acciones sobre ellos, son registro histórico) y los que sube el viajero (con acciones de aprobar/rechazar mientras estén pendientes). Se distingue visualmente quién subió cada uno.
+
+### Cambios de schema (Sesión 15 — aplicados por Claude IA vía MCP)
+
+- Tabla nueva `academy_vivencial_payments` (ledger de comprobantes: monto declarado/aprobado, fecha, comprobante, estado, quién y cuándo revisó).
+- `academy_courses`: columnas `vivencial_precio_cuotas_ars/usd` (de la primera iteración, sin uso en UI actual), `vivencial_whatsapp_url` resemantizado (grupo del viaje, no consultas).
+- `academy_enrollments`: columnas `pago_completado` (bool) y `fecha_limite_pago` (date). `monto_señado_ars`/`monto_pendiente_ars` cambiaron de significado — ahora los recalcula el trigger, nunca se editan a mano.
+- `academy_payments`: columnas `enrollment_id` y `comprobante_url`; constraint de `tipo` acepta también `'vivencial_cuotas'`.
+- RPCs: `academy_reserve_vivencial_spot` (ahora solo fallback), `academy_liberar_cupo_vivencial` (admin, libera cupo vencido), `academy_recalc_vivencial_balance` (interna, trigger-only).
+- Trigger de recálculo extendido para disparar también en INSERT (no solo UPDATE) — necesario para que la carga directa de Yesica impacte el saldo al instante.
+- Bucket privado `academy-comprobantes` (10MB, jpg/png/webp/pdf) con RLS: el viajero sube/lee su propia carpeta, el admin lee y sube todo.
+- Settings nuevos: `travexa_whatsapp_business` (en uso), `travexa_datos_transferencia` y `mp_monto_minimo_cuotas_ars` (de la primera iteración, sin uso en UI actual).
+
+### Bug preexistente encontrado y corregido (no introducido en esta sesión)
+
+En `mp-webhook-academy`, la rama de pagos de curso escribía el status crudo de Mercado Pago en inglés directo en la columna `estado` (que solo acepta español por `CHECK` constraint) — el `update` fallaba en silencio porque el código no revisaba el error de retorno. El acceso al curso se otorgaba igual, pero el registro de pago quedaba mal. Corregido con un mapeo compartido (`estadoMap`/`toEstado()`) entre la rama de cursos y la de vivenciales, más logging de errores. No afectó datos reales (tabla vacía, `MP_ACCESS_TOKEN` nunca cargado).
+
+### Verificación
+
+Todo lo reportado por Claude Code en esta sesión fue confirmado independientemente por Claude IA vía MCP antes de darlo por cerrado: código real de ambas edge functions releído, migraciones confirmadas contra `list_migrations`, valores reales de settings y de `genero` chequeados en producción, y estado de deploy confirmado contra Vercel (commit `67f680c` → `dpl_C8NiJo6f3fKmxW7Vt6A2UDPnur7n` → `READY`).
 
 ---
 
@@ -163,27 +234,6 @@ En rama `feat/plane-takeoff-hero`, no mergeada a `main` todavía (pendiente de l
 
 ---
 
-## VIVENCIALES SIN COBRO EN PLATAFORMA (`Sesión 15`) — CRÍTICO
-
-Cambio de modelo: **los vivenciales ya no se facturan ni se cobran dentro de la app.** Todo el cierre de venta pasa por WhatsApp con Yesica. La plataforma solo muestra la propuesta, registra inscriptos y guarda comprobantes; no inicia ningún cobro automático.
-
-**Cambios de DB (aplicados por Claude IA vía MCP, NO correr migraciones):**
-- Policy de admin en `academy_vivencial_payments` (`Admin crea comprobante` INSERT, además de las de UPDATE/SELECT que ya estaban).
-- Trigger `trg_academy_vivencial_payment_change` extendido a INSERT: si el pago entra en `estado='aprobado'`, dispara `academy_recalc_vivencial_balance()` que recalcula `monto_señado_ars` / `monto_pendiente_ars` / `seña_pagada` / `pago_completado` del enrollment (suma de `monto_aprobado_ars` de pagos aprobados + cuotas MP aprobadas). El total base es `academy_enrollments.monto_total_ars`.
-- Nuevo setting `academy_settings.travexa_whatsapp_business` (jsonb string, hoy `"+54 9 11 5697-4099"`) — número global al que va el botón "Quiero anotarme".
-
-**Frontend:**
-- **`VivencialPagoCTA`** (compartido por `/viaje/:slug`, `/vivencial/:slug` y perfil): sin enrollment muestra 2 tags informativos (Transferencia en un pago / Cuotas cómoda) + tag de seña sugerida + botón **"Quiero anotarme"** → WhatsApp Business global. Con enrollment activo: resumen Total/Pagado/Pendiente + **"Subir comprobante"** (abre `TransferModal`). **Se quitó el botón "Pagar en cuotas (MP)" de todos lados.** La edge function `create-vivencial-cuotas-payment` queda deployada pero sin invocación (no borrar).
-- **Link "Quiero anotarme":** `buildAnotarmeWaUrl()` en `useVivencialPago.ts`. Limpia el número a dígitos, arma `wa.me/<num>?text=...`. Mensaje "Hola! Estoy {interesado/a} en ser parte del vivencial {nombre}", donde interesado/a depende de `academy_profiles.genero` (`Femenino`→interesada, `Masculino`→interesado, resto/sin sesión→interesado/a).
-- **`TransferModal`:** ya no muestra CBU/alias/titular (Yesica los pasa por WhatsApp). Solo monto + fecha + comprobante. Acepta `enrollmentId`: si viene, NO llama `academy_reserve_vivencial_spot` (usa el enrollment que creó Yesica); el RPC queda solo como fallback defensivo. El INSERT del viajero sigue entrando en `estado='pendiente'` (espera aprobación en backoffice).
-- **Backoffice (`VivencialInscriptoRow`):** botón "+ Cargar pago" por inscripto → sube comprobante al bucket `academy-comprobantes` e inserta en `academy_vivencial_payments` con `estado='aprobado'`, `monto_declarado_ars=monto_aprobado_ars`, `revisado_por=auth.uid()`, `revisado_at=now()`. El trigger recalcula el saldo. Se pueden cargar varios pagos en el tiempo. El historial distingue pendientes del viajero (card de aprobar/rechazar) de los aprobados/históricos.
-- **`ManualEnrollmentForm`:** solo pide email + tipo de acceso + monto total. La seña y los pagos se cargan después como comprobantes (ya no hay campos de seña acá).
-- **`SettingsDrawer`:** se sacó la sección "Datos de transferencia" (CBU/alias/titular/banco). Se agregó campo **"WhatsApp Business"** (→ `travexa_whatsapp_business`).
-- **`VivencialWizard`:** se sacó "Precio en cuotas". La seña queda como referencia (no dispara cobro). El campo WhatsApp se relabeló a **"Link del grupo de WhatsApp del viaje"** (→ `vivencial_whatsapp_url`, es el grupo del viaje, NO el número de consultas).
-- **`vivencial_whatsapp_url` cambió de significado:** ahora es el **grupo de WhatsApp del viaje** (botón "Unirme al grupo"), no un contacto de consultas. Las consultas y el "Quiero anotarme" van al número global `travexa_whatsapp_business`.
-
----
-
 ## PROTOTIPOS HTML APROBADOS
 
 Los prototipos viven en la **raíz del proyecto**: `academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`, `academy_home.html`, `travexa_academy_backoffice.html`. Son la **fuente de verdad visual**. Claude Code debe replicar ese diseño exactamente en React, no reinterpretarlo.
@@ -200,6 +250,8 @@ Los prototipos viven en la **raíz del proyecto**: `academy_catalogo.html`, `aca
 **`academy_catalogo.html`** — referencia de `/cursos` y `/cursos/:slug`: (sin cambios respecto a la versión anterior de este documento)
 
 **`academy_onboarding_proto.html`** — referencia de `/onboarding`: (sin cambios)
+
+**`academy_vivencial.html`** — referencia de `/vivencial/:slug` y `/viaje/:slug`: desde Sesión 15, la sección de CTA de pago del prototipo queda desactualizada respecto a producción (el prototipo original mostraba botones de pago propios; producción usa el botón único "Quiero anotarme" → WhatsApp, ver sección dedicada arriba). Si se retoca este prototipo en el futuro, actualizarlo primero para no volver a divergir.
 
 ---
 
@@ -260,6 +312,8 @@ academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referra
 
 ⚠️ `referral_code`: hoy se genera con un default de 8 caracteres random en Postgres. El formato legible tipo `TRVX-NOMBRE-2026` quedó evaluado pero sin decisión final — revisar si se aplica antes de que el código empiece a compartirse en volumen.
 
+⚠️ `genero`: valores reales confirmados en producción (Sesión 15): `Masculino`, `Femenino` (capitalizados). Usado para personalizar el mensaje de WhatsApp de "Quiero anotarme" en vivenciales.
+
 **Catálogo:**
 ```
 academy_categories    → nombre, slug, icon, color, orden, activo
@@ -278,8 +332,12 @@ academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
                         vivencial_ciudad_salida, vivencial_punto_encuentro,
                         vivencial_cupo_maximo, vivencial_cupo_disponible,
                         vivencial_itinerario (JSONB), vivencial_hotel,
-                        vivencial_precio_seña_ars, vivencial_precio_seña_usd,
-                        vivencial_whatsapp_url
+                        vivencial_precio_seña_ars, vivencial_precio_seña_usd (referencia interna,
+                        Yesica la menciona por WhatsApp — no dispara ningún cobro),
+                        vivencial_precio_cuotas_ars, vivencial_precio_cuotas_usd (Sesión 15,
+                        de la primera iteración — sin uso en UI actual, ver backlog),
+                        vivencial_whatsapp_url (Sesión 15: link al GRUPO de WhatsApp del viaje,
+                        no es de consultas — lo carga Yesica cerca de la fecha de salida)
 academy_modules       → course_id, titulo, orden
 academy_lessons       → module_id, course_id, titulo, video_url, duracion_segundos,
                         orden, es_preview (bool), recursos (JSONB),
@@ -316,6 +374,17 @@ academy_benefits → id, titulo, descripcion, tipo ('curso_gratis'|'descuento_pc
 ```
 ⚠️ `/admin/beneficios` solo administra el catálogo — la tienda pública de canjes (`/beneficios`) todavía no existe.
 
+**Pagos de vivenciales (Sesión 15 — nuevo):**
+```
+academy_vivencial_payments → id, enrollment_id, user_id, tipo ('sena'|'transferencia' — solo
+                             etiqueta de reporting, no cambia el mecanismo), monto_declarado_ars,
+                             monto_aprobado_ars (lo carga el admin al aprobar, puede diferir de lo
+                             declarado), comprobante_url (bucket privado academy-comprobantes),
+                             fecha_declarada, estado ('pendiente'|'aprobado'|'rechazado'),
+                             notas_admin, revisado_por, revisado_at
+```
+⚠️ Nunca se borra (auditoría). El admin puede insertar directo en `estado='aprobado'` (carga manual); el viajero solo puede insertar en `estado='pendiente'` (queda a la espera de aprobación).
+
 **Extras:**
 ```
 academy_wishlists     → user_id, course_id
@@ -327,15 +396,20 @@ academy_referrals     → referrer_id, referred_id, estado
 ```
 academy_enrollments       → user_id, course_id, tipo_acceso, progreso_pct, completado,
                              activo, fecha_completado,
-                             seña_pagada, monto_total_ars, monto_señado_ars, monto_pendiente_ars
+                             seña_pagada, monto_total_ars, monto_señado_ars, monto_pendiente_ars,
+                             pago_completado (bool, Sesión 15), fecha_limite_pago (date, Sesión 15)
 academy_lesson_progress   → user_id, lesson_id, course_id, completada, segundos_vistos
-academy_payments          → user_id, tipo, course_id, monto_ars, monto_usd, mp_payment_id,
-                             mp_external_reference, mp_status, estado
+academy_payments          → user_id, tipo ('curso'|'suscripcion'|'vivencial_cuotas'), course_id,
+                             enrollment_id (Sesión 15), monto_ars, monto_usd, mp_payment_id,
+                             mp_external_reference, mp_status, estado, comprobante_url (Sesión 15,
+                             respaldo documental del admin, no gatea nada)
 ```
+
+⚠️ `monto_señado_ars`/`monto_pendiente_ars` de `academy_enrollments`: desde Sesión 15 **no se editan a mano nunca**. Los recalcula `academy_recalc_vivencial_balance()` vía trigger cuando algo en `academy_vivencial_payments` o `academy_payments` (tipo `vivencial_cuotas`) pasa a `estado='aprobado'`.
 
 **Reglas canónicas:**
 - Acceso a curso: `academy_enrollments` con `activo = true` O `lesson.es_preview = true`
-- `external_reference` siempre: `ACAD-COURSE-{userId}-{courseId}`
+- `external_reference` siempre: `ACAD-COURSE-{userId}-{courseId}` (cursos) / `ACAD-VIV-{enrollmentId}-{timestamp}` (vivenciales, hoy sin uso — ver backlog)
 - Tipo de curso: `'grabado'` | `'en_vivo'` | `'vivencial'` | `'ebook'` (ebook = pago único, se lee en canvas, sin descarga)
 - `tipo_acceso`: `'gratuito'` | `'pago'` | `'suscripcion'` | `'b2b_incluido'`
 
@@ -345,11 +419,12 @@ academy_payments          → user_id, tipo, course_id, monto_ars, monto_usd, mp
 
 | Función | Estado | Uso |
 |---|---|---|
-| `create-course-payment` | ✅ ACTIVE | Genera link de pago MP |
-| `confirm-course-payment` | ✅ ACTIVE | Verifica pago y crea enrollment |
-| `mp-webhook-academy` | ✅ ACTIVE | Recibe notificaciones de MP |
+| `create-course-payment` | ✅ ACTIVE | Genera link de pago MP para cursos |
+| `confirm-course-payment` | ✅ ACTIVE | Verifica pago de curso y crea enrollment (redirect de éxito) |
+| `mp-webhook-academy` | ✅ ACTIVE (v3) | Recibe notificaciones de MP (cursos, suscripciones y vivenciales-cuotas). Bugfix de mapeo de estado en Sesión 15 |
 | `award-points` | ✅ ACTIVE | Acredita XP/Créditos por acción, dispara check-badges |
 | `check-badges` | ✅ ACTIVE | Evalúa condiciones y otorga badges nuevas |
+| `create-vivencial-cuotas-payment` | ✅ ACTIVE (sin uso) | Sesión 15, primera iteración — genera link de pago en cuotas para saldo de vivencial. Ningún botón la invoca desde el pivote a WhatsApp. Ver backlog |
 
 ```
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/create-course-payment
@@ -357,6 +432,7 @@ https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/confirm-course-payment
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/mp-webhook-academy
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/award-points
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/check-badges
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/create-vivencial-cuotas-payment
 ```
 
 **Además, en DB:** `handle_new_user()` (trigger sobre `auth.users`) crea `academy_profiles` para cualquier signup — email o Google por igual — copia metadata y acredita referidos vía `award_points_and_credits()`. No recrear esta lógica en el frontend ni en una edge function aparte.
@@ -374,9 +450,11 @@ Backend:     Supabase (fvrwtqhkskbaixqbxami)
 Edge Fn:     Deno (Supabase Functions)
 Package mgr: bun (o npm si bun no está disponible)
 Deploy:      Vercel (push a main → deploy automático)
-Pagos:       Mercado Pago (Preference API)
+Pagos:       Mercado Pago (Preference API) — solo cursos. Vivenciales: sin cobro en plataforma,
+             cierre por WhatsApp (Sesión 15)
 Video:       YouTube iframe embed nocookie (MVP); canvas + frame-sequence para el hero animado
-Storage:     Supabase Storage — bucket `academy-media` (público, 5MB max, solo imágenes)
+Storage:     Supabase Storage — bucket `academy-media` (público, 5MB max, solo imágenes) +
+             bucket `academy-comprobantes` (privado, 10MB max, imágenes/PDF, Sesión 15)
 ```
 
 ---
@@ -386,7 +464,8 @@ Storage:     Supabase Storage — bucket `academy-media` (público, 5MB max, sol
 ```
 Repo:     github.com/travexa2-0/travexa-academy (público)
 Vercel:   travexa-academy (prj_EVk9I5qgCzTEJ5FAqNODm1t5N8AC)
-Producción: https://travexa-academy.vercel.app
+Producción: https://travexa-academy.vercel.app (dominio propio academy.travexa.com.ar pendiente
+            de cutover)
 Supabase: fvrwtqhkskbaixqbxami (São Paulo)
 Local:    /Users/nicolasbelinco/Projects/travexa/travexa-academy
 Proto:    Prototipos HTML en la raíz del proyecto — academy_catalogo.html, academy_perfil.html,
@@ -433,6 +512,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - **`/` — Home pública (Sesión 14).** Puerta de entrada real del producto, pensada para adquisición. Post-login sigue en `/cursos`, no en `/`
 - `/cursos` — Catálogo
 - `/cursos/:slug` — Detalle de curso
+- `/vivencial`, `/vivencial/:slug` — Catálogo y detalle de vivenciales. Desde Sesión 15, CTA de "Quiero anotarme" (WhatsApp) en vez de pago propio
 - `/login` — Login (email + Google OAuth)
 - `/registro` — Registro con tipo de cuenta
 - `/auth/callback` — Callback de OAuth
@@ -444,11 +524,12 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - `/dashboard` — Existe la ruta, sin uso en el flujo actual
 - `/mis-cursos` — Cursos enrollados + vivenciales
 - `/cursos/:slug/aprender` — Player
-- `/perfil` — Perfil del alumno
-- `/viaje/:slug` — Detalle de vivencial
+- `/perfil` — Perfil del alumno. Tab Vivenciales muestra estado de pago + botón "Subir comprobante" (Sesión 15)
+- `/viaje/:slug` — Detalle de vivencial para el inscripto (itinerario, pagos, grupo de WhatsApp)
 
 ### Admin ✅
 - `/admin/resumen`, `/admin/cursos`, `/admin/vivenciales`, `/admin/instructores`, `/admin/beneficios`, `/admin/comentarios`, `/admin/metricas`
+- `/admin/vivenciales`: tab Inscriptos con "Cargar inscripción manual" + "+ Cargar pago" por inscripto (Sesión 15)
 - Gate: `AdminGate` (RLS + `profiles.es_admin`)
 
 ### Pendientes
@@ -457,20 +538,36 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 
 ---
 
-## BACKLOG (NO CONSTRUIR AHORA)
+## BACKLOG — QUÉ FALTA PARA TERMINAR ACADEMY
 
-- [x] Backoffice completo (Sesión 10)
-- [x] Backoffice: instructores y beneficios (Sesión 13)
-- [x] Home pública con hero estático (Sesión 14)
-- [ ] Hero animado (Fase 2) mergeado a `main` — en rama, pendiente de ajustes finales
-- [ ] Testimonios reales para `TestimonialsSection`
-- [ ] Tienda pública de canjes (`/beneficios`)
-- [ ] Certificados PDF auto-generados
-- [ ] Comunidad: feed social + directorio
-- [ ] Eventos: webinars con cards boarding pass
-- [ ] Badge `top10_monthly`
-- [ ] MP_ACCESS_TOKEN carga en Supabase Secrets
-- [ ] SMTP propio para confirmación de email en volumen real
+Consolidado a Sesión 15. Orden aproximado por bloqueo/impacto, no es estricto.
+
+### 🔴 Bloqueante para abrir a usuarios reales / cobrar de verdad
+- [ ] `MP_ACCESS_TOKEN` cargado en Supabase Secrets — bloquea el cobro real de **cursos** (vivenciales ya no lo necesitan)
+- [ ] Reactivar "Confirm email" en Supabase Auth (protección contra account-takeover en el auto-linking Google↔password)
+- [ ] SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real
+- [ ] Test users / sacar el Google OAuth Client de modo "Testing"
+- [ ] JavaScript origins del Google OAuth Client (completar, hoy vacío)
+- [ ] Dominio propio `academy.travexa.com.ar`: alta en Vercel + DNS + Site URL/Redirect URLs de Supabase Auth + Authorized origins/redirect URIs de Google OAuth
+- [ ] Revisión visual end-to-end del flujo de vivenciales por WhatsApp (deployado, no probado por un humano todavía)
+
+### 🟡 Producto — pilares incompletos o features a medio construir
+- [ ] Testimonios reales para `TestimonialsSection` de la Home (hoy oculto, activar cuando existan reseñas)
+- [ ] Ajustes finales de la Home (checklist de Sesión 14, ver arriba)
+- [ ] Mergear Fase 2 del hero animado (`feat/plane-takeoff-hero`) a `main`
+- [ ] Tienda pública de canjes `/beneficios` — solo existe el lado de administración del catálogo
+- [ ] Badge `top10_monthly` (ranking-based, contra `get_academy_ranking()`)
+- [ ] Auditar `academy_badges.condicion` completo contra lo que cubren `useGamification.ts`/`check-badges`
+- [ ] Certificados: título para certificados externos + generación de PDF en backend
+- [ ] Backoffice: drag-and-drop para reordenar módulos/lecciones e itinerario de vivenciales
+- [ ] **Comunidad** (uno de los 4 pilares): feed social + directorio de miembros — no construido
+- [ ] **Eventos** (uno de los 4 pilares): webinars con cards tipo boarding pass — no construido
+- [ ] Decidir destino de la feature de cuotas MP para vivenciales que quedó deployada sin uso (retomar o dar de baja: edge function, columnas `vivencial_precio_cuotas_*`, settings `travexa_datos_transferencia`/`mp_monto_minimo_cuotas_ars`)
+- [ ] `referral_code` con formato legible (`TRVX-NOMBRE-2026`) — evaluado, sin decisión final
+
+### 🔵 Más adelante / infraestructura de fondo
+- [ ] Repos privados + Vercel Pro (cuando el negocio lo justifique)
+- [ ] Actualizar prototipo `academy_vivencial.html` para reflejar el CTA de WhatsApp (hoy desactualizado respecto a producción)
 
 ---
 
@@ -481,11 +578,12 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 3. **Nunca hardcodear secrets.**
 4. **No borrar datos.** Soft-delete siempre.
 5. **No re-crear tablas.** Solo `ALTER TABLE`.
-6. **Modelo:** registro gratis, pago por curso/vivencial/evento. Sin suscripciones.
+6. **Modelo:** registro gratis, pago por curso/evento vía Mercado Pago; vivenciales pagados por fuera de la plataforma (WhatsApp + registro manual). Sin suscripciones.
 7. **Diseño:** prototipos HTML en la raíz del proyecto son la fuente de verdad visual.
 8. **Nunca shippear estadísticas, testimonios o prueba social inventada** (ver principio dedicado arriba, Sesión 14).
 9. **Nunca agregar scroll-snap o scroll-jacking no pedido** (ver principio dedicado arriba, Sesión 14).
-10. **Actualizar este archivo** con cada sesión.
+10. **Los vivenciales no se cobran dentro de la plataforma** (ver principio dedicado arriba, Sesión 15). El saldo de un vivencial nunca se edita a mano — lo recalcula el trigger.
+11. **Actualizar este archivo** con cada sesión.
 
 ---
 

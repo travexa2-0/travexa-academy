@@ -199,7 +199,8 @@ export interface ProfileMini {
 }
 
 // ── academy_reviews ──
-// Se publica solo cuando Yesica responde (trigger en DB setea publicado=true al completar respuesta).
+// Se publica al responder (trigger en DB setea publicado=true al completar respuesta).
+// Responden: el admin (cualquier curso) o el instructor dueño del curso (Sesión 16).
 // Constraint en DB: comentario con mínimo 5 palabras. Unicidad (user_id, course_id).
 export interface Review {
   id: string
@@ -216,7 +217,8 @@ export interface Review {
 }
 
 // ── academy_lesson_comments ──
-// Pregunta del alumno bajo una lección. Solo alumno→Yesica (no foro entre alumnos).
+// Pregunta del alumno bajo una lección. No es un foro entre alumnos: responde el admin
+// o el instructor dueño del curso (Sesión 16).
 // Se publica automáticamente vía trigger en DB cuando se completa `respuesta`.
 export interface LessonComment {
   id: string
@@ -553,6 +555,27 @@ export interface AdminSummaryKpis {
   vivencialesCupoAbierto: number
 }
 
+// ── academy_instructor_payouts ──
+// Liquidación mensual por instructor. El mes lo cierra el admin a mano vía
+// `academy_close_instructor_month`; `pagado` lo setea un trigger al cargarse
+// `comprobante_pago_url`, nunca el frontend.
+export interface InstructorPayout {
+  id: string
+  instructor_id: string
+  periodo: string
+  monto_bruto_ars: number
+  monto_instructor_ars: number
+  cantidad_ventas: number
+  factura_url: string | null
+  factura_subida_at: string | null
+  comprobante_pago_url: string | null
+  monto_pagado_ars: number | null
+  fecha_pago: string | null
+  pagado: boolean
+  created_at: string
+  updated_at: string
+}
+
 // ── Database type map ──
 export interface Database {
   public: {
@@ -590,6 +613,12 @@ export interface Database {
         Row: Instructor
         Insert: Omit<Instructor, 'id'>
         Update: Partial<Omit<Instructor, 'id'>>
+        Relationships: []
+      }
+      academy_instructor_payouts: {
+        Row: InstructorPayout
+        Insert: Omit<InstructorPayout, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<InstructorPayout, 'id'>>
         Relationships: []
       }
       academy_courses: {

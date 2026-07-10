@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 7 Julio 2026 — Sesión 15**
+**Actualizado: 10 Julio 2026 — Sesión 16**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -91,6 +91,7 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 | Sesión 13 | Bugfixes de auth/infra en producción (Site URL, `vercel.json`, Realtime) + auditoría de mocks + `/admin/beneficios` y `/admin/instructores` |
 | Sesión 14 | **Home pública (`/`) diseñada, implementada y en producción**, con hero animado de scroll-scrub en curso (Fase 2, rama aparte). |
 | **Sesión 15** | **Vivenciales: cierre de venta por WhatsApp + carga manual de pagos en backoffice, en producción.** Diseñado, iterado (primero self-service con Mercado Pago, pivotado a modelo manual) y deployado. Bugfix de un bug preexistente en `mp-webhook-academy` (mapeo de estado de pagos de curso). Ver detalle completo más abajo |
+| **Sesión 16** | **Portal de instructores (`/instructor/*`)**, de solo lectura salvo perfil, factura y respuesta a comentarios. Liquidaciones mensuales (`academy_instructor_payouts`), cierre de mes manual por instructor, auto-link de cuenta por email. Ver sección dedicada más abajo |
 
 ### ✅ Infraestructura lista
 
@@ -172,6 +173,71 @@ En `mp-webhook-academy`, la rama de pagos de curso escribía el status crudo de 
 ### Verificación
 
 Todo lo reportado por Claude Code en esta sesión fue confirmado independientemente por Claude IA vía MCP antes de darlo por cerrado: código real de ambas edge functions releído, migraciones confirmadas contra `list_migrations`, valores reales de settings y de `genero` chequeados en producción, y estado de deploy confirmado contra Vercel (commit `67f680c` → `dpl_C8NiJo6f3fKmxW7Vt6A2UDPnur7n` → `READY`).
+
+---
+
+## PORTAL DE INSTRUCTORES (`/instructor/*`) — Sesión 16
+
+### Qué es
+
+Un portal de **solo lectura** para que cada instructor vea sus propios cursos, fechas, ventas, proyección de ganancia y liquidaciones. Reusa los componentes y tokens de `/admin/*` (`admin.css`, `.card`, `.tbl`, `.kpi-card`, `.chip`) — no es un sistema de diseño nuevo.
+
+**Lo único que un instructor puede escribir:** su propio perfil (bio, avatar, especialidad, redes), la factura de un período, y la respuesta a comentarios/reseñas de sus propios cursos. Nada más.
+
+**La carga de cursos sigue siendo 100% admin.** El instructor nunca crea ni edita cursos, precios, fechas ni `revenue_share_pct`.
+
+### Acceso
+
+- `InstructorGate` (análogo a `AdminGate`): exige una fila en `academy_instructors` con `user_id = auth.uid()` y `activo = true`.
+- **Prioridad admin:** si la persona es admin, el gate la manda a `/admin/*`. El botón "Backoffice" del header apunta a `/admin/resumen` para admins y a `/instructor/resumen` para instructores.
+- **Auto-link por email (en DB, sin intervención):** cargar un instructor con email ya registrado completa su `user_id` al instante; si el instructor se registra después, `handle_new_user()` lo vincula. Los dos órdenes están cubiertos por triggers.
+- Los instructores **sí pasan por `OnboardingGate`** como cualquier alumno (a diferencia de los admins, que lo saltean).
+
+### Liquidaciones — corte de mes MANUAL
+
+**No hay `pg_cron`.** La extensión no está instalada y el corte automático mensual del diseño original se descartó. En su lugar:
+
+`academy_close_instructor_month(p_instructor_id uuid, p_periodo date)` — RPC `SECURITY DEFINER`, admin-only (lanza excepción si `is_academy_admin()` es falso). Suma `academy_payments` (`tipo='curso'`, `estado='aprobado'`) de los cursos de ese instructor dentro del mes, aplica `revenue_share_pct`, y hace upsert sobre `(instructor_id, periodo)`. **Es idempotente:** correrla dos veces recalcula, no duplica.
+
+La dispara Yesica desde `/admin/pagos-instructores`.
+
+### Reglas de dinero
+
+- `pagado` **nunca** se escribe desde el frontend: lo pone en `true` un trigger al guardarse `comprobante_pago_url`.
+- El trigger `protect_payout_admin_fields` revierte cualquier intento del instructor de tocar montos, comprobante, fecha de pago o `pagado`. El frontend solo expone `factura_url`/`factura_subida_at`.
+- El trigger `protect_instructor_admin_fields` hace lo mismo sobre `academy_instructors` con `nombre`, `email`, `user_id`, `revenue_share_pct` y `activo`.
+- **La ganancia sale siempre de los pagos aprobados reales**, nunca de `precio_ars × inscriptos`: el precio de un curso puede haber cambiado entre ventas.
+- Yesica no tiene `user_id` vinculado y sus cursos no generan liquidación — la ganancia queda 100% Travexa. No tocar.
+
+### Nombres de terceros — no se abre `profiles`
+
+El instructor **no tiene lectura sobre `profiles`**. Para mostrar quién compró un curso se usa la RPC `get_instructor_course_buyer_names(p_course_id)`, `SECURITY DEFINER`, que valida `is_academy_admin() OR is_instructor_of_course()` y devuelve **solo** `enrollment_id, nombre, apellido, created_at` de los inscriptos activos. Nunca email ni teléfono.
+
+⚠️ **Consecuencia conocida:** en la pestaña "Comentarios" del detalle de curso, el autor de una pregunta o reseña se muestra como "Alumno/a" genérico. La RPC mapea inscripciones, no `user_id` de comentarios, y no hay otra vía sin exponer `profiles`. Si se quiere el nombre real ahí, hace falta una RPC nueva.
+
+### Storage — bucket privado `academy-comprobantes`
+
+- Factura del instructor: `instructor-facturas/{user_id}/{periodo}.ext`. El instructor tiene `INSERT`, `UPDATE` y `SELECT` sobre su carpeta → se sube con `upsert: true`, path estable.
+- Comprobante de pago: `instructor-pagos/{instructor_user_id}/{periodo}-{timestamp}.ext`. **El admin tiene `INSERT` y `SELECT` pero NO `UPDATE`**, así que el path lleva timestamp y se sube con `upsert: false`. No cambiar a un path fijo sin agregar antes la policy de `UPDATE`.
+- Al ser privado, todo archivo se muestra con `createSignedUrl()` (helper `signedComprobanteUrl` en `src/lib/storage.ts`, compartido con el flujo de vivenciales).
+
+### Rutas
+
+```
+/instructor/resumen      → ventas del mes, proyección, próximas fechas, último payout
+/instructor/cursos       → lista de sus cursos, con inscriptos pagos y ganancia
+/instructor/cursos/:id   → tabs "Resumen" (proyección o ganancia final + ventas
+                            posteriores) y "Comentarios" (responder preguntas/reseñas)
+/instructor/calendario   → grilla mensual: live_date de cursos + fecha_vivo de clases
+/instructor/metricas     → por mes: ventas, alumnos, ganancia (real si el mes está
+                            cerrado, proyectada si no)
+/instructor/pagos        → historial de payouts + subida de factura
+/instructor/perfil       → bio, avatar, especialidad, redes
+```
+
+### Admin — `/admin/pagos-instructores`
+
+Pantalla deliberadamente mínima (sección "Negocio" del sidebar): selector de instructor + período → "Cerrar mes"; tabla de payouts con monto pagado, fecha y upload de comprobante. Sin cola de aprobación. **La mejora visual del backoffice admin queda pendiente para una sesión futura — no construir de más acá.**
 
 ---
 
@@ -385,6 +451,17 @@ academy_vivencial_payments → id, enrollment_id, user_id, tipo ('sena'|'transfe
 ```
 ⚠️ Nunca se borra (auditoría). El admin puede insertar directo en `estado='aprobado'` (carga manual); el viajero solo puede insertar en `estado='pendiente'` (queda a la espera de aprobación).
 
+**Liquidaciones a instructores (Sesión 16 — nuevo):**
+```
+academy_instructor_payouts → id, instructor_id, periodo (primer día del mes),
+                             monto_bruto_ars, monto_instructor_ars, cantidad_ventas,
+                             factura_url + factura_subida_at (los escribe el instructor),
+                             comprobante_pago_url, monto_pagado_ars, fecha_pago (admin),
+                             pagado (bool, lo pone un trigger al cargarse el comprobante)
+                             UNIQUE (instructor_id, periodo)
+```
+⚠️ `pagado` nunca se escribe desde el frontend. Los campos de dinero los protege el trigger `protect_payout_admin_fields` contra escrituras de instructor. El mes lo cierra el admin a mano con `academy_close_instructor_month()` — no hay `pg_cron`.
+
 **Extras:**
 ```
 academy_wishlists     → user_id, course_id
@@ -528,9 +605,14 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - `/viaje/:slug` — Detalle de vivencial para el inscripto (itinerario, pagos, grupo de WhatsApp)
 
 ### Admin ✅
-- `/admin/resumen`, `/admin/cursos`, `/admin/vivenciales`, `/admin/instructores`, `/admin/beneficios`, `/admin/comentarios`, `/admin/metricas`
+- `/admin/resumen`, `/admin/cursos`, `/admin/vivenciales`, `/admin/instructores`, `/admin/beneficios`, `/admin/comentarios`, `/admin/metricas`, `/admin/pagos-instructores` (Sesión 16)
 - `/admin/vivenciales`: tab Inscriptos con "Cargar inscripción manual" + "+ Cargar pago" por inscripto (Sesión 15)
 - Gate: `AdminGate` (RLS + `profiles.es_admin`)
+
+### Instructor ✅ (Sesión 16)
+- `/instructor/resumen`, `/instructor/cursos`, `/instructor/cursos/:id`, `/instructor/calendario`, `/instructor/metricas`, `/instructor/pagos`, `/instructor/perfil`
+- Gate: `InstructorGate` (RLS + fila propia en `academy_instructors` con `activo = true`). Admin tiene prioridad
+- Solo lectura salvo: perfil propio, factura del período, respuesta a comentarios/reseñas de cursos propios
 
 ### Pendientes
 - Tienda pública de canjes (`/beneficios`)
@@ -564,6 +646,10 @@ Consolidado a Sesión 15. Orden aproximado por bloqueo/impacto, no es estricto.
 - [ ] **Eventos** (uno de los 4 pilares): webinars con cards tipo boarding pass — no construido
 - [ ] Decidir destino de la feature de cuotas MP para vivenciales que quedó deployada sin uso (retomar o dar de baja: edge function, columnas `vivencial_precio_cuotas_*`, settings `travexa_datos_transferencia`/`mp_monto_minimo_cuotas_ars`)
 - [ ] `referral_code` con formato legible (`TRVX-NOMBRE-2026`) — evaluado, sin decisión final
+- [ ] **[Sesión 16]** Rediseño visual completo del backoffice admin (`/admin/pagos-instructores` quedó intencionalmente básica)
+- [ ] **[Sesión 16]** Nombre real del autor en los comentarios/reseñas que ve el instructor (hoy "Alumno/a" — requiere una RPC nueva, no abrir `profiles`)
+- [ ] **[Sesión 16]** Exportar CSV de liquidaciones
+- [ ] **[Sesión 16]** Probar el portal de instructores con una cuenta real: hoy no hay ningún `academy_instructors` con `user_id` vinculado ni ventas de curso aprobadas
 
 ### 🔵 Más adelante / infraestructura de fondo
 - [ ] Repos privados + Vercel Pro (cuando el negocio lo justifique)
@@ -583,7 +669,8 @@ Consolidado a Sesión 15. Orden aproximado por bloqueo/impacto, no es estricto.
 8. **Nunca shippear estadísticas, testimonios o prueba social inventada** (ver principio dedicado arriba, Sesión 14).
 9. **Nunca agregar scroll-snap o scroll-jacking no pedido** (ver principio dedicado arriba, Sesión 14).
 10. **Los vivenciales no se cobran dentro de la plataforma** (ver principio dedicado arriba, Sesión 15). El saldo de un vivencial nunca se edita a mano — lo recalcula el trigger.
-11. **Actualizar este archivo** con cada sesión.
+11. **Comentarios y reseñas:** responde el admin (cualquier curso) o el instructor dueño del curso (Sesión 16). Ya no es "solo Yesica". El `pagado` de un payout y los campos de dinero nunca se escriben desde el frontend — los protegen triggers.
+12. **Actualizar este archivo** con cada sesión.
 
 ---
 

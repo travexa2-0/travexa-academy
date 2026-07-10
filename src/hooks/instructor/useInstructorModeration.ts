@@ -15,9 +15,8 @@ export interface AuthorName {
   apellido: string | null
 }
 
-// La RPC arma la lista a partir de `academy_lesson_comments`, así que cubre a quien
-// preguntó. Un alumno que solo dejó reseña sin comentar nunca no aparece: en ese caso
-// la UI cae al nombre genérico en vez de inventar uno.
+// La RPC cubre tanto a quien preguntó como a quien reseñó el curso. Si aun así un
+// autor no está en el mapa, la UI cae al nombre genérico en vez de inventar uno.
 async function fetchAuthorNames(courseId: string): Promise<Map<string, AuthorName>> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc('get_instructor_comment_author_names', { p_course_id: courseId })

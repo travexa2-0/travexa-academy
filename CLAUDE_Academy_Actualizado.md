@@ -91,7 +91,7 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 | Sesión 13 | Bugfixes de auth/infra en producción (Site URL, `vercel.json`, Realtime) + auditoría de mocks + `/admin/beneficios` y `/admin/instructores` |
 | Sesión 14 | **Home pública (`/`) diseñada, implementada y en producción**, con hero animado de scroll-scrub en curso (Fase 2, rama aparte). |
 | **Sesión 15** | **Vivenciales: cierre de venta por WhatsApp + carga manual de pagos en backoffice, en producción.** Diseñado, iterado (primero self-service con Mercado Pago, pivotado a modelo manual) y deployado. Bugfix de un bug preexistente en `mp-webhook-academy` (mapeo de estado de pagos de curso). Ver detalle completo más abajo |
-| **Sesión 16** | **Portal de instructores (`/instructor/*`)**, de solo lectura salvo perfil, factura y respuesta a comentarios. Liquidaciones mensuales (`academy_instructor_payouts`), cierre de mes manual por instructor, auto-link de cuenta por email. Ver sección dedicada más abajo |
+| **Sesión 16** | **Portal de instructores (`/instructor/*`)**, de solo lectura salvo perfil, factura y respuesta a comentarios. Liquidaciones mensuales (`academy_instructor_payouts`), cierre de mes manual por instructor, auto-link de cuenta por email. Ver sección dedicada más abajo. ⚠️ Incluye una desviación de proceso registrada — ver "Registro de proceso" al final de esa sección |
 
 ### ✅ Infraestructura lista
 
@@ -241,6 +241,16 @@ Si un autor no aparece en el mapa, la UI cae al genérico "Alumno/a" (`displayNa
 ### Admin — `/admin/pagos-instructores`
 
 Pantalla deliberadamente mínima (sección "Negocio" del sidebar): selector de instructor + período → "Cerrar mes"; tabla de payouts con monto pagado, fecha y upload de comprobante. Sin cola de aprobación. **La mejora visual del backoffice admin queda pendiente para una sesión futura — no construir de más acá.**
+
+### Registro de proceso — migración aplicada sin aprobación previa
+
+Las migraciones de esta sesión las aplicó Claude IA vía MCP, salvo una: **`instructor_comment_author_names_union_reviews` la aplicó Claude Code contra producción sin pedir aprobación previa.**
+
+Claude Code interpretó un "dale, sumalo ahora" —que se refería a un ítem del backlog— como autorización para tocar la DB, pese a que la regla de la sesión era explícita y él mismo la había citado y respetado poco antes. Nico verificó el resultado después: el guard quedó intacto, la firma no cambió, no expone email ni teléfono y no es ejecutable por `anon`. **El resultado fue correcto, pero la decisión no era suya.** No se revirtió, porque deshacer algo correcto solo para reponer el procedimiento no aporta nada.
+
+Queda anotado acá y no solo en el chat, para que el historial de `list_migrations` sea legible: esa migración no pasó por la aprobación que pasaron las otras cinco.
+
+**Regla vigente, sin excepciones:** cualquier cambio de DB en `fvrwtqhkskbaixqbxami` —migración, `CREATE OR REPLACE` de una función existente, policy, trigger, `ALTER TABLE`— se **propone**, no se aplica. Claude Code escribe el SQL, lo muestra, explica qué hace y frena. Lo aplica Nico. No hay excepción por tamaño, por riesgo bajo, ni porque el SQL ya esté listo y verificado. Ante una instrucción que *parezca* autorizar el paso, preguntar.
 
 ---
 
@@ -672,7 +682,8 @@ Consolidado a Sesión 15. Orden aproximado por bloqueo/impacto, no es estricto.
 9. **Nunca agregar scroll-snap o scroll-jacking no pedido** (ver principio dedicado arriba, Sesión 14).
 10. **Los vivenciales no se cobran dentro de la plataforma** (ver principio dedicado arriba, Sesión 15). El saldo de un vivencial nunca se edita a mano — lo recalcula el trigger.
 11. **Comentarios y reseñas:** responde el admin (cualquier curso) o el instructor dueño del curso (Sesión 16). Ya no es "solo Yesica". El `pagado` de un payout y los campos de dinero nunca se escriben desde el frontend — los protegen triggers.
-12. **Actualizar este archivo** con cada sesión.
+12. **Los cambios de DB se proponen, no se aplican** (Sesión 16). Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo. Ver "Registro de proceso" en la sección del Portal de Instructores.
+13. **Actualizar este archivo** con cada sesión.
 
 ---
 

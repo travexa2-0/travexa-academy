@@ -19,6 +19,7 @@ const CRUMBS: Record<string, string> = {
   '/admin/beneficios': 'Beneficios',
   '/admin/comentarios': 'Moderación',
   '/admin/metricas': 'Métricas',
+  '/admin/pagos-instructores': 'Pagos a instructores',
 }
 
 function NavIcon({ name }: { name: string }) {
@@ -30,6 +31,7 @@ function NavIcon({ name }: { name: string }) {
     case 'instructores': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>
     case 'beneficios': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" strokeLinejoin="round" /></svg>
     case 'metricas': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 20V10M12 20V4M20 20v-7" /></svg>
+    case 'pagos-instructores': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="6" width="20" height="13" rx="2" /><path d="M2 10h20M6 15h4" /></svg>
     default: return null
   }
 }
@@ -112,6 +114,7 @@ export default function AdminLayout() {
               {navItem('comentarios', 'Moderación', pendingModeration || undefined)}
               <div className="nav-section-label">Negocio</div>
               {navItem('metricas', 'Métricas')}
+              {navItem('pagos-instructores', 'Pagos a instructores')}
             </nav>
 
             <div className="sidebar-foot">

@@ -1,0 +1,100 @@
+/* ============================================================
+   Travexa Academy — páginas legales estáticas (/privacidad, /terminos)
+   Layout simple y legible sobre el dark navy del sitio. Usa los tokens
+   globales de index.css. Header + Footer son los componentes compartidos.
+   ============================================================ */
+
+.legal-root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-1);
+  display: flex;
+  flex-direction: column;
+}
+
+.legal-main {
+  flex: 1;
+  width: 100%;
+}
+
+.legal-container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 28px 72px;
+}
+
+.legal-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary-l);
+}
+
+.legal-title {
+  margin: 10px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+
+.legal-updated {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 32px;
+}
+
+.legal-container h2 {
+  margin: 34px 0 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+}
+
+.legal-container h3 {
+  margin: 22px 0 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--text-1);
+}
+
+.legal-container p {
+  margin: 0 0 14px;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+
+.legal-container ul {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  list-style: disc;
+}
+
+.legal-container li {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+
+.legal-container a {
+  color: var(--primary-l);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-container strong { color: var(--text-1); font-weight: 600; }
+
+.legal-intro {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text-2);
+}

@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import OnboardingGate from '@/components/layout/OnboardingGate'
 import AdminGate from '@/components/layout/AdminGate'
+import InstructorGate from '@/components/layout/InstructorGate'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 const Home                = lazy(() => import('@/pages/Home'))
@@ -18,6 +19,8 @@ const CourseDetail        = lazy(() => import('@/pages/public/CourseDetail'))
 const VivencialCatalog    = lazy(() => import('@/pages/public/VivencialCatalog'))
 const VivencialDetail     = lazy(() => import('@/pages/public/VivencialDetail'))
 const PerfilPublico     = lazy(() => import('@/pages/public/PerfilPublico'))
+const Privacidad        = lazy(() => import('@/pages/public/Privacidad'))
+const Terminos          = lazy(() => import('@/pages/public/Terminos'))
 const PagoConfirmado    = lazy(() => import('@/pages/public/PagoConfirmado'))
 const PagoError         = lazy(() => import('@/pages/public/PagoError'))
 const Dashboard         = lazy(() => import('@/pages/private/Dashboard'))
@@ -34,6 +37,15 @@ const AdminMetricas     = lazy(() => import('@/pages/admin/Metricas'))
 const AdminComentarios  = lazy(() => import('@/pages/admin/Comentarios'))
 const AdminBeneficios   = lazy(() => import('@/pages/admin/Beneficios'))
 const AdminInstructores = lazy(() => import('@/pages/admin/Instructores'))
+const AdminPagosInstructores = lazy(() => import('@/pages/admin/PagosInstructores'))
+const InstructorLayout       = lazy(() => import('@/pages/instructor/InstructorLayout'))
+const InstructorResumen      = lazy(() => import('@/pages/instructor/Resumen'))
+const InstructorCursos       = lazy(() => import('@/pages/instructor/Cursos'))
+const InstructorCursoDetalle = lazy(() => import('@/pages/instructor/CursoDetalle'))
+const InstructorCalendario   = lazy(() => import('@/pages/instructor/Calendario'))
+const InstructorMetricas     = lazy(() => import('@/pages/instructor/Metricas'))
+const InstructorPagos        = lazy(() => import('@/pages/instructor/Pagos'))
+const InstructorPerfil       = lazy(() => import('@/pages/instructor/Perfil'))
 
 function PageLoader() {
   return (
@@ -89,6 +101,8 @@ export default function App() {
               <Route path="/vivencial" element={<VivencialCatalog />} />
               <Route path="/vivencial/:slug" element={<VivencialDetail />} />
               <Route path="/u/:username" element={<PerfilPublico />} />
+              <Route path="/privacidad" element={<Privacidad />} />
+              <Route path="/terminos" element={<Terminos />} />
               <Route path="/pago-confirmado" element={<PagoConfirmado />} />
               <Route path="/pago-error" element={<PagoError />} />
 
@@ -119,6 +133,23 @@ export default function App() {
                     <Route path="beneficios" element={<AdminBeneficios />} />
                     <Route path="comentarios" element={<AdminComentarios />} />
                     <Route path="metricas" element={<AdminMetricas />} />
+                    <Route path="pagos-instructores" element={<AdminPagosInstructores />} />
+                  </Route>
+                </Route>
+              </Route>
+
+              {/* Portal de instructores — solo lectura salvo perfil, factura y respuestas */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<InstructorGate />}>
+                  <Route path="/instructor" element={<InstructorLayout />}>
+                    <Route index element={<Navigate to="/instructor/resumen" replace />} />
+                    <Route path="resumen" element={<InstructorResumen />} />
+                    <Route path="cursos" element={<InstructorCursos />} />
+                    <Route path="cursos/:id" element={<InstructorCursoDetalle />} />
+                    <Route path="calendario" element={<InstructorCalendario />} />
+                    <Route path="metricas" element={<InstructorMetricas />} />
+                    <Route path="pagos" element={<InstructorPagos />} />
+                    <Route path="perfil" element={<InstructorPerfil />} />
                   </Route>
                 </Route>
               </Route>

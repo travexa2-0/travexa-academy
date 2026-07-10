@@ -43,12 +43,8 @@ export function useEnrollmentPaymentHistory(enrollmentId: string | undefined, en
   })
 }
 
-// URL firmada para ver un comprobante privado.
-export async function signedComprobanteUrl(path: string): Promise<string | null> {
-  const { data, error } = await supabase.storage.from('academy-comprobantes').createSignedUrl(path, 120)
-  if (error) return null
-  return data.signedUrl
-}
+// URL firmada para ver un comprobante privado (compartida con el portal de instructores).
+export { signedComprobanteUrl } from '@/lib/storage'
 
 // ── Aprobar / rechazar comprobante ─────────────────────────────────────────
 

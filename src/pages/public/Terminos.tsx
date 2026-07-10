@@ -4,12 +4,9 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import './legal.css'
 
-// Términos y Condiciones públicos. Contenido estático.
-// ⚠️ Dos bloques requieren datos reales antes de publicar:
-//   - Datos de la empresa (CUIT, domicilio, jurisdicción) → [COMPLETAR: ...]
-//   - Política de cancelación / reembolso de vivenciales → a definir con Yesica.
-//     NO inventar términos comerciales; queda como bloque de aviso hasta tener
-//     el texto exacto.
+// Términos y Condiciones públicos. Contenido estático con los datos reales de
+// Pencom Travexa SAS. La política de cancelación/reembolso de vivenciales
+// refleja el modelo actual: se coordina de forma personalizada por WhatsApp.
 export default function Terminos() {
   useEffect(() => {
     document.title = 'Términos y Condiciones · Travexa Academy'
@@ -79,15 +76,13 @@ export default function Terminos() {
           </p>
 
           <h2>5. Cancelaciones y reembolsos de vivenciales</h2>
-          <div className="legal-note">
-            <p>
-              <span className="legal-todo">[COMPLETAR con Yesica]</span> — La política de
-              cancelación y reembolso de vivenciales (plazos, retención de seña, condiciones
-              de devolución) debe definirse con el área comercial antes de publicar esta
-              sección. No se incluye texto provisorio para no comprometer términos comerciales
-              que aún no están confirmados.
-            </p>
-          </div>
+          <p>
+            Las condiciones de cancelación y reembolso de cada vivencial se coordinan
+            directamente con Yesica Robles por WhatsApp, de forma personalizada según la
+            experiencia y la anticipación de la baja. Al confirmar tu lugar en un vivencial,
+            estas condiciones te son comunicadas explícitamente antes de realizar cualquier
+            pago.
+          </p>
 
           <h2>6. Propiedad intelectual</h2>
           <p>
@@ -131,14 +126,14 @@ export default function Terminos() {
           <h2>11. Ley aplicable y jurisdicción</h2>
           <p>
             Estos términos se rigen por las leyes de la República Argentina. Ante cualquier
-            controversia, las partes se someten a los tribunales de{' '}
-            <span className="legal-todo">[COMPLETAR: jurisdicción]</span>.
+            controversia, las partes se someten a los Tribunales Ordinarios de Quilmes,
+            Provincia de Buenos Aires.
           </p>
 
           <h2>12. Contacto</h2>
           <p>
             Ante cualquier consulta sobre estos términos, escribinos a{' '}
-            <span className="legal-todo">[COMPLETAR: email de contacto]</span>.
+            <a href="mailto:pencom.travel@gmail.com">pencom.travel@gmail.com</a>.
           </p>
         </div>
       </main>

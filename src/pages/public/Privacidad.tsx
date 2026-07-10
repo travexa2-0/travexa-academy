@@ -5,9 +5,8 @@ import Footer from '@/components/layout/Footer'
 import './legal.css'
 
 // Política de privacidad pública. Requerida por Google para publicar el OAuth
-// consent screen (salir de modo Testing). Contenido estático.
-// ⚠️ Los datos de la empresa marcados [COMPLETAR: ...] deben cargarse con datos
-// reales de Pencom Travexa SAS antes de publicar.
+// consent screen (salir de modo Testing). Contenido estático con los datos
+// reales de Pencom Travexa SAS.
 export default function Privacidad() {
   useEffect(() => {
     document.title = 'Política de Privacidad · Travexa Academy'
@@ -36,9 +35,9 @@ export default function Privacidad() {
           </p>
           <ul>
             <li>Razón social: <strong>Pencom Travexa SAS</strong></li>
-            <li>CUIT: <span className="legal-todo">[COMPLETAR: CUIT]</span></li>
-            <li>Domicilio: <span className="legal-todo">[COMPLETAR: domicilio legal]</span></li>
-            <li>Contacto de privacidad: <span className="legal-todo">[COMPLETAR: email de contacto]</span></li>
+            <li>CUIT: <strong>27-33499373-2</strong></li>
+            <li>Domicilio: <strong>Argentino Roca 361, Quilmes, Provincia de Buenos Aires</strong></li>
+            <li>Contacto de privacidad: <a href="mailto:pencom.travel@gmail.com">pencom.travel@gmail.com</a></li>
           </ul>
 
           <h2>2. Qué datos recolectamos</h2>
@@ -130,7 +129,7 @@ export default function Privacidad() {
             Podés solicitar el acceso, la rectificación, la actualización o la eliminación de
             tus datos personales, así como oponerte a determinados tratamientos. Para
             ejercer estos derechos, escribinos a{' '}
-            <span className="legal-todo">[COMPLETAR: email de contacto]</span>. Como titular
+            <a href="mailto:pencom.travel@gmail.com">pencom.travel@gmail.com</a>. Como titular
             de los datos, también tenés la facultad de reclamar ante la autoridad de control
             competente en materia de protección de datos personales.
           </p>
@@ -152,7 +151,7 @@ export default function Privacidad() {
           <h2>10. Contacto</h2>
           <p>
             Si tenés dudas sobre esta política o sobre el tratamiento de tus datos, podés
-            escribirnos a <span className="legal-todo">[COMPLETAR: email de contacto]</span>.
+            escribirnos a <a href="mailto:pencom.travel@gmail.com">pencom.travel@gmail.com</a>.
           </p>
 
           <p style={{ marginTop: 32 }}>

@@ -18,6 +18,8 @@ const CourseDetail        = lazy(() => import('@/pages/public/CourseDetail'))
 const VivencialCatalog    = lazy(() => import('@/pages/public/VivencialCatalog'))
 const VivencialDetail     = lazy(() => import('@/pages/public/VivencialDetail'))
 const PerfilPublico     = lazy(() => import('@/pages/public/PerfilPublico'))
+const Privacidad        = lazy(() => import('@/pages/public/Privacidad'))
+const Terminos          = lazy(() => import('@/pages/public/Terminos'))
 const PagoConfirmado    = lazy(() => import('@/pages/public/PagoConfirmado'))
 const PagoError         = lazy(() => import('@/pages/public/PagoError'))
 const Dashboard         = lazy(() => import('@/pages/private/Dashboard'))
@@ -89,6 +91,8 @@ export default function App() {
               <Route path="/vivencial" element={<VivencialCatalog />} />
               <Route path="/vivencial/:slug" element={<VivencialDetail />} />
               <Route path="/u/:username" element={<PerfilPublico />} />
+              <Route path="/privacidad" element={<Privacidad />} />
+              <Route path="/terminos" element={<Terminos />} />
               <Route path="/pago-confirmado" element={<PagoConfirmado />} />
               <Route path="/pago-error" element={<PagoError />} />
 

@@ -1,0 +1,53 @@
+/* ============================================================
+   Travexa Academy — shared site footer
+   Ported from the Home footer (was inline in FinalCTA). Uses the
+   global tokens from index.css so it renders consistently on the
+   Home and on the standalone legal pages (/privacidad, /terminos).
+   ============================================================ */
+
+.site-footer {
+  padding: 44px 0 36px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text-1);
+}
+
+.site-footer-inner {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.site-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.site-footer-brand span { color: var(--gold); }
+
+.site-footer-links {
+  display: flex;
+  gap: 22px;
+  font-size: 12.5px;
+  color: var(--text-3);
+  flex-wrap: wrap;
+}
+
+.site-footer-links a { color: var(--text-3); transition: color 160ms ease; }
+.site-footer-links a:hover { color: var(--text-1); }
+
+.site-footer-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}

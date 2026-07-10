@@ -397,14 +397,8 @@
   .cta-final p{ margin-top:16px; font-size:1.02rem; color:var(--text-2); }
   .cta-final .hero-cta{ justify-content:center; margin-top:32px; }
 
-  /* ============ FOOTER ============ */
-  .home-footer{ padding:44px 0 36px; border-top:1px solid var(--line); background:var(--bg); }
-  .footer-inner{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
-  .footer-brand{ display:flex; align-items:center; gap:9px; font-family:var(--font-display); font-weight:700; font-size:14.5px; }
-  .footer-brand span{ color:var(--gold); }
-  .footer-links{ display:flex; gap:22px; font-size:12.5px; color:var(--text-3); flex-wrap:wrap; }
-  .footer-links a:hover{ color:var(--text-1); }
-  .footer-meta{ font-family:var(--font-mono); font-size:11px; color:var(--text-3); }
+  /* Footer: ahora es el componente compartido src/components/layout/Footer.tsx
+     (footer.css), reutilizado por la Home y las páginas legales. */
 
   /* ============ SECCIONES A PANTALLA COMPLETA ============ */
   /* Cada sección mide exactamente una pantalla (100dvh, sin snap) con su

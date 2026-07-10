@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Reveal } from './Reveal'
+import Footer from '@/components/layout/Footer'
 
 // CTA final + footer de la Home. Estático.
 export default function FinalCTA() {
@@ -23,17 +24,7 @@ export default function FinalCTA() {
         </div>
       </section>
 
-      <footer className="home-footer">
-        <div className="container footer-inner">
-          <div className="footer-brand">Travexa <span>Academy</span></div>
-          <div className="footer-links">
-            <Link to="/cursos">Formación</Link>
-            <Link to="/vivencial">Vivencial</Link>
-            <Link to="/login">Ingresar</Link>
-          </div>
-          <div className="footer-meta">Pencom Travexa SAS · 2026</div>
-        </div>
-      </footer>
+      <Footer />
     </>
   )
 }

@@ -211,9 +211,12 @@ La dispara Yesica desde `/admin/pagos-instructores`.
 
 ### Nombres de terceros — no se abre `profiles`
 
-El instructor **no tiene lectura sobre `profiles`**. Para mostrar quién compró un curso se usa la RPC `get_instructor_course_buyer_names(p_course_id)`, `SECURITY DEFINER`, que valida `is_academy_admin() OR is_instructor_of_course()` y devuelve **solo** `enrollment_id, nombre, apellido, created_at` de los inscriptos activos. Nunca email ni teléfono.
+El instructor **no tiene lectura sobre `profiles`**. Todo nombre de tercero llega por RPC `SECURITY DEFINER`, cada una validando `is_academy_admin() OR is_instructor_of_course()`. Nunca email ni teléfono.
 
-⚠️ **Consecuencia conocida:** en la pestaña "Comentarios" del detalle de curso, el autor de una pregunta o reseña se muestra como "Alumno/a" genérico. La RPC mapea inscripciones, no `user_id` de comentarios, y no hay otra vía sin exponer `profiles`. Si se quiere el nombre real ahí, hace falta una RPC nueva.
+- `get_instructor_course_buyer_names(p_course_id)` → `enrollment_id, nombre, apellido, created_at` de los inscriptos activos. Se usa en el detalle de curso.
+- `get_instructor_comment_author_names(p_course_id)` → `user_id, nombre, apellido` de quienes comentaron. Se usa como mapa en la pestaña "Comentarios".
+
+⚠️ La segunda RPC se arma sobre `academy_lesson_comments`, así que **no cubre a un alumno que dejó reseña sin haber comentado nunca**. En ese caso la UI muestra "Alumno/a" genérico en vez de inventar un nombre. Si hace falta cubrirlo, extender la RPC con un `UNION` contra `academy_reviews`.
 
 ### Storage — bucket privado `academy-comprobantes`
 
@@ -647,7 +650,7 @@ Consolidado a Sesión 15. Orden aproximado por bloqueo/impacto, no es estricto.
 - [ ] Decidir destino de la feature de cuotas MP para vivenciales que quedó deployada sin uso (retomar o dar de baja: edge function, columnas `vivencial_precio_cuotas_*`, settings `travexa_datos_transferencia`/`mp_monto_minimo_cuotas_ars`)
 - [ ] `referral_code` con formato legible (`TRVX-NOMBRE-2026`) — evaluado, sin decisión final
 - [ ] **[Sesión 16]** Rediseño visual completo del backoffice admin (`/admin/pagos-instructores` quedó intencionalmente básica)
-- [ ] **[Sesión 16]** Nombre real del autor en los comentarios/reseñas que ve el instructor (hoy "Alumno/a" — requiere una RPC nueva, no abrir `profiles`)
+- [ ] **[Sesión 16]** Extender `get_instructor_comment_author_names` con un `UNION` contra `academy_reviews`: hoy un alumno que solo dejó reseña aparece como "Alumno/a"
 - [ ] **[Sesión 16]** Exportar CSV de liquidaciones
 - [ ] **[Sesión 16]** Probar el portal de instructores con una cuenta real: hoy no hay ningún `academy_instructors` con `user_id` vinculado ni ventas de curso aprobadas
 

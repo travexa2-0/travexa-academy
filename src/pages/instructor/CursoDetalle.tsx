@@ -6,7 +6,7 @@ import NumberFlow from '@number-flow/react'
 import { useInstructorSelf } from '@/hooks/useInstructorSelf'
 import { useOwnCourses, useOwnSales, useCourseBuyerNames } from '@/hooks/instructor/useInstructorCourses'
 import {
-  useCourseComments, useCourseReviews,
+  useCourseComments, useCourseReviews, useCourseAuthorNames,
   useInstructorRespondComment, useInstructorRespondReview,
   type InstructorComment,
 } from '@/hooks/instructor/useInstructorModeration'
@@ -108,8 +108,12 @@ function ComentariosTab({ courseId }: { courseId: string }) {
   const [sub, setSub] = useState<'preguntas' | 'resenas'>('preguntas')
   const { data: comments = [], isLoading: loadingC } = useCourseComments(courseId)
   const { data: reviews = [], isLoading: loadingR } = useCourseReviews(courseId)
+  const { data: authors } = useCourseAuthorNames(courseId)
   const respondComment = useInstructorRespondComment()
   const respondReview = useInstructorRespondReview()
+
+  // `displayName` cae a "Alumno/a" cuando el autor no está en el mapa.
+  const autorDe = (userId: string | null) => displayName(userId ? authors?.get(userId) : null)
 
   const loading = sub === 'preguntas' ? loadingC : loadingR
   const empty = sub === 'preguntas' ? comments.length === 0 : reviews.length === 0
@@ -142,7 +146,7 @@ function ComentariosTab({ courseId }: { courseId: string }) {
       {!loading && sub === 'preguntas' && comments.map((c: InstructorComment) => (
         <ModItemCard
           key={c.id}
-          autor={displayName(null)}
+          autor={autorDe(c.user_id)}
           contexto={c.lesson?.titulo ?? 'Lección'}
           fecha={fmtDate(c.created_at)}
           texto={c.comentario}
@@ -158,7 +162,7 @@ function ComentariosTab({ courseId }: { courseId: string }) {
       {!loading && sub === 'resenas' && reviews.map((r: Review) => (
         <ModItemCard
           key={r.id}
-          autor={displayName(null)}
+          autor={autorDe(r.user_id)}
           contexto="Reseña del curso"
           fecha={fmtDate(r.created_at)}
           texto={r.comentario ?? ''}

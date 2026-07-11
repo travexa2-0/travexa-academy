@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 11 Julio 2026 — Sesión 17**
+**Actualizado: 11 Julio 2026 — Sesión 18 (cutover de dominio)**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -19,7 +19,7 @@ Sos el CTO de desarrollo de **Travexa Academy**. Trabajás junto a Nicolás Beli
 
 ## QUÉ ES TRAVEXA ACADEMY
 
-Plataforma de formación del trade turístico argentino. URL destino: `academy.travexa.com.ar`. Producción actual: `https://travexa-academy.vercel.app` (dominio propio pendiente de cutover, ver backlog).
+Plataforma de formación del trade turístico argentino. URL oficial de producción: **`https://academy.travexa.com.ar`** (dominio propio, dado de alta en Vercel y sirviendo desde Sesión 18). `https://travexa-academy.vercel.app` sigue siendo el deploy de Vercel subyacente (el dominio custom apunta ahí) y sigue resolviendo, pero la URL de cara al usuario es la del dominio propio. ⚠️ Verificación de login desde el dominio nuevo pendiente de confirmar, ver backlog.
 
 **Los 4 pilares:**
 1. **Formación** — Cursos grabados por Yesica e instructores/influencers del sector
@@ -93,6 +93,7 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 | **Sesión 15** | **Vivenciales: cierre de venta por WhatsApp + carga manual de pagos en backoffice, en producción.** Diseñado, iterado (primero self-service con Mercado Pago, pivotado a modelo manual) y deployado. Bugfix de un bug preexistente en `mp-webhook-academy` (mapeo de estado de pagos de curso). Ver detalle completo más abajo |
 | **Sesión 16** | **Portal de instructores (`/instructor/*`)**, de solo lectura salvo perfil, factura y respuesta a comentarios. Liquidaciones mensuales (`academy_instructor_payouts`), cierre de mes manual por instructor, auto-link de cuenta por email. Ver sección dedicada más abajo. ⚠️ Incluye una desviación de proceso registrada — ver "Registro de proceso" al final de esa sección |
 | **Sesión 17** | **Video de lecciones grabado/en vivo unificado en el player** (embed `youtube-nocookie`, chat nativo de YouTube en vivo / comentarios de Academy según estado, watermark corregido sobre el iframe) + **el admin ahora carga video/`live_url`/`fecha_vivo`/portada por lección**. Columna nueva `academy_lessons.thumbnail_url`. Ver sección dedicada más abajo. Rama de trabajo, sin mergear |
+| **Sesión 18** | **Cutover de dominio propio: `academy.travexa.com.ar` en producción** — dado de alta en el proyecto Vercel + DNS, verificado sirviendo la app (HTTP 200). El `.vercel.app` sigue existiendo como deploy subyacente. ⚠️ **PENDIENTE de confirmar**: Site URL/Redirect URLs de Supabase Auth + Authorized origins de Google OAuth para el dominio nuevo (el login puede estar roto desde ahí aunque el sitio cargue). Ver sección dedicada más abajo |
 
 ### ✅ Infraestructura lista
 
@@ -109,7 +110,7 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 - Test users de Google OAuth → mientras el OAuth Client esté en modo "Testing", solo loguean cuentas agregadas a mano en Google Cloud Console
 - Volver a activar "Confirm email" en Supabase (se apagó para testear sin rate limit)
 - SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real
-- **[NUEVO] Dominio propio `academy.travexa.com.ar`** — cutover sin arrancar (alta en Vercel + DNS + Site URL/Redirect de Supabase Auth + Google OAuth origins). Tema de la próxima sesión
+- **[Sesión 18] Confirmar auth desde `academy.travexa.com.ar`** — el dominio ya está dado de alta en Vercel y sirviendo ✅, pero FALTA confirmar en los dashboards (no verificable por código): **Supabase Auth → Site URL** = `https://academy.travexa.com.ar`; **Supabase Auth → Redirect URLs** incluye `https://academy.travexa.com.ar/**` (mínimo `/auth/callback` y `/actualizar-contrasena`); **Google Cloud → OAuth Client → Authorized JavaScript origins** incluye `https://academy.travexa.com.ar`. Si no se actualizaron, el login (email + Google) puede estar roto desde el dominio nuevo aunque el sitio cargue. El código de la app ya arma el `redirectTo` con `window.location.origin`, así que del lado del código está listo — falta solo el allowlist de los dashboards. Verificar login end-to-end desde el dominio nuevo
 - **[NUEVO] Revisión visual end-to-end del flujo de vivenciales** — deployado y verificado a nivel de código/DB, pero nadie lo probó todavía como usuario real (botón "Quiero anotarme" → WhatsApp, alta + carga de pago en backoffice, subida de comprobante del viajero)
 
 ### 🟡 Próximos pasos
@@ -120,7 +121,30 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 4. `/beneficios` — página de canje de créditos
 5. Testimonios reales para `TestimonialsSection` (hoy feature-flagged off)
 6. **[NUEVO]** Decidir destino de la feature de cuotas MP para vivenciales (retomar o dar de baja, ver Sesión 15)
-7. **[NUEVO]** Dominio propio y revisión visual del flujo de vivenciales (ver arriba)
+7. **[Sesión 18]** Confirmar auth desde el dominio propio (ya sirviendo) + revisión visual del flujo de vivenciales (ver arriba)
+
+---
+
+## CUTOVER DE DOMINIO PROPIO — Sesión 18 (11 Julio 2026)
+
+Academy pasó de vivir solo en la URL de Vercel a tener su dominio propio en producción.
+
+**Qué se hizo (por Nico, en los dashboards):**
+- Alta del dominio `academy.travexa.com.ar` en el proyecto Vercel `travexa-academy` + registros DNS en el proveedor de `travexa.com.ar`.
+- El `.vercel.app` NO se dio de baja: sigue existiendo como deploy subyacente, el dominio custom apunta al mismo proyecto/deploy. Ambas URLs resuelven; la de cara al usuario pasa a ser la del dominio propio.
+
+**Verificado (Claude IA, de forma independiente):**
+- `https://academy.travexa.com.ar` → HTTP 200, sirve la app real de Academy (no 404 ni landing default). El dominio figura en `domains` del proyecto Vercel `prj_EVk9I5qgCzTEJ5FAqNODm1t5N8AC`.
+- No hay ninguna URL `travexa-academy.vercel.app` hardcodeada en el **código** (solo estaba en este doc). El código usa `academy.travexa.com.ar` donde corresponde (edge functions, links de referido/share) o `window.location.origin` (dinámico).
+
+**⚠️ PENDIENTE de confirmar (no verificable por código — es config de dashboard):**
+- **Supabase Auth → Site URL** = `https://academy.travexa.com.ar`.
+- **Supabase Auth → Redirect URLs** incluye `https://academy.travexa.com.ar/**` (mínimo `/auth/callback` y `/actualizar-contrasena`).
+- **Google Cloud → OAuth Client → Authorized JavaScript origins** incluye `https://academy.travexa.com.ar` (el redirect URI de Google apunta al callback de Supabase, que es independiente del dominio).
+
+`AuthContext.tsx` arma el OAuth con `redirectTo: ${window.location.origin}/auth/callback`, así que desde el dominio nuevo pide volver a `https://academy.travexa.com.ar/auth/callback` — pero si ese redirect y el Site URL no están en el allowlist de Supabase, el login queda roto **aunque el sitio cargue bien**. Confirmar con un login end-to-end (email + Google) desde el dominio nuevo antes de darlo por cerrado.
+
+**Nota Travexa Core:** el proyecto nuevo `travexa-core` (Home del Marketplace) linkea a Academy vía la constante `ACADEMY_URL` en `src/lib/config.ts`. Sigue apuntando a `https://travexa-academy.vercel.app` — actualizar a `https://academy.travexa.com.ar` cuando se confirme el cutover completo (los links de Academy en esa Home abren en pestaña nueva).
 
 ---
 
@@ -595,8 +619,9 @@ Storage:     Supabase Storage — bucket `academy-media` (público, 5MB max, sol
 ```
 Repo:     github.com/travexa2-0/travexa-academy (público)
 Vercel:   travexa-academy (prj_EVk9I5qgCzTEJ5FAqNODm1t5N8AC)
-Producción: https://travexa-academy.vercel.app (dominio propio academy.travexa.com.ar pendiente
-            de cutover)
+Producción: https://academy.travexa.com.ar (dominio propio oficial, Sesión 18 — sirviendo)
+            https://travexa-academy.vercel.app sigue siendo el deploy Vercel subyacente
+            (⚠️ auth desde el dominio nuevo pendiente de confirmar, ver backlog)
 Supabase: fvrwtqhkskbaixqbxami (São Paulo)
 Local:    /Users/nicolasbelinco/Projects/travexa/travexa-academy
 Proto:    Prototipos HTML en la raíz del proyecto — academy_catalogo.html, academy_perfil.html,
@@ -683,8 +708,8 @@ Consolidado a Sesión 15. Orden aproximado por bloqueo/impacto, no es estricto.
 - [ ] Reactivar "Confirm email" en Supabase Auth (protección contra account-takeover en el auto-linking Google↔password)
 - [ ] SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real
 - [ ] Test users / sacar el Google OAuth Client de modo "Testing"
-- [ ] JavaScript origins del Google OAuth Client (completar, hoy vacío)
-- [ ] Dominio propio `academy.travexa.com.ar`: alta en Vercel + DNS + Site URL/Redirect URLs de Supabase Auth + Authorized origins/redirect URIs de Google OAuth
+- [ ] JavaScript origins del Google OAuth Client (completar, hoy vacío — sumar `https://academy.travexa.com.ar`)
+- [x] Dominio propio `academy.travexa.com.ar`: alta en Vercel + DNS ✅ (Sesión 18, sirviendo). **Falta confirmar**: Site URL/Redirect URLs de Supabase Auth + Authorized origins de Google OAuth apuntando al dominio nuevo — sin eso el login puede fallar desde ahí (ver "Acción manual pendiente")
 - [ ] Revisión visual end-to-end del flujo de vivenciales por WhatsApp (deployado, no probado por un humano todavía)
 
 ### 🟡 Producto — pilares incompletos o features a medio construir

@@ -336,6 +336,8 @@ export interface Lesson {
   // clases en vivo con grabación
   fecha_vivo: string | null
   live_url: string | null
+  // portada propia de la lección; cae al thumbnail del curso si es null
+  thumbnail_url: string | null
 }
 
 // Recurso adjunto a una lección (PDF, link, etc.). Los PDFs se leen en canvas, nunca se descargan.
@@ -346,13 +348,36 @@ export interface LessonRecurso {
 }
 
 // Estado inferido de una lección en vivo (no hay campo explícito en DB).
-export type LiveLessonState = 'programada' | 'grabacion_pendiente' | 'grabada' | 'sin_video'
+// - programada: falta para el vivo (o no hay link cargado todavía).
+// - en_vivo: el vivo está al aire (dentro de la ventana desde fecha_vivo).
+// - grabacion_pendiente: ya pasó el vivo pero no hay link ni grabación.
+// - grabada: hay video (grabado subido, o el vivo que YouTube ya dejó como grabación en la misma live_url).
+// - sin_video: no hay nada cargado.
+export type LiveLessonState = 'programada' | 'en_vivo' | 'grabacion_pendiente' | 'grabada' | 'sin_video'
 
-export function liveLessonState(lesson: Pick<Lesson, 'video_url' | 'fecha_vivo'>): LiveLessonState {
+// Cuánto tiempo, desde fecha_vivo, se considera que una lección sigue "en vivo".
+// No hay duración por lección en el schema, así que usamos una ventana fija.
+// El chat embed de YouTube igual sólo renderiza mientras el stream está realmente al aire.
+export const LIVE_WINDOW_MS = 3 * 60 * 60 * 1000
+
+export function liveLessonState(lesson: Pick<Lesson, 'video_url' | 'live_url' | 'fecha_vivo'>): LiveLessonState {
+  // Grabado subido directo: siempre se reproduce como video normal.
   if (lesson.video_url) return 'grabada'
+  // Lección en vivo (con fecha programada).
   if (lesson.fecha_vivo) {
-    return new Date(lesson.fecha_vivo).getTime() > Date.now() ? 'programada' : 'grabacion_pendiente'
+    const start = new Date(lesson.fecha_vivo).getTime()
+    const now = Date.now()
+    if (!lesson.live_url) {
+      // Todavía sin link de YouTube: antes de la fecha es "programada", después "grabación pendiente".
+      return now < start ? 'programada' : 'grabacion_pendiente'
+    }
+    if (now < start) return 'programada'
+    if (now <= start + LIVE_WINDOW_MS) return 'en_vivo'
+    // Pasó la ventana: YouTube ya dejó la grabación en la misma URL.
+    return 'grabada'
   }
+  // Sin fecha pero con link cargado → tratarlo como grabado disponible.
+  if (lesson.live_url) return 'grabada'
   return 'sin_video'
 }
 

@@ -14,6 +14,7 @@ import { usePricingConfig } from '@/hooks/usePricing'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { courseLiveState } from '@/lib/liveState'
 import { displayName } from '@/lib/utils'
+import { liveLessonState } from '@/types'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -245,6 +246,23 @@ function CurriculumAccordion({ modules, isVivencial }: { modules: Module[]; isVi
   )
 }
 
+// Estado de una lección en vivo para el badge del listado (solo si tiene fecha programada).
+function LiveLessonBadge({ lesson }: { lesson: Lesson }) {
+  if (!lesson.fecha_vivo) return null
+  const st = liveLessonState(lesson)
+  if (st === 'en_vivo') {
+    return <span className="font-mono text-[8.5px] tracking-[.05em] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.14)', color: '#DC2626' }}>EN VIVO AHORA</span>
+  }
+  if (st === 'programada') {
+    const f = new Date(lesson.fecha_vivo).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+    return <span className="font-mono text-[8.5px] tracking-[.05em] px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-s)', color: 'var(--primary-l)' }}>PRÓXIMO · {f}</span>
+  }
+  if (st === 'grabacion_pendiente') {
+    return <span className="font-mono text-[8.5px] tracking-[.05em]" style={{ color: 'var(--text-3)' }}>GRABACIÓN PRONTO</span>
+  }
+  return <span className="font-mono text-[8.5px] tracking-[.05em]" style={{ color: 'var(--text-3)' }}>GRABADO DISPONIBLE</span>
+}
+
 function LessonRow({ lesson, isFirst }: { lesson: Lesson; isFirst: boolean }) {
   const dur = lesson.duracion_segundos ? `${Math.floor(lesson.duracion_segundos / 60)} min` : ''
   return (
@@ -256,6 +274,7 @@ function LessonRow({ lesson, isFirst }: { lesson: Lesson; isFirst: boolean }) {
         }
       </div>
       <span className="flex-1 text-sm" style={{ color: '#1A3040' }}>{lesson.titulo}</span>
+      <LiveLessonBadge lesson={lesson} />
       {(isFirst || lesson.es_preview) && (
         <span className="font-mono text-[8.5px] tracking-[.05em]" style={{ color: 'var(--primary-l)' }}>GRATIS</span>
       )}
@@ -694,7 +713,8 @@ export default function CourseDetail() {
   const liveState   = courseLiveState(course)
   const isLive      = liveState === 'upcoming' || liveState === 'live'
   const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
-  const nivelStyle  = NIVEL_STYLES[course.nivel]
+  // Fallback seguro: nivel null (ej. vivencial) o no contemplado → sin badge, sin romper el render.
+  const nivelStyle  = course.nivel ? NIVEL_STYLES[course.nivel] : undefined
   const precioTarjeta = Number(course.precio_ars) || 0
   const precioTransf  = Number(course.precio_transferencia_ars) || 0
 
@@ -835,12 +855,14 @@ export default function CourseDetail() {
               </div>
             )}
             {/* Nivel badge */}
-            <span
-              className="font-mono text-[9px] tracking-[.07em] uppercase px-[8px] py-[3px] rounded-[4px]"
-              style={{ background: nivelStyle.bg, color: nivelStyle.color }}
-            >
-              {nivelStyle.label}
-            </span>
+            {nivelStyle && (
+              <span
+                className="font-mono text-[9px] tracking-[.07em] uppercase px-[8px] py-[3px] rounded-[4px]"
+                style={{ background: nivelStyle.bg, color: nivelStyle.color }}
+              >
+                {nivelStyle.label}
+              </span>
+            )}
           </div>
 
           {/* Copy link */}

@@ -103,7 +103,18 @@
   }
   .content-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; z-index:2; }
 
-  .watermark{ position:absolute; inset:-40%; display:flex; flex-wrap:wrap; align-content:space-around; justify-content:space-around; transform:rotate(-30deg); opacity:0.055; pointer-events:none; user-select:none; z-index:1; }
+  /* Layout del vivo: video + chat de YouTube al lado (desktop). */
+  .live-stage.is-live{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:16px; align-items:start; }
+  .live-stage.is-live .content-frame{ align-self:stretch; }
+  .yt-chat{ display:flex; flex-direction:column; height:100%; min-height:420px; border-radius:var(--pl-radius-lg); overflow:hidden; border:1px solid var(--pl-line-strong); background:var(--bg-2); }
+  .yt-chat-head{ font-family:var(--font-display); font-weight:600; font-size:13px; color:var(--pl-text-2); padding:12px 14px; border-bottom:1px solid var(--pl-line-strong); }
+  .yt-chat iframe{ flex:1; width:100%; border:0; }
+
+  /* Portada de la lección (poster antes de reproducir / mientras está programada). */
+  .lesson-poster{ position:absolute; inset:0; z-index:1; background-size:cover; background-position:center; }
+
+  /* Watermark por encima del iframe del video (pointer-events:none, no bloquea el play). */
+  .watermark{ position:absolute; inset:-40%; display:flex; flex-wrap:wrap; align-content:space-around; justify-content:space-around; transform:rotate(-30deg); opacity:0.055; pointer-events:none; user-select:none; z-index:4; }
   .watermark span{ font-family:var(--font-mono); font-size:13px; color:#fff; white-space:nowrap; margin:26px 34px; }
 
   .play-btn{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:76px; height:76px; border-radius:50%; background:rgba(245,243,236,0.96); display:flex; align-items:center; justify-content:center; box-shadow:0 12px 32px -8px rgba(0,0,0,0.5); transition:transform .25s var(--pl-ease); z-index:2; }
@@ -254,6 +265,7 @@
   .tag-pill{ font-family:var(--font-mono); font-size:9px; letter-spacing:0.04em; padding:2px 6px; border-radius:5px; text-transform:uppercase; }
   .tag-pill.preview{ background:rgba(201,154,58,0.15); color:var(--pl-gold); }
   .tag-pill.live{ background:rgba(239,68,68,0.15); color:#FCA5A5; }
+  .tag-pill.upcoming{ background:rgba(78,205,184,0.12); color:var(--pl-primary-l); }
   .tag-pill.pdf{ background:rgba(78,205,184,0.12); color:var(--pl-primary-l); }
 
   .mobile-drawer-backdrop{ display:none; position:fixed; inset:0; z-index:44; background:rgba(0,0,0,0.5); }
@@ -271,6 +283,11 @@
     .sidebar-toggle-mobile{ display:flex; }
     .bottom-bar{ right:0 !important; }
     .route-progress-loc{ display:none; }
+  }
+  @media(max-width:900px){
+    /* Chat del vivo debajo del video en pantallas chicas. */
+    .live-stage.is-live{ grid-template-columns:1fr; }
+    .yt-chat{ min-height:360px; }
   }
   @media(max-width:720px){
     .player-wrap,.lesson-meta,.lesson-section-label,.resources,.no-resources,.lesson-comments{ padding-left:18px; padding-right:18px; margin-left:0; margin-right:0; }

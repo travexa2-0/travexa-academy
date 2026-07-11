@@ -36,8 +36,15 @@ const IcoVideo = () => <svg viewBox="0 0 24 24" {...S}><path d="M23 7l-7 5 7 5V7
 const IcoCalendar = () => <svg viewBox="0 0 24 24" {...S}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
 
 function getYouTubeId(url: string): string | null {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/]+)/)
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|live\/))([^&?/]+)/)
   return m?.[1] ?? null
+}
+
+// Parámetros comunes del embed: nocookie, sin branding ni sugerencias al terminar.
+function ytEmbedSrc(id: string, autoplay: boolean): string {
+  const p = new URLSearchParams({ rel: '0', modestbranding: '1', playsinline: '1' })
+  if (autoplay) p.set('autoplay', '1')
+  return `https://www.youtube-nocookie.com/embed/${id}?${p.toString()}`
 }
 
 function asResources(recursos: Lesson['recursos']): LessonRecurso[] {
@@ -293,7 +300,14 @@ export default function Player() {
 
   const accessible = current ? isAccessible(viewingIndex) : false
   const state = current ? liveLessonState(current) : 'sin_video'
-  const youtubeId = current?.video_url ? getYouTubeId(current.video_url) : null
+  const isLiveNow = state === 'en_vivo'
+  // La lección en vivo usa live_url; la grabada usa video_url (YouTube deja el vivo en la misma URL al terminar).
+  const effectiveVideoUrl = current?.video_url ?? current?.live_url ?? null
+  const youtubeId = effectiveVideoUrl ? getYouTubeId(effectiveVideoUrl) : null
+  // Portada de la lección con fallback al thumbnail del curso.
+  const lessonPoster = current?.thumbnail_url ?? course.thumbnail_url ?? null
+  // Chat embed nativo de YouTube (solo mientras está en vivo).
+  const liveChatSrc = youtubeId ? `https://www.youtube.com/live_chat?v=${youtubeId}&embed_domain=${window.location.hostname}` : null
   const doneCurrent = current ? completedIds.has(current.id) : false
   const canComment = enrolled || !!current?.es_preview
 
@@ -337,29 +351,40 @@ export default function Player() {
   } else if (state === 'grabada' && youtubeId) {
     media = playing ? (
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1&autoplay=1`}
+        src={ytEmbedSrc(youtubeId, true)}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen title={current?.titulo}
       />
     ) : (
       <>
+        {lessonPoster && <div className="lesson-poster" style={{ backgroundImage: `url('${lessonPoster}')` }} />}
         <div className="duration-chip">00:00 / {fmtSecs(current?.duracion_segundos ?? null) || '—'}</div>
         <div className="progress-mini"><i style={{ width: doneCurrent ? '100%' : '0%' }} /></div>
         <button className="play-btn" aria-label="Reproducir" onClick={() => setPlaying(true)} onContextMenu={e => e.preventDefault()}><IcoPlay /></button>
+      </>
+    )
+  } else if (state === 'en_vivo' && youtubeId) {
+    // Vivo al aire: se reproduce embebido dentro de Academy, nunca redirige a YouTube.
+    media = (
+      <>
+        <div className="badge-live"><span className="dot" />EN VIVO AHORA</div>
+        <iframe
+          src={ytEmbedSrc(youtubeId, true)}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen title={current?.titulo}
+        />
       </>
     )
   } else if (state === 'programada') {
     const fecha = new Date(current!.fecha_vivo!)
     media = (
       <>
+        {lessonPoster && <div className="lesson-poster" style={{ backgroundImage: `url('${lessonPoster}')` }} />}
         <div className="badge-live"><span className="dot" />EN VIVO · {fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}</div>
         <div className="frame-state">
           <div className="fs-ic"><IcoCalendar /></div>
           <h4>{fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
-          <p>{fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} h · La grabación queda disponible después.</p>
-          {current!.live_url && (
-            <a className="fs-btn" href={current!.live_url} target="_blank" rel="noopener noreferrer"><IcoVideo /> Ir a la sala en vivo</a>
-          )}
+          <p>{fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} h · El vivo se reproduce acá mismo. La grabación queda disponible después.</p>
         </div>
       </>
     )
@@ -407,9 +432,17 @@ export default function Player() {
       <div className="shell">
         <div className="main-col">
           <div className="player-wrap">
-            <div className={`content-frame${!accessible ? ' is-locked' : ''}`}>
-              {watermark}
-              {media}
+            <div className={`live-stage${isLiveNow && accessible && liveChatSrc ? ' is-live' : ''}`}>
+              <div className={`content-frame${!accessible ? ' is-locked' : ''}`}>
+                {watermark}
+                {media}
+              </div>
+              {isLiveNow && accessible && liveChatSrc && (
+                <aside className="yt-chat">
+                  <div className="yt-chat-head">Chat en vivo</div>
+                  <iframe src={liveChatSrc} title="Chat en vivo de YouTube" />
+                </aside>
+              )}
             </div>
           </div>
 
@@ -470,8 +503,8 @@ export default function Player() {
             <div className="no-resources">Esta lección no tiene recursos adicionales</div>
           )}
 
-          {/* Preguntas de la clase */}
-          {current && (
+          {/* Preguntas de la clase — mientras está en vivo, el chat de YouTube las reemplaza arriba. */}
+          {current && !isLiveNow && (
             <>
               <div className="lesson-section-label">Preguntas de esta clase</div>
               <div className="lesson-comments">
@@ -547,7 +580,8 @@ export default function Player() {
                             <div className="lesson-status">{done ? <IcoCheck /> : fr ? <IcoPlane /> : acc ? <IcoCircle /> : <IcoLock />}</div>
                             <div className="lname">{l.titulo}</div>
                             <div className="lesson-meta-row">
-                              {st2 === 'programada' && <span className="tag-pill live">En vivo</span>}
+                              {st2 === 'en_vivo' && <span className="tag-pill live">En vivo ahora</span>}
+                              {st2 === 'programada' && <span className="tag-pill upcoming">Próximo</span>}
                               {l.es_preview && <span className="tag-pill preview">Preview</span>}
                               {!l.video_url && asResources(l.recursos).some(isPdfRes) && <span className="tag-pill pdf">PDF</span>}
                               <span className="lesson-dur">{st2 === 'programada' && l.fecha_vivo ? new Date(l.fecha_vivo).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : fmtSecs(l.duracion_segundos)}</span>

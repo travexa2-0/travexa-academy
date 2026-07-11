@@ -52,6 +52,7 @@ function toModuleInputs(modules?: Module[]): ModuleInput[] {
     descripcion: m.descripcion ?? null,
     lessons: (m.lessons ?? []).map(l => ({
       id: l.id, titulo: l.titulo, video_url: l.video_url, duracion_segundos: l.duracion_segundos, es_preview: l.es_preview, recursos: l.recursos,
+      live_url: l.live_url, fecha_vivo: l.fecha_vivo, thumbnail_url: l.thumbnail_url,
     })),
   }))
 }
@@ -371,7 +372,12 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                   Este es un ebook: el contenido es el PDF que subiste. El programa es opcional; podés dejarlo vacío.
                 </div>
               )}
-              <ModuleBuilder modules={form.modules} onChange={m => set('modules', m)} />
+              <ModuleBuilder
+                modules={form.modules}
+                onChange={m => set('modules', m)}
+                isLive={form.tipo === 'en_vivo'}
+                onUploadThumb={file => uploadMedia(slugify(form.titulo) || 'nuevo', file, 'lesson-thumb')}
+              />
             </div>
           )}
 

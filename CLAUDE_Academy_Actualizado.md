@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 10 Julio 2026 — Sesión 16**
+**Actualizado: 11 Julio 2026 — Sesión 17**
 
 > Este archivo es la fuente de verdad para Claude Code en este proyecto.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -92,6 +92,7 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 | Sesión 14 | **Home pública (`/`) diseñada, implementada y en producción**, con hero animado de scroll-scrub en curso (Fase 2, rama aparte). |
 | **Sesión 15** | **Vivenciales: cierre de venta por WhatsApp + carga manual de pagos en backoffice, en producción.** Diseñado, iterado (primero self-service con Mercado Pago, pivotado a modelo manual) y deployado. Bugfix de un bug preexistente en `mp-webhook-academy` (mapeo de estado de pagos de curso). Ver detalle completo más abajo |
 | **Sesión 16** | **Portal de instructores (`/instructor/*`)**, de solo lectura salvo perfil, factura y respuesta a comentarios. Liquidaciones mensuales (`academy_instructor_payouts`), cierre de mes manual por instructor, auto-link de cuenta por email. Ver sección dedicada más abajo. ⚠️ Incluye una desviación de proceso registrada — ver "Registro de proceso" al final de esa sección |
+| **Sesión 17** | **Video de lecciones grabado/en vivo unificado en el player** (embed `youtube-nocookie`, chat nativo de YouTube en vivo / comentarios de Academy según estado, watermark corregido sobre el iframe) + **el admin ahora carga video/`live_url`/`fecha_vivo`/portada por lección**. Columna nueva `academy_lessons.thumbnail_url`. Ver sección dedicada más abajo. Rama de trabajo, sin mergear |
 
 ### ✅ Infraestructura lista
 
@@ -120,6 +121,44 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 5. Testimonios reales para `TestimonialsSection` (hoy feature-flagged off)
 6. **[NUEVO]** Decidir destino de la feature de cuotas MP para vivenciales (retomar o dar de baja, ver Sesión 15)
 7. **[NUEVO]** Dominio propio y revisión visual del flujo de vivenciales (ver arriba)
+
+---
+
+## VIDEO DE LECCIONES: GRABADO + EN VIVO (Sesión 17)
+
+Reproducción unificada de lecciones grabadas y en vivo, **todo embebido dentro del player de Academy — nunca redirige a YouTube**. Decisiones de producto tomadas por Nico; abajo lo que quedó implementado y lo no obvio.
+
+### Modelo de video
+- **Todo video (grabado y en vivo) se sirve por YouTube en modo "No listado"**, embebido vía `youtube-nocookie.com` con `rel=0`, `modestbranding=1`, `playsinline=1` (helper `ytEmbedSrc()` en `Player.tsx`). Nunca se linkea a `youtube.com` afuera.
+- **La lección grabada usa `video_url`; la lección en vivo usa `live_url`.** Cuando el vivo termina, YouTube deja la grabación en la **misma** `live_url` → el player sigue apuntando ahí sin código nuevo ni ingesta.
+- Un curso `en_vivo` puede tener varias lecciones, cada una un vivo independiente con su propio `live_url`/`fecha_vivo` (ya soportado por `academy_lessons`). El `live_url` se puede cargar **después** de crear la lección (guardar vacío y editar luego).
+
+### Estado de la lección (`liveLessonState()` en `types/index.ts`)
+Ahora recibe también `live_url` y devuelve un estado nuevo **`en_vivo`**. Como `academy_lessons` **no tiene duración por lección** (y no se agregan columnas salvo `thumbnail_url`), la ventana de "en vivo ahora" es **fija: 3 horas** desde `fecha_vivo` (`LIVE_WINDOW_MS`). Estados: `programada` → `en_vivo` (dentro de la ventana, con `live_url`) → `grabada` (pasada la ventana, misma URL) · `grabacion_pendiente` (pasó sin link) · `sin_video`.
+
+### Chat vs. comentarios (switch por estado)
+- **Mientras la lección está en vivo** (`en_vivo`): chat embed nativo de YouTube (`youtube.com/live_chat?v=<id>&embed_domain=<host>`) al lado del video en desktop / debajo en mobile (`.live-stage.is-live` en `player.css`). Los comentarios de Academy se ocultan.
+- **Cuando NO está en vivo** (aún no arrancó, o ya es grabado): el bloque de preguntas/comentarios de Academy (`LessonComments` → `academy_lesson_comments`, con respuesta del instructor desde backoffice). Mismo componente, ahora presente también en lecciones en vivo, sin duplicar.
+- ⚠️ El chat embed de YouTube solo renderiza con un `embed_domain` real → en `localhost` puede no cargar; en producción (Vercel) sí. El video embebido funciona igual en dev.
+
+### Watermark
+Se reusó el patrón existente (`.watermark` en `player.css`: email del usuario, `opacity ~.055`, `rotate(-30deg)`, `pointer-events:none`). **Bugfix:** estaba en `z-index:1`, debajo del iframe (`z-index:2`), así que no se veía sobre el video reproduciéndose. Subido a `z-index:4` (la portada/poster nueva queda en `z-index:1`). Aplica a grabado y en vivo.
+
+### Completado (sin cambios)
+Sigue siendo **botón manual "Marcar como completada"**, idéntico para grabadas y vivos, vía RPC `academy_sync_course_progress`. NO depende de `segundos_vistos` (se guarda en 0) y dar play NO completa. No hay lógica de asistencia mínima para vivos.
+
+### Portada de lección (nuevo)
+- Columna **`academy_lessons.thumbnail_url`** (`text`, nullable) — **migración `supabase/migrations/20260711000000_lesson_thumbnail.sql`, YA APLICADA a producción (`fvrwtqhkskbaixqbxami`) vía MCP en esta sesión.** Verificada en `information_schema`.
+- Opcional; si no se carga, cae al `thumbnail_url` del curso en cualquier UI que muestre miniatura de lección. Subida al bucket público `academy-media` vía `uploadMedia(..., 'lesson-thumb')` (mismo patrón que las demás imágenes).
+
+### Admin de lección (`ModuleBuilder.tsx` + `useAdminCourses.ts`)
+El `ModuleBuilder` **no exponía ningún campo de video por lección** (solo título/preview/duración; el `live_url` del `CourseWizard` es a nivel curso). Se extendió con, por lección: URL de video (grabado) **o** link del vivo + fecha/hora (`datetime-local`, editable después) si el curso es `en_vivo`, más subida de portada. `LessonInput` y `saveCurriculum()` ahora persisten `live_url`, `fecha_vivo` y `thumbnail_url`.
+
+### Estado por lección en la página pública
+`LessonRow`/`LiveLessonBadge` en `CourseDetail.tsx` muestran por lección con `fecha_vivo`: **En vivo ahora / Próximo·fecha / Grabación pronto / Grabado disponible**. El badge a nivel curso sigue usando `courseLiveState` (distinto de `liveLessonState`).
+
+### Archivos tocados
+`supabase/migrations/20260711000000_lesson_thumbnail.sql` (nuevo), `src/types/index.ts`, `src/pages/private/Player.tsx`, `src/pages/private/player.css`, `src/hooks/admin/useAdminCourses.ts`, `src/pages/admin/components/ModuleBuilder.tsx`, `src/pages/admin/components/CourseWizard.tsx`, `src/pages/public/CourseDetail.tsx`. `tsc` + `eslint` limpios. No se tocó RLS (la columna nueva no lo requiere) ni otras columnas. Las pruebas en navegador las hacen Nico y Yesica.
 
 ---
 
@@ -420,7 +459,9 @@ academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
 academy_modules       → course_id, titulo, orden
 academy_lessons       → module_id, course_id, titulo, video_url, duracion_segundos,
                         orden, es_preview (bool), recursos (JSONB),
-                        fecha_vivo, live_url (clases en vivo con grabación)
+                        fecha_vivo, live_url (clases en vivo con grabación),
+                        thumbnail_url (Sesión 17: portada propia de la lección,
+                        nullable, fallback al thumbnail del curso)
 ```
 
 **Comunidad / lectura:**

@@ -16,6 +16,11 @@ export interface LessonInput {
   duracion_segundos: number | null
   es_preview: boolean
   recursos: LessonRecurso[] | Record<string, unknown> | null
+  // clase en vivo por lección (link editable después, fecha/hora del stream)
+  live_url: string | null
+  fecha_vivo: string | null
+  // portada propia; cae al thumbnail del curso si es null
+  thumbnail_url: string | null
 }
 export interface ModuleInput {
   id?: string
@@ -195,6 +200,9 @@ async function saveCurriculum(courseId: string, modules: ModuleInput[]): Promise
         orden: li,
         es_preview: lesson.es_preview,
         recursos: lesson.recursos,
+        live_url: lesson.live_url,
+        fecha_vivo: lesson.fecha_vivo,
+        thumbnail_url: lesson.thumbnail_url,
       }
       if (lesson.id) {
         await supabaseWrite.from('academy_lessons').update(payload).eq('id', lesson.id)
@@ -283,7 +291,7 @@ export function useHardDeleteCourse() {
 }
 
 // ── Media upload (bucket academy-media) ──────────────────────────
-export async function uploadMedia(courseKey: string, file: File, kind: 'thumbnail' | 'trailer' | 'gallery' | 'pdf'): Promise<string> {
+export async function uploadMedia(courseKey: string, file: File, kind: 'thumbnail' | 'trailer' | 'gallery' | 'pdf' | 'lesson-thumb'): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg'
   const path = `courses/${courseKey}/${kind}-${Date.now()}.${ext}`
   const { error } = await supabase.storage

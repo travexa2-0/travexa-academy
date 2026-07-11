@@ -101,8 +101,11 @@ const NIVEL_STYLES: Record<NivelCurso, { bg: string; color: string; label: strin
   avanzado:     { bg: 'rgba(239,68,68,.72)',   color: '#FECACA', label: 'Avanzado' },
 }
 
-function NivelBadge({ nivel }: { nivel: NivelCurso }) {
-  const s = NIVEL_STYLES[nivel]
+function NivelBadge({ nivel }: { nivel: NivelCurso | null | undefined }) {
+  // Fallback seguro: cursos sin nivel (ej. vivenciales) o con un valor no contemplado
+  // no muestran badge, en vez de romper el render de toda la card.
+  const s = nivel ? NIVEL_STYLES[nivel] : undefined
+  if (!s) return null
   return (
     <span
       className="inline-flex items-center font-mono text-[9px] tracking-[.08em] uppercase px-2 py-[3.5px] rounded-[4px]"

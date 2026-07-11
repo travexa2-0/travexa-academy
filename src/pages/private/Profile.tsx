@@ -25,6 +25,7 @@ import { nivelInfo, NIVELES } from '@/types'
 import type { Enrollment, Badge, RankingRow, ItinerarioDia } from '@/types'
 import { cupoEstado } from '@/lib/cupo'
 import { EASE_OUT } from '@/lib/motion'
+import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 
 const NEON = '#00E5C8'
 const GOLD = '#C99A3A'
@@ -1287,12 +1288,12 @@ function VivModal({ enrollment, onClose }: { enrollment: Enrollment | null; onCl
               <div>
                 <p className="text-[.84rem] font-semibold mb-2.5" style={{ color: '#0A1E29' }}>✅ Incluye</p>
                 <ul className="text-[.82rem] leading-relaxed pl-4 list-disc" style={{ color: '#4A6070' }}>
-                  {(c.incluye ?? []).length ? c.incluye.map((x, i) => <li key={i}>{x}</li>) : <li>Detalle disponible próximamente.</li>}
+                  {hasRichText(c.incluye) ? richTextLines(c.incluye).map((x, i) => <li key={i}>{renderBold(x, `inc${i}`)}</li>) : <li>Detalle disponible próximamente.</li>}
                 </ul>
-                {(c.no_incluye ?? []).length > 0 && (
+                {hasRichText(c.no_incluye) && (
                   <>
                     <p className="text-[.84rem] font-semibold mt-3.5 mb-2" style={{ color: '#8FA3AB' }}>✗ No incluye</p>
-                    <ul className="text-[.82rem] leading-relaxed pl-4 list-disc" style={{ color: '#8FA3AB' }}>{c.no_incluye.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                    <ul className="text-[.82rem] leading-relaxed pl-4 list-disc" style={{ color: '#8FA3AB' }}>{richTextLines(c.no_incluye).map((x, i) => <li key={i}>{renderBold(x, `ninc${i}`)}</li>)}</ul>
                   </>
                 )}
               </div>

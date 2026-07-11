@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Header from '@/components/layout/Header'
 import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
 import type { Course, Enrollment } from '@/types'
+import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { staggerContainer, staggerItem, EASE_OUT } from '@/lib/motion'
 
 // ── Checklist persistido en localStorage ─────────────────────────
@@ -366,31 +367,31 @@ export default function VivencialDetalle() {
         )}
 
         {/* Incluye / No incluye */}
-        {(course.incluye?.length > 0 || course.no_incluye?.length > 0) && (
+        {(hasRichText(course.incluye) || hasRichText(course.no_incluye)) && (
           <div className="grid sm:grid-cols-2 gap-5">
-            {course.incluye?.length > 0 && (
+            {hasRichText(course.incluye) && (
               <div className="rounded-2xl border p-5" style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}>
                 <h4 className="font-display font-bold mb-3" style={{ color: 'var(--text-1)' }}>✅ Incluye</h4>
                 <ul className="space-y-2">
-                  {course.incluye.map((item, i) => (
+                  {richTextLines(course.incluye).map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-2)' }}>
                       <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
-                      {item}
+                      <span>{renderBold(item, `inc${i}`)}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            {course.no_incluye?.length > 0 && (
+            {hasRichText(course.no_incluye) && (
               <div className="rounded-2xl border p-5" style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}>
                 <h4 className="font-display font-bold mb-3" style={{ color: 'var(--text-1)' }}>❌ No incluye</h4>
                 <ul className="space-y-2">
-                  {course.no_incluye.map((item, i) => (
+                  {richTextLines(course.no_incluye).map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-2)' }}>
                       <div className="w-3.5 h-3.5 shrink-0 mt-0.5 rounded-full border flex items-center justify-center" style={{ borderColor: '#ef4444' }}>
                         <div className="w-1.5 h-0.5 rounded" style={{ background: '#ef4444' }} />
                       </div>
-                      {item}
+                      <span>{renderBold(item, `ninc${i}`)}</span>
                     </li>
                   ))}
                 </ul>

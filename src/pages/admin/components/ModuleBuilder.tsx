@@ -14,6 +14,7 @@ const TrashIcon = () => (
 )
 
 const emptyLesson = (): LessonInput => ({ titulo: '', video_url: null, duracion_segundos: 0, es_preview: false, recursos: null })
+const emptyModule = (): ModuleInput => ({ titulo: 'Nuevo módulo', descripcion: null, lessons: [emptyLesson()] })
 
 export default function ModuleBuilder({ modules, onChange }: Props) {
   const updateModule = (mi: number, patch: Partial<ModuleInput>) =>
@@ -22,7 +23,7 @@ export default function ModuleBuilder({ modules, onChange }: Props) {
   const updateLesson = (mi: number, li: number, patch: Partial<LessonInput>) =>
     onChange(modules.map((m, i) => i === mi ? { ...m, lessons: m.lessons.map((l, j) => (j === li ? { ...l, ...patch } : l)) } : m))
 
-  const addModule = () => onChange([...modules, { titulo: 'Nuevo módulo', lessons: [emptyLesson()] }])
+  const addModule = () => onChange([...modules, emptyModule()])
   const removeModule = (mi: number) => onChange(modules.filter((_, i) => i !== mi))
   const addLesson = (mi: number) => updateModule(mi, { lessons: [...modules[mi].lessons, emptyLesson()] })
   const removeLesson = (mi: number, li: number) => updateModule(mi, { lessons: modules[mi].lessons.filter((_, j) => j !== li) })
@@ -34,9 +35,18 @@ export default function ModuleBuilder({ modules, onChange }: Props) {
           <div className="module-block" key={mi}>
             <div className="module-head">
               <Grip />
-              <input value={mod.titulo} placeholder="Nombre del módulo" onChange={e => updateModule(mi, { titulo: e.target.value })} />
+              <input value={mod.titulo} placeholder="Nombre del módulo" style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }} onChange={e => updateModule(mi, { titulo: e.target.value })} />
               <span className="module-count">{mod.lessons.length} {mod.lessons.length === 1 ? 'lección' : 'lecciones'}</span>
               <button className="module-del-btn" title="Borrar módulo" onClick={() => removeModule(mi)}><TrashIcon /></button>
+            </div>
+            <div style={{ padding: '0 14px 10px', display: 'flex' }}>
+              <textarea
+                className="textarea"
+                value={mod.descripcion ?? ''}
+                placeholder="Descripción del módulo (opcional) — qué se ve en este tramo"
+                onChange={e => updateModule(mi, { descripcion: e.target.value || null })}
+                style={{ minHeight: 44, fontSize: 12.6 }}
+              />
             </div>
             {mod.lessons.map((les, li) => (
               <div className="lesson-row" key={li}>

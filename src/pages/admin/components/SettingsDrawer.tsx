@@ -26,6 +26,9 @@ export default function SettingsDrawer({ open, onClose }: Props) {
   const [minCuotas, setMinCuotas] = useState('')
   const [diasLimite, setDiasLimite] = useState('')
   const [whatsappBusiness, setWhatsappBusiness] = useState('')
+  const [recargoTarjeta, setRecargoTarjeta] = useState('')
+  const [recargoTransferencia, setRecargoTransferencia] = useState('')
+  const [cuotasMax, setCuotasMax] = useState('')
 
   useEffect(() => {
     if (settings) {
@@ -36,6 +39,9 @@ export default function SettingsDrawer({ open, onClose }: Props) {
       setMinCuotas(String(settings.mp_monto_minimo_cuotas_ars))
       setDiasLimite(String(settings.dias_limite_pago_vivencial))
       setWhatsappBusiness(settings.travexa_whatsapp_business)
+      setRecargoTarjeta(String(settings.mp_recargo_tarjeta_pct))
+      setRecargoTransferencia(String(settings.mp_recargo_transferencia_pct))
+      setCuotasMax(String(settings.mp_cuotas_max))
     }
   }, [settings])
 
@@ -49,6 +55,9 @@ export default function SettingsDrawer({ open, onClose }: Props) {
         mp_monto_minimo_cuotas_ars: Number(minCuotas) || 0,
         dias_limite_pago_vivencial: Number(diasLimite) || 0,
         travexa_whatsapp_business: whatsappBusiness.trim(),
+        mp_recargo_tarjeta_pct: Number(recargoTarjeta) || 0,
+        mp_recargo_transferencia_pct: Number(recargoTransferencia) || 0,
+        mp_cuotas_max: Number(cuotasMax) || 0,
       })
       toast.success('Configuración guardada')
       onClose()
@@ -114,6 +123,31 @@ export default function SettingsDrawer({ open, onClose }: Props) {
               <input className="input" type="number" placeholder="0" value={marketing} onChange={e => setMarketing(e.target.value)} />
             </div>
             <div className="f-hint">Se usa para calcular el ROI de marketing en Métricas.</div>
+          </div>
+
+          <div style={{ marginTop: 26, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+            <label className="f-label" style={{ fontWeight: 600 }}>Cobros con Mercado Pago</label>
+            <div className="f-hint" style={{ marginBottom: 12 }}>Recargos sobre el precio neto del curso y cantidad de cuotas sin interés.</div>
+            <div className="field-row cols-2">
+              <div className="field">
+                <label className="f-label">Recargo tarjeta / cuotas</label>
+                <div className="input-prefix-wrap"><span className="input-prefix">%</span>
+                  <input className="input" type="number" step="0.1" value={recargoTarjeta} onChange={e => setRecargoTarjeta(e.target.value)} />
+                </div>
+                <div className="f-hint">Precio final tarjeta = neto ÷ (1 − %).</div>
+              </div>
+              <div className="field">
+                <label className="f-label">Recargo transferencia</label>
+                <div className="input-prefix-wrap"><span className="input-prefix">%</span>
+                  <input className="input" type="number" step="0.1" value={recargoTransferencia} onChange={e => setRecargoTransferencia(e.target.value)} />
+                </div>
+                <div className="f-hint">Precio final transferencia = neto ÷ (1 − %).</div>
+              </div>
+            </div>
+            <div className="field">
+              <label className="f-label">Cuotas máximas sin interés</label>
+              <input className="input" type="number" value={cuotasMax} onChange={e => setCuotasMax(e.target.value)} style={{ maxWidth: 160 }} />
+            </div>
           </div>
 
           <div style={{ marginTop: 26, paddingTop: 20, borderTop: '1px solid var(--line)' }}>

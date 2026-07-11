@@ -1,21 +1,25 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface PaymentResult {
   init_point?: string
   error?: string
 }
 
+export type MetodoPago = 'transferencia' | 'tarjeta'
+
 export function useCoursePayment() {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const initiate = async (courseId: string): Promise<string | null> => {
+  const initiate = async (courseId: string, metodoPago: MetodoPago): Promise<string | null> => {
     setLoading(true)
     setError(null)
 
     const { data, error: fnError } = await supabase.functions.invoke('create-course-payment', {
-      body: { course_id: courseId },
+      body: { course_id: courseId, user_id: user?.id, metodo_pago: metodoPago },
     })
 
     setLoading(false)

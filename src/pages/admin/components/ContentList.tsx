@@ -104,7 +104,7 @@ export default function ContentList({ kind, courses, onNew, onOpen }: Props) {
         <FilterDropdown label="Categoría" options={catOptions} selected={cats} onToggle={v => toggle(cats, setCats, v)} />
         {!isViv && <FilterDropdown label="Formato" options={['Grabado', 'En vivo']} selected={tipos} onToggle={v => toggle(tipos, setTipos, v)} />}
         <FilterDropdown label="Instructor" options={instrOptions} selected={instructors} onToggle={v => toggle(instructors, setInstructors, v)} />
-        <button className={`filter-btn${featured ? ' active' : ''}`} onClick={() => setFeatured(v => !v)}>
+        <button className={`filter-btn${featured ? ' is-set' : ''}`} onClick={() => setFeatured(v => !v)}>
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.6 6.6L21 11l-6.4 2.4L12 20l-2.6-6.6L3 11l6.4-2.4z" /></svg>
           Destacado
         </button>

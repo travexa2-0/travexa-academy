@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import Overlay from './Overlay'
-import TagInput from './TagInput'
+import RichTextArea from './RichTextArea'
 import ItineraryBuilder from './ItineraryBuilder'
-import { TAG_SUGGESTIONS } from './wizardData'
 import { formatArs } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useUpsertCourse, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
@@ -34,8 +33,8 @@ interface FormState {
   sena_usd: string
   whatsapp: string
   itinerario: ItinerarioDia[]
-  incluye: string[]
-  no_incluye: string[]
+  incluye: string
+  no_incluye: string
 }
 
 const STEPS = ['Destino', 'Precio', 'Itinerario', 'Incluye', 'Revisión']
@@ -58,8 +57,8 @@ function initialState(initial?: Course | null): FormState {
     sena_usd: initial?.vivencial_precio_seña_usd != null ? String(initial.vivencial_precio_seña_usd) : '',
     whatsapp: initial?.vivencial_whatsapp_url ?? '',
     itinerario: initial?.vivencial_itinerario ?? [],
-    incluye: initial?.incluye ?? [],
-    no_incluye: initial?.no_incluye ?? [],
+    incluye: initial?.incluye ?? '',
+    no_incluye: initial?.no_incluye ?? '',
   }
 }
 
@@ -121,8 +120,8 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         fotos: form.fotos,
         precio_usd: Number(form.precio_usd) || 0,
         precio_ars: Math.round(precioArs),
-        incluye: form.incluye,
-        no_incluye: form.no_incluye,
+        incluye: form.incluye.trim() || null,
+        no_incluye: form.no_incluye.trim() || null,
         vivencial_pais: form.pais || null,
         vivencial_region: form.region || null,
         vivencial_ciudad_salida: form.ciudad_salida || null,
@@ -243,8 +242,8 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
             <div className="wiz-step-panel active">
               <div className="wiz-step-title">Qué incluye y qué no</div>
               <div className="wiz-step-sub">Esto se muestra tal cual en la página de venta.</div>
-              <div className="field"><label className="f-label">✓ Incluye</label><TagInput value={form.incluye} onChange={v => set('incluye', v)} variant="pos" suggestions={TAG_SUGGESTIONS.vivIncluye} /></div>
-              <div className="field"><label className="f-label">✕ No incluye</label><TagInput value={form.no_incluye} onChange={v => set('no_incluye', v)} variant="neg" suggestions={TAG_SUGGESTIONS.vivNoIncluye} /></div>
+              <div className="field"><label className="f-label">✓ Incluye</label><RichTextArea value={form.incluye} onChange={v => set('incluye', v)} placeholder={'Alojamiento\nDesayuno diario\n**Bonus:** kit del viajero'} /></div>
+              <div className="field"><label className="f-label">✕ No incluye</label><RichTextArea value={form.no_incluye} onChange={v => set('no_incluye', v)} placeholder={'Pasajes aéreos\nGastos personales'} /></div>
             </div>
           )}
 

@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Heart, Users, Clock, ArrowRight } from 'lucide-react'
+import { usePricingConfig } from '@/hooks/usePricing'
 import type { Course, NivelCurso } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -115,10 +116,17 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
   const cardRef     = useRef<HTMLElement>(null)
   const dahRef      = useRef<HTMLDivElement>(null)
 
+  const { data: pricing } = usePricingConfig()
+
   const isLive     = course.tipo === 'en_vivo'
   const isVivencial = course.tipo === 'vivencial'
   const isFree     = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
   const cupoLow    = isVivencial && course.vivencial_cupo_disponible !== null && course.vivencial_cupo_disponible <= 5
+
+  const cuotasMax  = pricing?.cuotasMax ?? 6
+  const precioTarjeta = Number(course.precio_ars) || 0
+  const precioTransf  = Number(course.precio_transferencia_ars) || 0
+  const cuotaValor    = cuotasMax > 0 ? Math.round(precioTarjeta / cuotasMax) : 0
 
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (shouldReduce || !dahRef.current || !cardRef.current) return
@@ -272,6 +280,22 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
             <span style={{ fontSize: '.83rem', color: 'var(--text-3)' }}>
               Seña <strong style={{ color: 'var(--text-1)', fontSize: '.92rem', fontWeight: 700 }}>{formatARS(course.vivencial_precio_seña_ars)}</strong>
             </span>
+          ) : precioTransf > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {precioTarjeta > precioTransf && (
+                <span style={{ fontSize: '.72rem', color: 'var(--text-3)', textDecoration: 'line-through' }}>
+                  {formatARS(precioTarjeta)}
+                </span>
+              )}
+              <span className="font-display font-bold" style={{ fontSize: '1.12rem', color: 'var(--text-1)', letterSpacing: '-.01em', lineHeight: 1.1 }}>
+                {formatARS(precioTransf)}
+              </span>
+              {cuotaValor > 0 && (
+                <span style={{ fontSize: '.68rem', color: 'var(--text-3)' }}>
+                  o {cuotasMax}x {formatARS(cuotaValor)} sin interés
+                </span>
+              )}
+            </div>
           ) : (
             <span className="font-display font-bold" style={{ fontSize: '1.12rem', color: 'var(--text-1)', letterSpacing: '-.01em' }}>
               {formatPrice(course.precio_ars, course.tipo_acceso)}
@@ -303,8 +327,8 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
           )}
         </div>
 
-        {/* Live date */}
-        {isLive && course.live_date && (
+        {/* Live date — solo si hay fecha y duración */}
+        {isLive && course.live_date && course.live_duration_minutes && (
           <div className="font-mono flex items-center gap-[5px] mt-[6px]" style={{ fontSize: '9.5px', color: '#EF4444' }}>
             <span className="live-stat-dot w-[5px] h-[5px] rounded-full shrink-0" style={{ background: '#EF4444' }} />
             {new Date(course.live_date).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}

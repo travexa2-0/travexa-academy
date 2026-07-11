@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { ExternalLink } from 'lucide-react'
 import './admin.css'
 import { AdminUIContext } from './adminContext'
 import SettingsDrawer from './components/SettingsDrawer'
@@ -116,6 +117,13 @@ export default function AdminLayout() {
               {navItem('metricas', 'Métricas')}
               {navItem('pagos-instructores', 'Pagos a instructores')}
             </nav>
+
+            <div className="sidebar-external">
+              <a href="/" target="_blank" rel="noopener noreferrer" className="nav-item" title="Ver Academy (nueva pestaña)">
+                <ExternalLink />
+                <span className="nav-label">Ver Academy</span>
+              </a>
+            </div>
 
             <div className="sidebar-foot">
               <button className="sidebar-user" onClick={() => setSettingsOpen(true)}>

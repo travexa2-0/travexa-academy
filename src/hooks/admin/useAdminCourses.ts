@@ -20,6 +20,7 @@ export interface LessonInput {
 export interface ModuleInput {
   id?: string
   titulo: string
+  descripcion: string | null
   lessons: LessonInput[]
 }
 
@@ -31,8 +32,8 @@ function normalize(row: CourseRow): Course {
     ...row,
     tags: row.tags ?? [],
     fotos: row.fotos ?? [],
-    incluye: row.incluye ?? [],
-    no_incluye: row.no_incluye ?? [],
+    incluye: row.incluye ?? null,
+    no_incluye: row.no_incluye ?? null,
     vivencial_itinerario: row.vivencial_itinerario ?? [],
     category: row.category ?? undefined,
     instructor: row.instructor ?? undefined,
@@ -159,10 +160,10 @@ async function saveCurriculum(courseId: string, modules: ModuleInput[]): Promise
     let moduleId = mod.id
 
     if (moduleId) {
-      await supabaseWrite.from('academy_modules').update({ titulo: mod.titulo, orden: mi }).eq('id', moduleId)
+      await supabaseWrite.from('academy_modules').update({ titulo: mod.titulo, descripcion: mod.descripcion || null, orden: mi }).eq('id', moduleId)
     } else {
       const { data, error } = await supabaseWrite.from('academy_modules')
-        .insert({ course_id: courseId, titulo: mod.titulo, orden: mi })
+        .insert({ course_id: courseId, titulo: mod.titulo, descripcion: mod.descripcion || null, orden: mi })
         .select('id')
         .single()
       if (error) throw new Error(error.message)
@@ -282,7 +283,7 @@ export function useHardDeleteCourse() {
 }
 
 // ── Media upload (bucket academy-media) ──────────────────────────
-export async function uploadMedia(courseKey: string, file: File, kind: 'thumbnail' | 'trailer' | 'gallery'): Promise<string> {
+export async function uploadMedia(courseKey: string, file: File, kind: 'thumbnail' | 'trailer' | 'gallery' | 'pdf'): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg'
   const path = `courses/${courseKey}/${kind}-${Date.now()}.${ext}`
   const { error } = await supabase.storage

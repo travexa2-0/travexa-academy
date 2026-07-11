@@ -4,12 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Copy, CheckCircle2, Users, Clock,
   Play, Lock, X, Check, MapPin, Hotel, CalendarDays,
-  Loader2, Heart,
+  Loader2, Heart, AlertCircle,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments, useReviews } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCoursePayment } from '@/hooks/usePayment'
+import { useCoursePayment, type MetodoPago } from '@/hooks/usePayment'
+import { usePricingConfig } from '@/hooks/usePricing'
+import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { displayName } from '@/lib/utils'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
 
@@ -38,7 +40,7 @@ const FAQ_ITEMS = [
   { q: '¿Cómo accedo al contenido después de comprar?', a: 'Inmediatamente después de confirmar el pago tenés acceso de por vida desde tu dashboard. Sin esperas.' },
   { q: '¿Puedo ver los cursos en mi celular?', a: 'Sí, la plataforma está optimizada para mobile y tablet. El contenido se adapta a cualquier pantalla.' },
   { q: '¿Los cursos se actualizan?', a: 'Sí. Cuando los instructores actualicen el contenido, tenés acceso automático sin costo extra.' },
-  { q: '¿Puedo ver parte del contenido antes de comprar?', a: 'Sí, la primera lección de cada curso tiene preview gratuita. También podés leer el curriculum completo antes de decidir.' },
+  { q: '¿Puedo ver parte del contenido antes de comprar?', a: 'Sí, la primera lección de cada curso tiene preview gratuita. También podés leer el programa completo antes de decidir.' },
   { q: '¿Cómo funciona el fam trip (vivencial)?', a: 'Son experiencias grupales de 3–5 días. Se reserva con una seña (50% del total) y el saldo se abona antes del viaje. El cupo es limitado.' },
   { q: '¿Qué pasa si un live se superpone con mi horario?', a: 'La grabación queda disponible 48 horas después del live para todos los inscriptos, sin costo extra.' },
   { q: '¿Puedo regalar un curso?', a: 'Sí, usá el botón Regalar en el detalle del curso para comprar un acceso como regalo.' },
@@ -211,7 +213,10 @@ function CurriculumAccordion({ modules, isVivencial }: { modules: Module[]; isVi
             onClick={() => setOpenIdx(openIdx === mi ? -1 : mi)}
           >
             <div>
-              <div className="font-display font-semibold text-sm" style={{ color: '#0A1E29' }}>{mod.titulo}</div>
+              <div className="font-display font-bold text-sm" style={{ color: '#0A1E29' }}>{mod.titulo}</div>
+              {mod.descripcion && (
+                <div className="text-xs mt-[3px]" style={{ color: 'var(--text-3)', lineHeight: 1.5 }}>{mod.descripcion}</div>
+              )}
               <div className="font-mono mt-[2px]" style={{ fontSize: '9px', color: 'var(--text-3)' }}>
                 {(mod.lessons ?? []).length} {unit}
               </div>
@@ -347,16 +352,21 @@ interface CTACardProps {
   paymentLoading: boolean
   paymentError:   string | null
   wishlisted:     boolean
+  cuotasMax:      number
   onEnroll:       () => void
   onWishlist:     () => void
   onGift:         () => void
   onFAQ:          () => void
 }
 
-function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, onEnroll, onWishlist, onGift, onFAQ }: CTACardProps) {
+function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, cuotasMax, onEnroll, onWishlist, onGift, onFAQ }: CTACardProps) {
   const isVivencial = course.tipo === 'vivencial'
   const isLive      = course.tipo === 'en_vivo'
   const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
+
+  const precioTarjeta = Number(course.precio_ars) || 0
+  const precioTransf  = Number(course.precio_transferencia_ars) || 0
+  const cuotaValor    = cuotasMax > 0 ? Math.round(precioTarjeta / cuotasMax) : 0
 
   const ctaLabel = enrolled ? 'Continuar aprendiendo'
     : isFree      ? 'Acceder gratis'
@@ -389,11 +399,21 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, o
           </p>
         </div>
       ) : (
-        <div>
-          <div className="font-display font-bold" style={{ fontSize: '1.95rem', color: 'var(--text-1)', letterSpacing: '-.02em' }}>
-            {formatARS(course.precio_ars)}
+        <div className="mb-3">
+          {precioTarjeta > precioTransf && (
+            <div className="font-mono text-sm" style={{ color: 'var(--text-3)', textDecoration: 'line-through' }}>
+              {formatARS(precioTarjeta)}
+            </div>
+          )}
+          <div className="font-display font-bold" style={{ fontSize: '1.95rem', color: 'var(--text-1)', letterSpacing: '-.02em', lineHeight: 1.1 }}>
+            {formatARS(precioTransf || precioTarjeta)}
           </div>
-          <p className="text-xs mt-[3px] mb-3" style={{ color: 'var(--text-3)' }}>Pago único · Acceso de por vida</p>
+          <p className="text-xs mt-[3px]" style={{ color: 'var(--primary-l)' }}>Pagando por transferencia</p>
+          {cuotaValor > 0 && (
+            <p className="text-xs mt-[2px]" style={{ color: 'var(--text-3)' }}>
+              o en {cuotasMax} cuotas de {formatARS(cuotaValor)} sin interés
+            </p>
+          )}
         </div>
       )}
 
@@ -476,11 +496,94 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, o
   )
 }
 
+// ── Payment method modal ──────────────────────────────────────────
+
+function PaymentMethodModal({ course, cuotasMax, loading, onSelect, onClose }: {
+  course: Course
+  cuotasMax: number
+  loading: boolean
+  onSelect: (metodo: MetodoPago) => void
+  onClose: () => void
+}) {
+  const precioTarjeta = Number(course.precio_ars) || 0
+  const precioTransf  = Number(course.precio_transferencia_ars) || 0
+  const cuotaValor    = cuotasMax > 0 ? Math.round(precioTarjeta / cuotasMax) : 0
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[400] flex items-center justify-center p-5"
+      style={{ background: 'rgba(4,10,15,.82)', backdropFilter: 'blur(6px)' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="w-full max-w-[440px] rounded-[20px] border p-7"
+        style={{ background: '#0C1E2C', borderColor: 'var(--line-s)' }}
+        initial={{ opacity: 0, scale: .95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: .95 }}
+        transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-display font-bold text-lg" style={{ color: 'var(--text-1)' }}>Elegí cómo pagar</h2>
+          <button onClick={onClose} aria-label="Cerrar" className="w-[30px] h-[30px] rounded-lg flex items-center justify-center" style={{ color: 'var(--text-3)' }}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm mb-5" style={{ color: 'var(--text-3)' }}>{course.titulo}</p>
+
+        <div className="space-y-3">
+          {/* Transferencia */}
+          <button
+            onClick={() => onSelect('transferencia')}
+            disabled={loading}
+            className="w-full text-left rounded-[14px] border p-4 transition-colors disabled:opacity-60"
+            style={{ borderColor: 'var(--primary)', background: 'rgba(14,107,92,.08)' }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-display font-semibold text-sm" style={{ color: 'var(--text-1)' }}>Transferencia</span>
+              <span className="font-mono text-[10px] px-2 py-[3px] rounded-full" style={{ background: 'rgba(14,107,92,.2)', color: 'var(--primary-l)' }}>MEJOR PRECIO</span>
+            </div>
+            <div className="font-display font-bold mt-1" style={{ fontSize: '1.4rem', color: 'var(--text-1)' }}>{formatARS(precioTransf || precioTarjeta)}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>Pago único</div>
+          </button>
+
+          {/* Tarjeta */}
+          <button
+            onClick={() => onSelect('tarjeta')}
+            disabled={loading}
+            className="w-full text-left rounded-[14px] border p-4 transition-colors disabled:opacity-60"
+            style={{ borderColor: 'var(--line-s)', background: 'var(--card)' }}
+          >
+            <span className="font-display font-semibold text-sm" style={{ color: 'var(--text-1)' }}>Tarjeta</span>
+            <div className="font-display font-bold mt-1" style={{ fontSize: '1.4rem', color: 'var(--text-1)' }}>{cuotasMax}x {formatARS(cuotaValor)}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>Sin interés · total {formatARS(precioTarjeta)}</div>
+          </button>
+        </div>
+
+        {loading && (
+          <div className="flex items-center justify-center gap-2 mt-5 text-sm" style={{ color: 'var(--text-3)' }}>
+            <Loader2 className="w-4 h-4 animate-spin" /> Redirigiendo a Mercado Pago…
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ── Main CourseDetail ─────────────────────────────────────────────
 
 export default function CourseDetail() {
   const { slug } = useParams<{ slug: string }>()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const preview = searchParams.get('preview') === '1'
   const { user } = useAuth()
   const navigate  = useNavigate()
@@ -489,12 +592,17 @@ export default function CourseDetail() {
   const [showFAQ, setShowFAQ]       = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   const [toast, setToast]           = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false })
+  const [paymentBanner, setPaymentBanner] = useState<'pending' | 'error' | null>(null)
 
   const { data: course, isLoading, error } = useCourseDetail(slug ?? '', preview)
   const { data: wishlist = [] }            = useWishlist(user?.id)
   const { mutate: toggleWishlist }         = useToggleWishlist(user?.id)
   const { data: enrollments = [] }         = useMyEnrollments(user?.id)
+  const { data: pricing }                  = usePricingConfig()
   const { initiate, loading: paymentLoading, error: paymentError } = useCoursePayment()
+
+  const [showPayModal, setShowPayModal] = useState(false)
+  const cuotasMax = pricing?.cuotasMax ?? 6
 
   const wishlisted = course ? wishlist.includes(course.id) : false
   const enrolled   = course ? enrollments.some(e => e.course_id === course.id && e.activo) : false
@@ -504,12 +612,18 @@ export default function CourseDetail() {
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2400)
   }
 
-  const handleEnroll = useCallback(async () => {
+  const handleEnroll = useCallback(() => {
     if (!user) { navigate('/registro', { state: { from: `/cursos/${slug}` } }); return }
     if (course?.tipo_acceso === 'gratuito' || enrolled) { navigate(`/cursos/${slug}/aprender`); return }
-    const initPoint = await initiate(course!.id)
+    // Curso pago: elegir método de pago antes de ir a Mercado Pago.
+    setShowPayModal(true)
+  }, [user, course, enrolled, slug, navigate])
+
+  const startPayment = useCallback(async (metodo: MetodoPago) => {
+    if (!course) return
+    const initPoint = await initiate(course.id, metodo)
     if (initPoint) window.location.href = initPoint
-  }, [user, course, enrolled, slug, navigate, initiate])
+  }, [course, initiate])
 
   const handleWishlist = useCallback(() => {
     if (!user) { navigate('/login'); return }
@@ -524,6 +638,18 @@ export default function CourseDetail() {
   }
 
   const handleGift = () => showToast('Función de regalo próxima!')
+
+  // Vuelta desde Mercado Pago sin acreditar: mostrar banner acorde y limpiar los params.
+  useEffect(() => {
+    const p = searchParams.get('payment')
+    if (p !== 'pending' && p !== 'error') return
+    setPaymentBanner(p)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      for (const k of ['payment', 'payment_id', 'collection_id', 'status', 'collection_status', 'external_reference', 'preference_id', 'payment_type', 'merchant_order_id', 'site_id', 'processing_mode', 'merchant_account_id']) next.delete(k)
+      return next
+    }, { replace: true })
+  }, [searchParams, setSearchParams])
 
   // Derive tab list based on course type
   const tabs: { key: TabKey; label: string }[] = [
@@ -565,6 +691,8 @@ export default function CourseDetail() {
   const isLive      = course.tipo === 'en_vivo'
   const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
   const nivelStyle  = NIVEL_STYLES[course.nivel]
+  const precioTarjeta = Number(course.precio_ars) || 0
+  const precioTransf  = Number(course.precio_transferencia_ars) || 0
 
   const totalLessons = course.modules?.reduce((a, m) => a + (m.lessons?.length ?? 0), 0) ?? 0
   const contentUnit  = isVivencial ? 'actividades' : 'lecciones'
@@ -579,7 +707,8 @@ export default function CourseDetail() {
     course, enrolled, paymentLoading,
     paymentError,
     wishlisted,
-    onEnroll:  () => { void handleEnroll() },
+    cuotasMax,
+    onEnroll:  handleEnroll,
     onWishlist: handleWishlist,
     onGift:    handleGift,
     onFAQ:     () => setShowFAQ(true),
@@ -592,6 +721,45 @@ export default function CourseDetail() {
       {preview && (
         <div style={{ position: 'sticky', top: 0, zIndex: 60, background: '#C99A3A', color: '#0A1E29', textAlign: 'center', padding: '8px 16px', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
           Modo preview — así se va a ver el curso publicado. {!course.publicado && 'Todavía está en borrador.'}
+        </div>
+      )}
+
+      {paymentBanner && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 max-w-[1200px] mx-auto mt-4 rounded-xl border"
+          style={
+            paymentBanner === 'pending'
+              ? { background: 'rgba(201,154,58,.1)', borderColor: 'rgba(201,154,58,.35)' }
+              : { background: 'rgba(239,68,68,.08)', borderColor: 'rgba(239,68,68,.35)' }
+          }
+        >
+          {paymentBanner === 'pending'
+            ? <Loader2 className="w-[18px] h-[18px] shrink-0 animate-spin" style={{ color: 'var(--gold)' }} />
+            : <AlertCircle className="w-[18px] h-[18px] shrink-0" style={{ color: '#f87171' }} />
+          }
+          <p className="flex-1 text-sm" style={{ color: 'var(--text-2)' }}>
+            {paymentBanner === 'pending'
+              ? 'Tu pago está siendo procesado. Te avisamos apenas se acredite.'
+              : 'Hubo un problema con el pago.'}
+          </p>
+          {paymentBanner === 'error' && (
+            <button
+              onClick={() => { setPaymentBanner(null); void handleEnroll() }}
+              disabled={paymentLoading}
+              className="shrink-0 font-semibold rounded-lg px-4 py-2 text-[13px]"
+              style={{ background: 'var(--neon)', color: '#0A1E29' }}
+            >
+              Reintentar compra
+            </button>
+          )}
+          <button
+            onClick={() => setPaymentBanner(null)}
+            aria-label="Cerrar"
+            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg"
+            style={{ color: 'var(--text-3)' }}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -731,8 +899,8 @@ export default function CourseDetail() {
                     {/* Descripción */}
                     {activeTab === 'desc' && (
                       <div>
-                        {/* En vivo: show live date prominently */}
-                        {isLive && course.live_date && (
+                        {/* En vivo: show live date prominently (solo si hay fecha y duración) */}
+                        {isLive && course.live_date && course.live_duration_minutes && (
                           <div className="mb-4 rounded-xl border p-4 flex items-center gap-3" style={{ borderColor: 'rgba(239,68,68,.3)', background: 'rgba(239,68,68,.04)' }}>
                             <CalendarDays className="w-5 h-5 shrink-0" style={{ color: '#EF4444' }} />
                             <div>
@@ -815,34 +983,34 @@ export default function CourseDetail() {
                           </p>
                         )}
 
-                        {/* Incluye / No incluye */}
-                        {isVivencial && (course.incluye?.length > 0 || course.no_incluye?.length > 0) && (
+                        {/* Incluye / No incluye — texto libre; la sección se oculta si está vacía */}
+                        {(hasRichText(course.incluye) || hasRichText(course.no_incluye)) && (
                           <div className="grid sm:grid-cols-2 gap-5 mt-5">
-                            {course.incluye?.length > 0 && (
+                            {hasRichText(course.incluye) && (
                               <div>
                                 <h3 className="font-display font-bold mb-3 flex items-center gap-2" style={{ color: '#0A1E29' }}>
                                   <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--success)' }} /> Incluye
                                 </h3>
                                 <ul className="space-y-2">
-                                  {course.incluye.map((item, i) => (
+                                  {richTextLines(course.incluye).map((item, i) => (
                                     <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#1A3040' }}>
                                       <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
-                                      {item}
+                                      <span>{renderBold(item, `inc${i}`)}</span>
                                     </li>
                                   ))}
                                 </ul>
                               </div>
                             )}
-                            {course.no_incluye?.length > 0 && (
+                            {hasRichText(course.no_incluye) && (
                               <div>
                                 <h3 className="font-display font-bold mb-3 flex items-center gap-2" style={{ color: '#0A1E29' }}>
                                   <X className="w-4 h-4 text-red-400" /> No incluye
                                 </h3>
                                 <ul className="space-y-2">
-                                  {course.no_incluye.map((item, i) => (
+                                  {richTextLines(course.no_incluye).map((item, i) => (
                                     <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#1A3040' }}>
                                       <X className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
-                                      {item}
+                                      <span>{renderBold(item, `ninc${i}`)}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -959,10 +1127,10 @@ export default function CourseDetail() {
       >
         <div>
           <div className="font-display font-bold" style={{ fontSize: '1.25rem', color: 'var(--text-1)' }}>
-            {isFree ? 'GRATIS' : isVivencial && course.vivencial_precio_seña_ars ? formatARS(course.vivencial_precio_seña_ars) : formatARS(course.precio_ars)}
+            {isFree ? 'GRATIS' : isVivencial && course.vivencial_precio_seña_ars ? formatARS(course.vivencial_precio_seña_ars) : formatARS(precioTransf || precioTarjeta)}
           </div>
           <div className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>
-            {isFree ? 'Sin costo' : isVivencial ? 'Seña' : 'Pago único'}
+            {isFree ? 'Sin costo' : isVivencial ? 'Seña' : 'Transferencia'}
           </div>
         </div>
         <div className="flex gap-2">
@@ -989,6 +1157,19 @@ export default function CourseDetail() {
       {/* ── FAQ Modal ── */}
       <AnimatePresence>
         {showFAQ && <FAQModal onClose={() => setShowFAQ(false)} />}
+      </AnimatePresence>
+
+      {/* ── Modal método de pago ── */}
+      <AnimatePresence>
+        {showPayModal && (
+          <PaymentMethodModal
+            course={course}
+            cuotasMax={cuotasMax}
+            loading={paymentLoading}
+            onSelect={(metodo) => { void startPayment(metodo) }}
+            onClose={() => setShowPayModal(false)}
+          />
+        )}
       </AnimatePresence>
 
       {/* ── WhatsApp float ── */}

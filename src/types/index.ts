@@ -4,7 +4,7 @@ export type PlanName = 'free' | 'mensual' | 'anual'
 export type SubscriptionStatus = 'free' | 'active' | 'cancelled' | 'pending'
 export type TipoCuenta = 'asesor' | 'agencia' | 'instructor' | 'externo'
 // Valores reales del CHECK de academy_courses.tipo_acceso.
-export type TipoAcceso = 'gratuito' | 'pago' | 'suscripcion' | 'b2b_incluido'
+export type TipoAcceso = 'gratuito' | 'pago'
 export type NivelCurso = 'principiante' | 'intermedio' | 'avanzado'
 export type TipoCurso = 'grabado' | 'en_vivo' | 'vivencial' | 'ebook'
 export type TipoPunto = 'ganado' | 'canjeado'
@@ -262,7 +262,9 @@ export interface Course {
   tags: string[]
   tipo_acceso: TipoAcceso
   precio_usd: number | null
-  precio_ars: number | null
+  precio_ars: number | null              // precio final tarjeta/cuotas
+  precio_neto_ars: number | null         // lo que el negocio quiere cobrarse
+  precio_transferencia_ars: number | null // precio final por transferencia
   publicado: boolean
   destacado: boolean
   archivado: boolean
@@ -281,8 +283,9 @@ export interface Course {
   pdf_url: string | null
   total_paginas: number | null
   fotos: string[]
-  incluye: string[]
-  no_incluye: string[]
+  // texto libre compartido con vivenciales (markdown **negrita**, un ítem por línea). NULL si vacío.
+  incluye: string | null
+  no_incluye: string | null
   duracion_total_minutos: number
   total_lecciones: number
   rating_avg: number
@@ -314,6 +317,7 @@ export interface Module {
   id: string
   course_id: string
   titulo: string
+  descripcion: string | null
   orden: number
   lessons?: Lesson[]
 }
@@ -538,6 +542,9 @@ export interface AdminSettings {
   mp_monto_minimo_cuotas_ars: number
   dias_limite_pago_vivencial: number
   travexa_whatsapp_business: string
+  mp_recargo_tarjeta_pct: number
+  mp_recargo_transferencia_pct: number
+  mp_cuotas_max: number
 }
 
 // Inscripción con el perfil del alumno resuelto (para la tabla de inscriptos)

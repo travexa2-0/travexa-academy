@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     // Obtener curso
     const { data: course, error: courseError } = await supabaseAdmin
       .from('academy_courses')
-      .select('id, titulo, precio_ars, tipo_acceso, publicado')
+      .select('id, slug, titulo, precio_ars, tipo_acceso, publicado')
       .eq('id', course_id)
       .eq('publicado', true)
       .single()
@@ -85,9 +85,11 @@ Deno.serve(async (req) => {
         }],
         external_reference: externalReference,
         back_urls: {
-          success: `${ACADEMY_URL}/pago-confirmado`,
-          failure: `${ACADEMY_URL}/pago-error`,
-          pending: `${ACADEMY_URL}/pago-confirmado`,
+          // Éxito → player del curso, que confirma el pago y destraba el acceso sin recargar.
+          // Pending/error → detalle del curso, que muestra el banner correspondiente.
+          success: `${ACADEMY_URL}/cursos/${course.slug}/aprender?payment=success`,
+          failure: `${ACADEMY_URL}/cursos/${course.slug}?payment=error`,
+          pending: `${ACADEMY_URL}/cursos/${course.slug}?payment=pending`,
         },
         auto_return: 'approved',
         notification_url: WEBHOOK_URL,

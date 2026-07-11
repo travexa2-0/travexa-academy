@@ -229,7 +229,7 @@
   .module-block.is-current .module-node{ background:var(--bg); border-color:var(--pl-primary-l); color:var(--pl-primary-l); box-shadow:0 0 0 4px rgba(78,205,184,0.16); }
   .module-block.is-locked .module-node{ color:var(--pl-text-3); }
   .module-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; cursor:pointer; }
-  .module-head .title{ font-family:var(--font-display); font-weight:600; font-size:14.5px; color:var(--pl-text-1); line-height:1.3; }
+  .module-head .title{ font-family:var(--font-display); font-weight:700; font-size:14.5px; color:var(--pl-text-1); line-height:1.3; }
   .module-block.is-locked .module-head .title{ color:var(--pl-text-3); }
   .module-head .frac{ font-family:var(--font-mono); font-size:11px; color:var(--pl-text-3); white-space:nowrap; flex-shrink:0; }
   .module-head .chev{ color:var(--pl-text-3); transition:transform .25s var(--pl-ease); flex-shrink:0; }

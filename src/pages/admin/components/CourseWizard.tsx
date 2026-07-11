@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import Overlay from './Overlay'
-import TagInput from './TagInput'
+import RichTextArea from './RichTextArea'
 import ModuleBuilder from './ModuleBuilder'
-import { NIVEL_OPTIONS, ACCESO_OPTIONS, TAG_SUGGESTIONS } from './wizardData'
+import { NIVEL_OPTIONS, ACCESO_OPTIONS } from './wizardData'
 import { useAdminUI } from '../adminContext'
 import { formatArs } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useAdminInstructors, useUpsertCourse, useSaveCurriculum, uploadMedia, slugify, type ModuleInput, type CourseWrite } from '@/hooks/admin/useAdminCourses'
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings'
+import { grossFromNet } from '@/hooks/usePricing'
 import type { Course, Module } from '@/types'
 
 interface Props {
@@ -23,30 +24,32 @@ interface FormState {
   category_id: string
   nivel: 'principiante' | 'intermedio' | 'avanzado'
   instructor_id: string
-  tipo: 'grabado' | 'en_vivo'
+  tipo: 'grabado' | 'en_vivo' | 'ebook'
   descripcion: string
   descripcion_larga: string
   thumbnail_url: string | null
   trailer_url: string
-  tags: string[]
-  tipo_acceso: 'pago' | 'gratuito' | 'b2b_incluido'
-  precio_usd: string
+  tipo_acceso: 'pago' | 'gratuito'
+  precio_neto_ars: string
   destacado: boolean
   live_date: string
   live_time: string
   live_duration_minutes: string
   live_url: string
-  incluye: string[]
-  no_incluye: string[]
+  pdf_url: string | null
+  total_paginas: string
+  incluye: string
+  no_incluye: string
   modules: ModuleInput[]
 }
 
-const STEPS = ['General', 'Precio', 'Currículum', 'Incluye', 'Revisión']
+const STEPS = ['General', 'Precio', 'Programa', 'Incluye', 'Revisión']
 
 function toModuleInputs(modules?: Module[]): ModuleInput[] {
   return (modules ?? []).map(m => ({
     id: m.id,
     titulo: m.titulo,
+    descripcion: m.descripcion ?? null,
     lessons: (m.lessons ?? []).map(l => ({
       id: l.id, titulo: l.titulo, video_url: l.video_url, duracion_segundos: l.duracion_segundos, es_preview: l.es_preview, recursos: l.recursos,
     })),
@@ -60,21 +63,22 @@ function initialState(initial?: (Course & { modules?: Module[] }) | null): FormS
     category_id: initial?.category_id ?? '',
     nivel: (initial?.nivel as FormState['nivel']) ?? 'principiante',
     instructor_id: initial?.instructor_id ?? '',
-    tipo: (initial?.tipo === 'en_vivo' ? 'en_vivo' : 'grabado'),
+    tipo: (initial?.tipo === 'en_vivo' ? 'en_vivo' : initial?.tipo === 'ebook' ? 'ebook' : 'grabado'),
     descripcion: initial?.descripcion ?? '',
     descripcion_larga: initial?.descripcion_larga ?? '',
     thumbnail_url: initial?.thumbnail_url ?? null,
     trailer_url: initial?.trailer_url ?? '',
-    tags: initial?.tags ?? [],
-    tipo_acceso: (['pago', 'gratuito', 'b2b_incluido'].includes(initial?.tipo_acceso as string) ? initial!.tipo_acceso as FormState['tipo_acceso'] : 'pago'),
-    precio_usd: initial?.precio_usd != null ? String(initial.precio_usd) : '',
+    tipo_acceso: (initial?.tipo_acceso === 'gratuito' ? 'gratuito' : 'pago'),
+    precio_neto_ars: initial?.precio_neto_ars != null ? String(initial.precio_neto_ars) : '',
     destacado: initial?.destacado ?? false,
     live_date: liveDate ? liveDate.toISOString().slice(0, 10) : '',
     live_time: liveDate ? liveDate.toISOString().slice(11, 16) : '19:00',
     live_duration_minutes: initial?.live_duration_minutes != null ? String(initial.live_duration_minutes) : '90',
     live_url: initial?.live_url ?? '',
-    incluye: initial?.incluye ?? [],
-    no_incluye: initial?.no_incluye ?? [],
+    pdf_url: initial?.pdf_url ?? null,
+    total_paginas: initial?.total_paginas != null ? String(initial.total_paginas) : '',
+    incluye: initial?.incluye ?? '',
+    no_incluye: initial?.no_incluye ?? '',
     modules: toModuleInputs(initial?.modules),
   }
 }
@@ -92,6 +96,8 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
   const [form, setForm] = useState<FormState>(() => initialState(initial))
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingPdf, setUploadingPdf] = useState(false)
+  const pdfRef = useRef<HTMLInputElement>(null)
 
   // Reset when reopened for a different course.
   useEffect(() => {
@@ -100,15 +106,19 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm(f => ({ ...f, [key]: value }))
 
-  const tc = settings?.tipo_cambio_usd_ars ?? 1450
-  const precioArs = useMemo(() => (Number(form.precio_usd) || 0) * tc, [form.precio_usd, tc])
+  const recargoTarjeta = settings?.mp_recargo_tarjeta_pct ?? 23
+  const recargoTransferencia = settings?.mp_recargo_transferencia_pct ?? 6
+  const neto = useMemo(() => Number(form.precio_neto_ars) || 0, [form.precio_neto_ars])
+  const precioTarjeta = useMemo(() => grossFromNet(neto, recargoTarjeta), [neto, recargoTarjeta])
+  const precioTransferencia = useMemo(() => grossFromNet(neto, recargoTransferencia), [neto, recargoTransferencia])
 
   const validateStep = (s: number): string | null => {
     if (s === 1) {
       if (form.titulo.trim().length < 3) return 'El título es obligatorio (mínimo 3 caracteres).'
+      if (form.tipo === 'ebook' && !form.pdf_url) return 'Subí el PDF del ebook.'
     }
     if (s === 2) {
-      if (form.tipo_acceso === 'pago' && (Number(form.precio_usd) || 0) <= 0) return 'El precio debe ser mayor a 0.'
+      if (form.tipo_acceso === 'pago' && neto <= 0) return 'El precio neto debe ser mayor a 0.'
       if (form.tipo === 'en_vivo' && !form.live_date) return 'Indicá la fecha del vivo.'
     }
     return null
@@ -131,6 +141,16 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
     finally { setUploading(false) }
   }
 
+  const onPickPdf = async (file: File) => {
+    setUploadingPdf(true)
+    try {
+      const url = await uploadMedia(slugify(form.titulo) || 'nuevo', file, 'pdf')
+      set('pdf_url', url)
+      toast.success('PDF subido')
+    } catch (e) { toast.error((e as Error).message) }
+    finally { setUploadingPdf(false) }
+  }
+
   const finish = async () => {
     for (let s = 1; s <= 2; s++) { const err = validateStep(s); if (err) { toast.error(err); setStep(s); return } }
     setSaving(true)
@@ -149,16 +169,18 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         descripcion_larga: form.descripcion_larga || null,
         thumbnail_url: form.thumbnail_url,
         trailer_url: form.trailer_url || null,
-        tags: form.tags,
         tipo_acceso: form.tipo_acceso,
-        precio_usd: form.tipo_acceso === 'gratuito' ? 0 : Number(form.precio_usd) || 0,
-        precio_ars: form.tipo_acceso === 'gratuito' ? 0 : Math.round(precioArs),
+        precio_neto_ars: form.tipo_acceso === 'gratuito' ? 0 : neto,
+        precio_ars: form.tipo_acceso === 'gratuito' ? 0 : precioTarjeta,
+        precio_transferencia_ars: form.tipo_acceso === 'gratuito' ? 0 : precioTransferencia,
         destacado: form.destacado,
-        incluye: form.incluye,
-        no_incluye: form.no_incluye,
-        live_date: liveISO,
+        incluye: form.incluye.trim() || null,
+        no_incluye: form.no_incluye.trim() || null,
+        live_date: form.tipo === 'en_vivo' ? liveISO : null,
         live_url: form.tipo === 'en_vivo' ? (form.live_url || null) : null,
         live_duration_minutes: form.tipo === 'en_vivo' ? (Number(form.live_duration_minutes) || null) : null,
+        pdf_url: form.tipo === 'ebook' ? (form.pdf_url || null) : null,
+        total_paginas: form.tipo === 'ebook' ? (Number(form.total_paginas) || null) : null,
       }
       const course = await upsert.mutateAsync(payload)
       await saveCurriculum.mutateAsync({ courseId: course.id, modules: form.modules })
@@ -237,8 +259,26 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 <div style={{ display: 'flex', gap: 8 }}>
                   <span className={`chip${form.tipo === 'grabado' ? ' chip-active' : ''}`} onClick={() => set('tipo', 'grabado')} style={{ cursor: 'pointer' }}>Grabado</span>
                   <span className={`chip${form.tipo === 'en_vivo' ? ' chip-active' : ''}`} onClick={() => set('tipo', 'en_vivo')} style={{ cursor: 'pointer' }}>En vivo</span>
+                  <span className={`chip${form.tipo === 'ebook' ? ' chip-active' : ''}`} onClick={() => set('tipo', 'ebook')} style={{ cursor: 'pointer' }}>Ebook / PDF</span>
                 </div>
               </div>
+              {form.tipo === 'ebook' && (
+                <div className="field-row cols-2">
+                  <div className="field">
+                    <label className="f-label">Archivo PDF</label>
+                    <input ref={pdfRef} type="file" accept="application/pdf" hidden onChange={e => { const f = e.target.files?.[0]; if (f) onPickPdf(f) }} />
+                    <button type="button" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }} onClick={() => pdfRef.current?.click()}>
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
+                      {uploadingPdf ? 'Subiendo…' : form.pdf_url ? 'Reemplazar PDF' : 'Subir PDF'}
+                    </button>
+                    {form.pdf_url && <div className="f-hint" style={{ marginTop: 6 }}>PDF cargado · <a href={form.pdf_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal-deep)', fontWeight: 600 }}>ver</a></div>}
+                  </div>
+                  <div className="field">
+                    <label className="f-label">Cantidad de páginas <span className="opt">— opcional</span></label>
+                    <input className="input" type="number" value={form.total_paginas} onChange={e => set('total_paginas', e.target.value)} placeholder="0" />
+                  </div>
+                </div>
+              )}
               <div className="field">
                 <label className="f-label">Descripción corta <span className="opt">— aparece en la card del catálogo</span></label>
                 <textarea className="textarea" style={{ minHeight: 56 }} placeholder="Una línea que resuma el curso" value={form.descripcion} onChange={e => set('descripcion', e.target.value)} />
@@ -262,8 +302,6 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 <div className="field">
                   <label className="f-label">Trailer <span className="opt">— opcional</span></label>
                   <input className="input" type="text" placeholder="Link de YouTube" value={form.trailer_url} onChange={e => set('trailer_url', e.target.value)} />
-                  <label className="f-label" style={{ marginTop: 14 }}>Tags</label>
-                  <TagInput value={form.tags} onChange={v => set('tags', v)} placeholder="Agregar tag…" />
                 </div>
               </div>
             </div>
@@ -273,7 +311,7 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
           {step === 2 && (
             <div className="wiz-step-panel active">
               <div className="wiz-step-title">Precio y acceso</div>
-              <div className="wiz-step-sub">Pensá en dólares, se cobra en pesos al tipo de cambio del momento.</div>
+              <div className="wiz-step-sub">Poné el neto que querés cobrarte; calculamos el precio final según el medio de pago.</div>
               <div className="field">
                 <label className="f-label">Tipo de acceso</label>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -283,18 +321,25 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 </div>
               </div>
               {form.tipo_acceso !== 'gratuito' && (
-                <div className="field-row cols-2">
-                  <div className="field">
-                    <label className="f-label">Precio (USD)</label>
-                    <div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="number" value={form.precio_usd} onChange={e => set('precio_usd', e.target.value)} /></div>
+                <div className="field">
+                  <label className="f-label">Precio neto <span className="opt">— lo que querés cobrarte</span></label>
+                  <div className="input-prefix-wrap" style={{ maxWidth: 260 }}><span className="input-prefix">$</span><input className="input" type="number" value={form.precio_neto_ars} onChange={e => set('precio_neto_ars', e.target.value)} placeholder="0" /></div>
+                  <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ padding: '12px 14px', background: 'var(--surface-2, rgba(78,205,184,0.08))', border: '1px solid var(--line)', borderRadius: 12 }}>
+                      <div className="f-hint" style={{ margin: 0 }}>Precio tarjeta/cuotas</div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--ink)' }}>{neto > 0 ? formatArs(precioTarjeta) : '—'}</div>
+                      <div className="f-hint" style={{ margin: 0 }}>recargo {recargoTarjeta}%</div>
+                    </div>
+                    <div style={{ padding: '12px 14px', background: 'var(--gold-soft)', border: '1px solid var(--line)', borderRadius: 12 }}>
+                      <div className="f-hint" style={{ margin: 0 }}>Precio transferencia</div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--ink)' }}>{neto > 0 ? formatArs(precioTransferencia) : '—'}</div>
+                      <div className="f-hint" style={{ margin: 0 }}>recargo {recargoTransferencia}%</div>
+                    </div>
                   </div>
-                  <div className="field">
-                    <label className="f-label">Equivalente en ARS <span className="opt">— hoy</span></label>
-                    <div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="text" value={formatArs(precioArs).replace('$', '')} disabled style={{ color: 'var(--ink-faint)' }} /></div>
-                    <div className="f-hint">Tipo de cambio configurado: {formatArs(tc)} · <a href="#" onClick={e => { e.preventDefault(); openSettings() }} style={{ color: 'var(--teal-deep)', fontWeight: 600 }}>editar</a></div>
-                  </div>
+                  <div className="f-hint" style={{ marginTop: 8 }}>Recargos configurados en Ajustes · <a href="#" onClick={e => { e.preventDefault(); openSettings() }} style={{ color: 'var(--teal-deep)', fontWeight: 600 }}>editar</a></div>
                 </div>
               )}
+              <div style={{ borderTop: '1px solid var(--line)', margin: '20px 0 16px' }} />
               <div className="field" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', background: 'var(--gold-soft)', borderRadius: 12 }}>
                 <div>
                   <label className="f-label" style={{ margin: 0 }}>★ Destacar en el catálogo</label>
@@ -316,11 +361,16 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
             </div>
           )}
 
-          {/* STEP 3 — CURRICULUM */}
+          {/* STEP 3 — PROGRAMA */}
           {step === 3 && (
             <div className="wiz-step-panel active">
-              <div className="wiz-step-title">Currículum</div>
+              <div className="wiz-step-title">Programa</div>
               <div className="wiz-step-sub">Módulos y lecciones. Marcá una lección como Preview para que sea gratis.</div>
+              {form.tipo === 'ebook' && (
+                <div className="f-hint" style={{ marginBottom: 14, padding: '10px 12px', background: 'var(--gold-soft)', borderRadius: 10 }}>
+                  Este es un ebook: el contenido es el PDF que subiste. El programa es opcional; podés dejarlo vacío.
+                </div>
+              )}
               <ModuleBuilder modules={form.modules} onChange={m => set('modules', m)} />
             </div>
           )}
@@ -329,14 +379,14 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
           {step === 4 && (
             <div className="wiz-step-panel active">
               <div className="wiz-step-title">Qué incluye y qué no</div>
-              <div className="wiz-step-sub">Esto se muestra tal cual en la página de venta. Elegí de la lista o escribí el tuyo.</div>
+              <div className="wiz-step-sub">Un ítem por línea. Si dejás un campo vacío, esa sección no aparece en el curso publicado.</div>
               <div className="field">
                 <label className="f-label">✓ Incluye</label>
-                <TagInput value={form.incluye} onChange={v => set('incluye', v)} variant="pos" suggestions={TAG_SUGGESTIONS.cursoIncluye} />
+                <RichTextArea value={form.incluye} onChange={v => set('incluye', v)} placeholder={'Acceso de por vida\nCertificado al completar\n**Bonus:** plantillas editables'} />
               </div>
               <div className="field">
                 <label className="f-label">✕ No incluye</label>
-                <TagInput value={form.no_incluye} onChange={v => set('no_incluye', v)} variant="neg" suggestions={TAG_SUGGESTIONS.cursoNoIncluye} />
+                <RichTextArea value={form.no_incluye} onChange={v => set('no_incluye', v)} placeholder={'Mentoría 1 a 1\nSoporte telefónico'} />
               </div>
             </div>
           )}
@@ -355,9 +405,11 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 </div>
                 <div className="preview-body">
                   <div className="stat-mini-grid" style={{ marginBottom: 0 }}>
-                    <div className="stat-mini"><div className="v">{form.tipo_acceso === 'gratuito' ? 'Gratis' : `US$ ${Number(form.precio_usd) || 0}`}</div><div className="l">{form.tipo_acceso === 'gratuito' ? '—' : `${formatArs(precioArs)} ARS`}</div></div>
-                    <div className="stat-mini"><div className="v">{form.modules.length}</div><div className="l">Módulos · {totalLecciones} lecciones</div></div>
-                    <div className="stat-mini"><div className="v">{form.tipo === 'en_vivo' ? 'En vivo' : 'Grabado'}</div><div className="l">{instructors?.find(i => i.id === form.instructor_id)?.nombre ?? 'Sin instructor'}</div></div>
+                    <div className="stat-mini"><div className="v">{form.tipo_acceso === 'gratuito' ? 'Gratis' : formatArs(precioTransferencia)}</div><div className="l">{form.tipo_acceso === 'gratuito' ? '—' : `Transferencia · Tarjeta ${formatArs(precioTarjeta)}`}</div></div>
+                    {form.tipo === 'ebook'
+                      ? <div className="stat-mini"><div className="v">{Number(form.total_paginas) || '—'}</div><div className="l">Páginas · Ebook</div></div>
+                      : <div className="stat-mini"><div className="v">{form.modules.length}</div><div className="l">Módulos · {totalLecciones} lecciones</div></div>}
+                    <div className="stat-mini"><div className="v">{form.tipo === 'en_vivo' ? 'En vivo' : form.tipo === 'ebook' ? 'Ebook' : 'Grabado'}</div><div className="l">{instructors?.find(i => i.id === form.instructor_id)?.nombre ?? 'Sin instructor'}</div></div>
                   </div>
                 </div>
               </div>

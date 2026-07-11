@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import toast from 'react-hot-toast'
@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { liveLessonState } from '@/types'
 import type { Course, Module, Lesson, LessonProgress, LessonRecurso } from '@/types'
 import { onLessonComplete } from '@/hooks/useGamification'
+import { confirmCoursePayment } from '@/hooks/usePayment'
 import { useMyReview } from '@/hooks/useCourses'
 import LessonComments from '@/components/player/LessonComments'
 import CourseCompleteModal from '@/components/player/CourseCompleteModal'
@@ -105,6 +106,8 @@ export default function Player() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const paymentConfirmRan = useRef(false)
 
   const [collapsed, setCollapsed] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -132,6 +135,38 @@ export default function Player() {
     enabled: !!user?.id && !!course?.id,
   })
   const { data: myReview } = useMyReview(user?.id, course?.id)
+
+  // Vuelta desde Mercado Pago: confirmar el pago del curso y destrabar el acceso sin recargar.
+  useEffect(() => {
+    if (paymentConfirmRan.current) return
+    const payment = searchParams.get('payment')
+    const paymentId = searchParams.get('payment_id') ?? searchParams.get('collection_id')
+    const status = searchParams.get('status') ?? searchParams.get('collection_status')
+    const externalRef = searchParams.get('external_reference') ?? ''
+    const isSuccess = payment === 'success' || status === 'approved'
+    if (!isSuccess || !paymentId) return
+    paymentConfirmRan.current = true
+
+    void (async () => {
+      const result = await confirmCoursePayment(paymentId, externalRef)
+      if (result.success) {
+        // Prefijo parcial: invalida el enrollment de cualquier curso sin depender de course.id (aún puede estar cargando).
+        await qc.invalidateQueries({ queryKey: ['enrollment-active'] })
+        void qc.invalidateQueries({ queryKey: ['enrollments', user?.id] })
+        toast('¡Listo! Ya tenés acceso a este curso', {
+          icon: '✅',
+          style: { background: 'var(--bg-2)', color: 'var(--text-1)', border: '1px solid var(--primary)', borderRadius: '12px' },
+          duration: 3500,
+        })
+      }
+      // Limpiar los params (replace, sin entrada de historial) para que un refresh no reintente.
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        for (const k of ['payment', 'payment_id', 'collection_id', 'status', 'collection_status', 'external_reference', 'preference_id', 'payment_type', 'merchant_order_id', 'site_id', 'processing_mode', 'merchant_account_id']) next.delete(k)
+        return next
+      }, { replace: true })
+    })()
+  }, [searchParams, setSearchParams, qc, user?.id])
 
   const completedIds = useMemo(() => new Set(progress.filter(p => p.completada).map(p => p.lesson_id)), [progress])
   const isEbook = course?.tipo === 'ebook'

@@ -68,7 +68,7 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
 
         <div className="slideover-tabs">
           <button className={`so-tab${tab === 'info' ? ' active' : ''}`} onClick={() => setTab('info')}>Info general</button>
-          <button className={`so-tab${tab === 'curriculum' ? ' active' : ''}`} onClick={() => setTab('curriculum')}>{isViv ? 'Itinerario' : 'Currículum'}</button>
+          <button className={`so-tab${tab === 'curriculum' ? ' active' : ''}`} onClick={() => setTab('curriculum')}>{isViv ? 'Itinerario' : 'Programa'}</button>
           <button className={`so-tab${tab === 'alumnos' ? ' active' : ''}`} onClick={() => setTab('alumnos')}>Inscriptos {enrollments ? `· ${enrollments.length}` : ''}</button>
         </div>
 
@@ -134,10 +134,11 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
                         </div>
                       )))
                 : ((full?.modules ?? []).length === 0
-                    ? <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Sin currículum cargado todavía.</div>
+                    ? <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Sin programa cargado todavía.</div>
                     : (full?.modules ?? []).map(m => (
                         <div className="module-block" key={m.id}>
-                          <div className="module-head" style={{ padding: '11px 14px' }}><b style={{ fontFamily: 'var(--font-display)', fontSize: 13 }}>{m.titulo}</b><span className="module-count">{(m.lessons ?? []).length} lecciones</span></div>
+                          <div className="module-head" style={{ padding: '11px 14px' }}><b style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13 }}>{m.titulo}</b><span className="module-count">{(m.lessons ?? []).length} lecciones</span></div>
+                          {m.descripcion && <div style={{ padding: '0 14px 8px', fontSize: 12.4, color: 'var(--ink-soft)', lineHeight: 1.5 }}>{m.descripcion}</div>}
                           {(m.lessons ?? []).map(l => (
                             <div className="lesson-row" key={l.id} style={{ paddingLeft: 14 }}>
                               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none" /></svg>

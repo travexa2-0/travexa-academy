@@ -10,6 +10,9 @@ const DEFAULTS: AdminSettings = {
   mp_monto_minimo_cuotas_ars: 50000,
   dias_limite_pago_vivencial: 7,
   travexa_whatsapp_business: '',
+  mp_recargo_tarjeta_pct: 23,
+  mp_recargo_transferencia_pct: 6,
+  mp_cuotas_max: 6,
 }
 
 function toNumber(value: unknown, fallback: number): number {
@@ -30,6 +33,9 @@ async function fetchSettings(): Promise<AdminSettings> {
     mp_monto_minimo_cuotas_ars:     toNumber(map.get('mp_monto_minimo_cuotas_ars'), DEFAULTS.mp_monto_minimo_cuotas_ars),
     dias_limite_pago_vivencial:     toNumber(map.get('dias_limite_pago_vivencial'), DEFAULTS.dias_limite_pago_vivencial),
     travexa_whatsapp_business:      typeof map.get('travexa_whatsapp_business') === 'string' ? map.get('travexa_whatsapp_business') as string : DEFAULTS.travexa_whatsapp_business,
+    mp_recargo_tarjeta_pct:         toNumber(map.get('mp_recargo_tarjeta_pct'), DEFAULTS.mp_recargo_tarjeta_pct),
+    mp_recargo_transferencia_pct:   toNumber(map.get('mp_recargo_transferencia_pct'), DEFAULTS.mp_recargo_transferencia_pct),
+    mp_cuotas_max:                  toNumber(map.get('mp_cuotas_max'), DEFAULTS.mp_cuotas_max),
   }
 }
 

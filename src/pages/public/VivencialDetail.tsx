@@ -13,6 +13,7 @@ import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
 import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPago'
 import { cupoEstado } from '@/lib/cupo'
 import { displayName } from '@/lib/utils'
+import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import type { ItinerarioDia, Enrollment } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -279,8 +280,9 @@ export default function VivencialDetail() {
   const waDigits = cleanWhatsappNumber(whatsappBusiness ?? '') || '5491112345678'
   const waUrl   = `https://wa.me/${waDigits}?text=${encodeURIComponent(`Hola! Quiero consultar por el vivencial ${course.titulo} (${fmtDate(course.vivencial_fecha_salida)}). ¿Me pasás más info?`)}`
 
-  const ctaFeatures = course.incluye.length > 0
-    ? course.incluye.slice(0, 4)
+  const incluyeLines = richTextLines(course.incluye)
+  const ctaFeatures = incluyeLines.length > 0
+    ? incluyeLines.slice(0, 4)
     : ['Cupos limitados por salida', 'Acompañamiento Travexa Academy', 'Certificado Travexa Academy', 'Cierre de venta por WhatsApp']
 
   function handleCopyLink() {
@@ -552,33 +554,33 @@ export default function VivencialDetail() {
                   {/* ── QUÉ INCLUYE ── */}
                   {activeTab === 'inc' && (
                     <div>
-                      {course.incluye.length > 0 && (
+                      {hasRichText(course.incluye) && (
                         <>
                           <p className="font-display font-bold" style={{ fontSize: '.95rem', color: '#0A1E29', marginBottom: 14 }}>Incluye</p>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 24px', marginBottom: 22 }}>
-                            {course.incluye.map((item, i) => (
+                            {richTextLines(course.incluye).map((item, i) => (
                               <div key={i} className="flex items-start gap-2" style={{ fontSize: '.87rem', color: '#4A6070', lineHeight: 1.5 }}>
                                 <Check className="shrink-0 mt-[1px]" style={{ width: 15, height: 15, color: 'var(--primary)' }} />
-                                <span>{item}</span>
+                                <span>{renderBold(item, `inc${i}`)}</span>
                               </div>
                             ))}
                           </div>
                         </>
                       )}
-                      {course.no_incluye.length > 0 && (
+                      {hasRichText(course.no_incluye) && (
                         <>
                           <p className="font-display font-bold" style={{ fontSize: '.95rem', color: '#0A1E29', marginBottom: 14 }}>No incluye</p>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 24px' }}>
-                            {course.no_incluye.map((item, i) => (
+                            {richTextLines(course.no_incluye).map((item, i) => (
                               <div key={i} className="flex items-start gap-2" style={{ fontSize: '.87rem', color: '#8FA3AB', lineHeight: 1.5 }}>
                                 <X className="shrink-0 mt-[1px]" style={{ width: 15, height: 15, color: '#B0BEC5' }} />
-                                <span>{item}</span>
+                                <span>{renderBold(item, `ninc${i}`)}</span>
                               </div>
                             ))}
                           </div>
                         </>
                       )}
-                      {course.incluye.length === 0 && course.no_incluye.length === 0 && (
+                      {!hasRichText(course.incluye) && !hasRichText(course.no_incluye) && (
                         <p style={{ fontSize: '.85rem', color: '#8FA3AB' }}>El detalle de qué incluye este vivencial estará disponible próximamente.</p>
                       )}
                     </div>
@@ -748,7 +750,7 @@ export default function VivencialDetail() {
                 {ctaFeatures.map((f, i) => (
                   <div key={i} className="flex items-center gap-2 mb-2" style={{ fontSize: '.79rem', color: 'var(--text-2)' }}>
                     <Check className="shrink-0" style={{ width: 14, height: 14, color: 'var(--neon)' }} />
-                    {f}
+                    <span>{renderBold(f, `cta${i}`)}</span>
                   </div>
                 ))}
 

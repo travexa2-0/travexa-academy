@@ -1,8 +1,9 @@
 import { useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Heart, Users, Clock, ArrowRight } from 'lucide-react'
+import { Heart, Users, Clock, ArrowRight, BookOpen } from 'lucide-react'
 import { usePricingConfig } from '@/hooks/usePricing'
+import { courseLiveState } from '@/lib/liveState'
 import type { Course, NivelCurso } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -72,6 +73,17 @@ function TipoBadge({ tipo }: { tipo: Course['tipo'] }) {
       </span>
     )
   }
+  if (tipo === 'ebook') {
+    return (
+      <span
+        className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[.08em] uppercase px-2 py-[3.5px] rounded-[4px]"
+        style={{ background: 'rgba(10,30,41,.85)', color: 'var(--text-2)', border: '1px solid rgba(245,243,236,.18)', backdropFilter: 'blur(10px)' }}
+      >
+        <BookOpen className="w-[9px] h-[9px]" />
+        Ebook
+      </span>
+    )
+  }
   return (
     <span
       className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[.08em] uppercase px-2 py-[3.5px] rounded-[4px]"
@@ -118,10 +130,14 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
 
   const { data: pricing } = usePricingConfig()
 
-  const isLive     = course.tipo === 'en_vivo'
+  const liveState  = courseLiveState(course)
+  const isLive     = liveState === 'upcoming' || liveState === 'live'  // trato visual "en vivo"
+  const isEbook    = course.tipo === 'ebook'
   const isVivencial = course.tipo === 'vivencial'
   const isFree     = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
   const cupoLow    = isVivencial && course.vivencial_cupo_disponible !== null && course.vivencial_cupo_disponible <= 5
+  // Un en_vivo ya grabado se muestra como grabado normal.
+  const badgeTipo: Course['tipo'] = course.tipo === 'en_vivo' && !isLive ? 'grabado' : course.tipo
 
   const cuotasMax  = pricing?.cuotasMax ?? 6
   const precioTarjeta = Number(course.precio_ars) || 0
@@ -196,7 +212,7 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
 
         {/* Badges top-left */}
         <div className="absolute top-[9px] left-[9px] right-9 flex items-start gap-1 flex-wrap" style={{ zIndex: 4 }}>
-          <TipoBadge tipo={course.tipo} />
+          <TipoBadge tipo={badgeTipo} />
           <NivelBadge nivel={course.nivel} />
         </div>
 
@@ -313,12 +329,19 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
               {course.rating_avg.toFixed(1)}
             </span>
           )}
-          {course.duracion_total_minutos > 0 && (
+          {isEbook ? (
+            course.total_paginas ? (
+              <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
+                <BookOpen className="w-[11px] h-[11px]" />
+                {course.total_paginas} pág
+              </span>
+            ) : null
+          ) : course.duracion_total_minutos > 0 ? (
             <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
               <Clock className="w-[11px] h-[11px]" />
               {formatDuration(course.duracion_total_minutos)}
             </span>
-          )}
+          ) : null}
           {course.total_alumnos > 0 && (
             <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
               <Users className="w-[11px] h-[11px]" />
@@ -327,13 +350,18 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
           )}
         </div>
 
-        {/* Live date — solo si hay fecha y duración */}
-        {isLive && course.live_date && course.live_duration_minutes && (
+        {/* Clase en vivo — próxima o en curso (si ya pasó y hay grabación, se ve como grabado) */}
+        {liveState === 'live' ? (
+          <div className="font-mono flex items-center gap-[5px] mt-[6px]" style={{ fontSize: '9.5px', color: '#EF4444', fontWeight: 600 }}>
+            <span className="live-stat-dot w-[5px] h-[5px] rounded-full shrink-0" style={{ background: '#EF4444' }} />
+            EN VIVO AHORA
+          </div>
+        ) : liveState === 'upcoming' && course.live_date ? (
           <div className="font-mono flex items-center gap-[5px] mt-[6px]" style={{ fontSize: '9.5px', color: '#EF4444' }}>
             <span className="live-stat-dot w-[5px] h-[5px] rounded-full shrink-0" style={{ background: '#EF4444' }} />
-            {new Date(course.live_date).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+            Próx · {new Date(course.live_date).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
           </div>
-        )}
+        ) : null}
 
         {/* Cupo vivencial */}
         {isVivencial && course.vivencial_cupo_disponible !== null && !cupoLow && (

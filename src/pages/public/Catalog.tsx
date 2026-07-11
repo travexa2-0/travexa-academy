@@ -6,12 +6,13 @@ import CourseCard from '@/components/courses/CourseCard'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { useCourses, useCategories, useWishlist, useToggleWishlist } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Course, TipoCurso } from '@/types'
+import type { Course, TipoCurso, NivelCurso } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────
 
-type TipoFilter = TipoCurso | 'all' | 'gratis'
-type SortKey    = 'popular' | 'rating' | 'price-asc' | 'price-desc' | 'newest'
+type TipoFilter  = TipoCurso | 'all' | 'gratis'
+type NivelFilter = NivelCurso | 'all'
+type SortKey     = 'popular' | 'rating' | 'price-asc' | 'price-desc' | 'newest'
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'popular',    label: 'Más vendidos' },
@@ -25,9 +26,15 @@ const TIPO_OPTIONS: { value: TipoFilter; label: string; icon?: string }[] = [
   { value: 'all',       label: 'Todos' },
   { value: 'grabado',   label: 'A tu ritmo' },
   { value: 'en_vivo',   label: 'En Vivo' },
-  { value: 'vivencial', label: '✈ Vivencial' },
-  { value: 'ebook',     label: 'Ebooks' },
+  { value: 'ebook',     label: 'Ebook / PDF' },
   { value: 'gratis',    label: 'Gratis' },
+]
+
+const NIVEL_OPTIONS: { value: NivelFilter; label: string }[] = [
+  { value: 'all',           label: 'Todos' },
+  { value: 'principiante',  label: 'Principiante' },
+  { value: 'intermedio',    label: 'Intermedio' },
+  { value: 'avanzado',      label: 'Avanzado' },
 ]
 
 // ── Sort ──────────────────────────────────────────────────────────
@@ -199,6 +206,7 @@ function WhatsAppFloat() {
 export default function Catalog() {
   const { user } = useAuth()
   const [selectedTipo, setSelectedTipo]     = useState<TipoFilter>('all')
+  const [selectedNivel, setSelectedNivel]   = useState<NivelFilter>('all')
   const [selectedCat, setSelectedCat]       = useState<string>('all')
   const [sort, setSort]                     = useState<SortKey>('popular')
   const [search, setSearch]                 = useState('')
@@ -228,15 +236,18 @@ export default function Catalog() {
     toggleWishlist({ courseId, isWishlisted: wishlist.includes(courseId) })
   }
 
-  const filtered = useMemo(() => {
-    let list = courses
-    if (selectedTipo === 'grabado')   list = list.filter(c => c.tipo === 'grabado')
-    else if (selectedTipo === 'en_vivo')   list = list.filter(c => c.tipo === 'en_vivo')
-    else if (selectedTipo === 'vivencial') list = list.filter(c => c.tipo === 'vivencial')
-    else if (selectedTipo === 'ebook')     list = list.filter(c => c.tipo === 'ebook')
-    else if (selectedTipo === 'gratis')    list = list.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito')
+  // Los vivenciales tienen su propio catálogo en /vivencial — acá no se muestran.
+  const catalogCourses = useMemo(() => courses.filter(c => c.tipo !== 'vivencial'), [courses])
 
-    if (selectedCat !== 'all') list = list.filter(c => c.category?.nombre === selectedCat)
+  const filtered = useMemo(() => {
+    let list = catalogCourses
+    if (selectedTipo === 'grabado')      list = list.filter(c => c.tipo === 'grabado')
+    else if (selectedTipo === 'en_vivo') list = list.filter(c => c.tipo === 'en_vivo')
+    else if (selectedTipo === 'ebook')   list = list.filter(c => c.tipo === 'ebook')
+    else if (selectedTipo === 'gratis')  list = list.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito')
+
+    if (selectedNivel !== 'all') list = list.filter(c => c.nivel === selectedNivel)
+    if (selectedCat !== 'all')   list = list.filter(c => c.category?.nombre === selectedCat)
 
     if (search) {
       list = list.filter(c =>
@@ -246,12 +257,12 @@ export default function Catalog() {
       )
     }
     return sortCourses(list, sort)
-  }, [courses, selectedTipo, selectedCat, search, sort])
+  }, [catalogCourses, selectedTipo, selectedNivel, selectedCat, search, sort])
 
-  const liveCount      = courses.filter(c => c.tipo === 'en_vivo').length
-  const freeCount      = courses.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito').length
-  const ritmoCount     = courses.filter(c => c.tipo === 'grabado').length
-  const totalCount     = courses.length
+  const liveCount      = catalogCourses.filter(c => c.tipo === 'en_vivo').length
+  const freeCount      = catalogCourses.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito').length
+  const ritmoCount     = catalogCourses.filter(c => c.tipo === 'grabado').length
+  const totalCount     = catalogCourses.length
 
   const categoryNames = ['all', ...categories.map(c => c.nombre)]
 
@@ -434,7 +445,24 @@ export default function Catalog() {
             </div>
           </div>
 
-          {/* Row 2: Categoría */}
+          {/* Row 2: Nivel */}
+          <div className="flex items-center gap-[14px] mb-[10px]">
+            <span className="font-display text-[13px] font-bold shrink-0 min-w-[90px]" style={{ color: 'var(--text-1)' }}>
+              Nivel
+            </span>
+            <div className="flex items-center gap-[7px] overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {NIVEL_OPTIONS.map(opt => (
+                <FilterPill
+                  key={opt.value}
+                  label={opt.label}
+                  active={selectedNivel === opt.value}
+                  onClick={() => setSelectedNivel(opt.value)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Row 3: Categoría */}
           <div className="flex items-center gap-[14px]">
             <span className="font-display text-[13px] font-bold shrink-0 min-w-[90px]" style={{ color: 'var(--text-1)' }}>
               Categoría

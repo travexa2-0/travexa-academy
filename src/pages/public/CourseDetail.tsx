@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Copy, CheckCircle2, Users, Clock,
   Play, Lock, X, Check, MapPin, Hotel, CalendarDays,
-  Loader2, Heart, AlertCircle,
+  Loader2, Heart, AlertCircle, BookOpen,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments, useReviews } from '@/hooks/useCourses'
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useCoursePayment, type MetodoPago } from '@/hooks/usePayment'
 import { usePricingConfig } from '@/hooks/usePricing'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
+import { courseLiveState } from '@/lib/liveState'
 import { displayName } from '@/lib/utils'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
 
@@ -361,7 +362,8 @@ interface CTACardProps {
 
 function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, cuotasMax, onEnroll, onWishlist, onGift, onFAQ }: CTACardProps) {
   const isVivencial = course.tipo === 'vivencial'
-  const isLive      = course.tipo === 'en_vivo'
+  const liveState   = courseLiveState(course)
+  const isLive      = liveState === 'upcoming' || liveState === 'live'  // en vivo real; ya grabado = curso normal
   const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
 
   const precioTarjeta = Number(course.precio_ars) || 0
@@ -386,7 +388,7 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, c
       {/* Price */}
       {isFree ? (
         <div>
-          <div className="font-display font-bold" style={{ fontSize: '1.7rem', color: 'var(--primary-l)' }}>GRATIS</div>
+          <div className="font-display font-bold" style={{ fontSize: '1.95rem', color: 'var(--primary-l)', letterSpacing: '-.02em', lineHeight: 1.1 }}>GRATIS</div>
           <p className="text-xs mt-[3px] mb-3" style={{ color: 'var(--text-3)' }}>Sin costo, sin tarjeta</p>
         </div>
       ) : isVivencial && course.vivencial_precio_seña_ars ? (
@@ -654,7 +656,7 @@ export default function CourseDetail() {
   // Derive tab list based on course type
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'desc', label: 'Descripción' },
-    { key: 'cont', label: 'Contenido' },
+    { key: 'cont', label: 'Programa' },
     { key: 'inst', label: 'Instructor' },
     { key: 'revs', label: 'Reseñas' },
     ...(course?.trailer_url ? [{ key: 'trl' as TabKey, label: 'Trailer' }] : []),
@@ -688,7 +690,9 @@ export default function CourseDetail() {
   }
 
   const isVivencial = course.tipo === 'vivencial'
-  const isLive      = course.tipo === 'en_vivo'
+  const isEbook     = course.tipo === 'ebook'
+  const liveState   = courseLiveState(course)
+  const isLive      = liveState === 'upcoming' || liveState === 'live'
   const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
   const nivelStyle  = NIVEL_STYLES[course.nivel]
   const precioTarjeta = Number(course.precio_ars) || 0
@@ -812,12 +816,19 @@ export default function CourseDetail() {
                 {course.total_alumnos} alumnos
               </div>
             )}
-            {course.duracion_total_minutos > 0 && (
+            {isEbook ? (
+              course.total_paginas ? (
+                <div className="flex items-center gap-1 font-mono" style={{ fontSize: '10px', color: 'var(--text-2)' }}>
+                  <BookOpen className="w-3 h-3" />
+                  {course.total_paginas} páginas
+                </div>
+              ) : null
+            ) : course.duracion_total_minutos > 0 ? (
               <div className="flex items-center gap-1 font-mono" style={{ fontSize: '10px', color: 'var(--text-2)' }}>
                 <Clock className="w-3 h-3" />
                 {formatDuration(course.duracion_total_minutos)}
               </div>
-            )}
+            ) : null}
             {course.instructor && (
               <div className="font-mono" style={{ fontSize: '10px', color: 'var(--text-2)' }}>
                 Instructor: <strong style={{ color: 'var(--text-1)', marginLeft: '3px' }}>{course.instructor.nombre}</strong>
@@ -899,11 +910,16 @@ export default function CourseDetail() {
                     {/* Descripción */}
                     {activeTab === 'desc' && (
                       <div>
-                        {/* En vivo: show live date prominently (solo si hay fecha y duración) */}
-                        {isLive && course.live_date && course.live_duration_minutes && (
+                        {/* Clase en vivo — Próxima / En vivo ahora. Si ya pasó y hay grabación, no se muestra (curso normal). */}
+                        {(liveState === 'upcoming' || liveState === 'live') && course.live_date && (
                           <div className="mb-4 rounded-xl border p-4 flex items-center gap-3" style={{ borderColor: 'rgba(239,68,68,.3)', background: 'rgba(239,68,68,.04)' }}>
-                            <CalendarDays className="w-5 h-5 shrink-0" style={{ color: '#EF4444' }} />
+                            {liveState === 'live'
+                              ? <span className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse" style={{ background: '#EF4444', boxShadow: '0 0 0 4px rgba(239,68,68,.18)' }} />
+                              : <CalendarDays className="w-5 h-5 shrink-0" style={{ color: '#EF4444' }} />}
                             <div>
+                              <p className="font-mono text-[10px] tracking-[.08em] uppercase mb-0.5" style={{ color: '#EF4444', fontWeight: 600 }}>
+                                {liveState === 'live' ? 'En vivo ahora' : 'Próxima clase en vivo'}
+                              </p>
                               <p className="font-display font-bold" style={{ color: '#0A1E29' }}>
                                 {new Date(course.live_date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                               </p>
@@ -1038,16 +1054,20 @@ export default function CourseDetail() {
                       </div>
                     )}
 
-                    {/* Contenido */}
+                    {/* Programa */}
                     {activeTab === 'cont' && (
                       <div>
                         <p className="font-mono text-sm mb-3" style={{ color: 'var(--text-3)' }}>
-                          {totalLessons} {contentUnit} · {course.modules?.length ?? 0} módulos · {formatDuration(course.duracion_total_minutos)}
+                          {isEbook
+                            ? (course.total_paginas ? `${course.total_paginas} páginas` : 'Ebook en PDF')
+                            : `${totalLessons} ${contentUnit} · ${course.modules?.length ?? 0} módulos · ${formatDuration(course.duracion_total_minutos)}`}
                         </p>
                         {course.modules && course.modules.length > 0 ? (
                           <CurriculumAccordion modules={course.modules} isVivencial={isVivencial} />
                         ) : (
-                          <p className="text-sm" style={{ color: 'var(--text-3)' }}>Contenido próximamente.</p>
+                          <p className="text-sm" style={{ color: 'var(--text-3)' }}>
+                            {isEbook ? 'Este ebook se lee completo desde tu panel al acceder.' : 'Contenido próximamente.'}
+                          </p>
                         )}
                       </div>
                     )}

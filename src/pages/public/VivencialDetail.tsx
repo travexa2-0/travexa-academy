@@ -477,7 +477,8 @@ export default function VivencialDetail() {
                       {/* Info grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         {[
-                          { label: 'Nivel',         value: course.nivel.charAt(0).toUpperCase() + course.nivel.slice(1) },
+                          // nivel es null para vivenciales (es un campo de cursos): solo lo mostramos si existe.
+                          ...(course.nivel ? [{ label: 'Nivel', value: course.nivel.charAt(0).toUpperCase() + course.nivel.slice(1) }] : []),
                           { label: 'Idioma',        value: 'Español' },
                           { label: 'Cupo máximo',   value: max > 0 ? `${max} asesores` : 'Sin límite' },
                           { label: 'Salida desde',  value: course.vivencial_ciudad_salida ?? 'Por confirmar' },

@@ -690,7 +690,8 @@ export default function CourseDetail() {
   const isVivencial = course.tipo === 'vivencial'
   const isLive      = course.tipo === 'en_vivo'
   const isFree      = course.tipo_acceso === 'gratuito' || course.precio_ars === 0
-  const nivelStyle  = NIVEL_STYLES[course.nivel]
+  // Fallback seguro: nivel null (ej. vivencial) o no contemplado → sin badge, sin romper el render.
+  const nivelStyle  = course.nivel ? NIVEL_STYLES[course.nivel] : undefined
   const precioTarjeta = Number(course.precio_ars) || 0
   const precioTransf  = Number(course.precio_transferencia_ars) || 0
 
@@ -824,12 +825,14 @@ export default function CourseDetail() {
               </div>
             )}
             {/* Nivel badge */}
-            <span
-              className="font-mono text-[9px] tracking-[.07em] uppercase px-[8px] py-[3px] rounded-[4px]"
-              style={{ background: nivelStyle.bg, color: nivelStyle.color }}
-            >
-              {nivelStyle.label}
-            </span>
+            {nivelStyle && (
+              <span
+                className="font-mono text-[9px] tracking-[.07em] uppercase px-[8px] py-[3px] rounded-[4px]"
+                style={{ background: nivelStyle.bg, color: nivelStyle.color }}
+              >
+                {nivelStyle.label}
+              </span>
+            )}
           </div>
 
           {/* Copy link */}

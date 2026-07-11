@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import ErrorBoundary from '@/components/layout/ErrorBoundary'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import OnboardingGate from '@/components/layout/OnboardingGate'
 import AdminGate from '@/components/layout/AdminGate'
@@ -86,6 +87,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* OnboardingGate global: único decisor del gate de onboarding para todas las rutas */}
@@ -159,6 +161,7 @@ export default function App() {
             </Route>
           </Routes>
           </Suspense>
+          </ErrorBoundary>
 
           <Toaster
             position="bottom-right"

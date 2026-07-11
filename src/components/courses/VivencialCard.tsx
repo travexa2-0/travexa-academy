@@ -194,7 +194,7 @@ export default function VivencialCard({ course: c, isWishlisted, onToggleWishlis
                   height: '100%',
                   width: `${pct}%`,
                   borderRadius: 2,
-                  background: cupoBarColor[estado.cls],
+                  background: cupoBarColor[estado.cls] ?? 'var(--primary)',
                   transition: 'width 800ms cubic-bezier(0.23,1,0.32,1)',
                 }}
               />

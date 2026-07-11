@@ -28,3 +28,7 @@ assets/source/
 
 # imágenes de referencia locales (no versionar)
 _ref/
+
+# docs de negocio/técnico viven en la carpeta padre (~/Projects/travexa/),
+# no deben trackearse acá: eran copias internas duplicadas por error.
+/Travexa_*.md

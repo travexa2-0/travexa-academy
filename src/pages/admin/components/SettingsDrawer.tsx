@@ -157,7 +157,7 @@ export default function SettingsDrawer({ open, onClose }: Props) {
             <div className="field">
               <label className="f-label">WhatsApp Business</label>
               <input className="input" type="text" placeholder="+54 9 11 5697-4099" value={whatsappBusiness} onChange={e => setWhatsappBusiness(e.target.value)} />
-              <div className="f-hint">Es el número al que llega el botón “Quiero anotarme” de cada vivencial.</div>
+              <div className="f-hint">Es el número al que llega el botón “Quiero mi lugar” de cada vivencial.</div>
             </div>
             <div className="field-row cols-2">
               <div className="field">

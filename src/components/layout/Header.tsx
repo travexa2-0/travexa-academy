@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home, LayoutDashboard } from 'lucide-react'
+import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home, LayoutDashboard, Users } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
@@ -105,9 +105,10 @@ export default function Header() {
           {/* Nav desktop */}
           <nav className="hidden md:flex items-center gap-1">
             {[
-              { to: '/',           label: 'Inicio',     icon: Home },
-              { to: '/cursos',     label: 'Formación',  icon: Library },
-              { to: '/vivencial',  label: 'Vivencial',  icon: Globe },
+              { to: '/',             label: 'Inicio',       icon: Home },
+              { to: '/cursos',       label: 'Formación',    icon: Library },
+              { to: '/vivencial',    label: 'Vivencial',    icon: Globe },
+              { to: '/instructores', label: 'Instructores', icon: Users },
             ].map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
@@ -247,6 +248,9 @@ export default function Header() {
             </Link>
             <Link to="/vivencial" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
               <Globe className="h-4 w-4" /> Vivencial
+            </Link>
+            <Link to="/instructores" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
+              <Users className="h-4 w-4" /> Instructores
             </Link>
             {user ? (
               <>

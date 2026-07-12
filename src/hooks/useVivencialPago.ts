@@ -6,7 +6,7 @@ const COMPROBANTES_BUCKET = 'academy-comprobantes'
 export const MAX_COMPROBANTE_BYTES = 10 * 1024 * 1024 // 10MB
 const ACCEPTED_MIME = /^(image\/|application\/pdf)/
 
-// ── WhatsApp Business (número global para "Quiero anotarme") ────────────────
+// ── WhatsApp Business (número global para "Quiero mi lugar") ────────────────
 
 async function fetchWhatsappBusiness(): Promise<string> {
   const { data, error } = await supabase
@@ -32,7 +32,7 @@ export function cleanWhatsappNumber(raw: string): string {
 }
 
 /**
- * Arma el link de "Quiero anotarme". La forma de "interesado" depende del
+ * Arma el link de "Quiero mi lugar". La forma de "interesado" depende del
  * género que cargó el usuario en el onboarding (Femenino / Masculino); para
  * cualquier otro valor, sin sesión o sin dato, usa el genérico "interesado/a".
  */

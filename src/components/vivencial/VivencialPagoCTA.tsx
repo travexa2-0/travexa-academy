@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRightLeft, CheckCircle2, Clock, MessageCircle, CreditCard, CalendarClock } from 'lucide-react'
+import { ArrowRightLeft, CheckCircle2, Clock, MessageCircle, CreditCard, CalendarClock, ArrowRight } from 'lucide-react'
 import {
   useVivencialPaymentsFor,
   useWhatsappBusiness,
@@ -103,7 +103,10 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
     )
   }
 
-  // ── Estado: sin enrollment → informativo + "Quiero anotarme" ────
+  // ── Estado: sin enrollment → informativo + "Quiero mi lugar" ────
+  // Solo cambia el LABEL del botón (antes "Quiero anotarme"): el comportamiento
+  // sigue intacto → abre WhatsApp al número de `travexa_whatsapp_business` con el
+  // mensaje pre-armado (buildAnotarmeWaUrl). No se toca la lógica ni el flujo.
   const anotarmeUrl = whatsappBusiness
     ? buildAnotarmeWaUrl(whatsappBusiness, course.titulo, academyProfile?.genero)
     : null
@@ -139,7 +142,7 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm"
         style={btnPrimary}
       >
-        <MessageCircle className="h-4 w-4" /> Quiero anotarme
+        <MessageCircle className="h-4 w-4" /> Quiero mi lugar <ArrowRight className="h-4 w-4" />
       </button>
     </div>
   )

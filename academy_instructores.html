@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instructores — Travexa Academy</title>
+<meta property="og:title" content="Travexa Academy — Instructores">
+<meta property="og:description" content="No enseña cualquiera. Enseña quien ya lo hizo.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A1E29;--bg2:#0F2C3B;--bg3:#162F3E;
+  --pr:#0E6B5C;--ph:#0D5E50;--ps:rgba(14,107,92,.16);--pl:#4ECDB8;
+  --neon:#00E5C8;--neon-glow:rgba(0,229,200,.22);--neon-dim:rgba(0,229,200,.08);
+  --gd:#C99A3A;
+  --t1:#F5F3EC;--t2:#C9D3D6;--t3:#8FA3AB;
+  --ln:rgba(245,243,236,.11);--ls:rgba(245,243,236,.22);
+  --e:cubic-bezier(0.23,1,0.32,1);
+  --fd:'Space Grotesk',sans-serif;--fb:'Inter',sans-serif;--fm:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:var(--fb);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;min-height:100vh}
+a{font:inherit;cursor:pointer;color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 22px}
+
+/* HEADER */
+.ho{position:fixed;top:0;left:0;right:0;z-index:300;display:flex;justify-content:center;padding:10px 14px;pointer-events:none}
+.hp{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:1180px;height:56px;padding:0 20px;border-radius:14px;background:rgba(10,22,32,.78);backdrop-filter:blur(44px) saturate(190%);-webkit-backdrop-filter:blur(44px) saturate(190%);border:1px solid rgba(255,255,255,.1);box-shadow:0 2px 16px rgba(0,0,0,.35);pointer-events:auto}
+.logo{font-family:var(--fd);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo-m{width:26px;height:26px;background:var(--pr);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-m svg{width:13px;height:13px;color:#fff}
+.logo-a{color:var(--t1)}.logo-b{color:var(--gd)}
+.hnav{display:flex;align-items:center;gap:2px}
+@media(max-width:680px){.hnav{display:none}}
+.hlnk{font-size:13px;font-weight:500;color:rgba(245,243,236,.6);padding:7px 12px;border-radius:8px}
+.hlnk.on{color:var(--neon);background:var(--neon-dim)}
+
+/* HERO */
+.hero{position:relative;display:flex;align-items:center;overflow:hidden;padding:120px 0 60px;
+  background:radial-gradient(ellipse 1100px 620px at 22% 0%,rgba(0,229,200,.16),transparent 62%),radial-gradient(ellipse 700px 460px at 100% 10%,rgba(14,107,92,.22),transparent 58%),linear-gradient(180deg,#0D2A38 0%,var(--bg) 46%,#0D2230 100%)}
+.hero-grid{position:absolute;inset:0;pointer-events:none;opacity:.6;background-image:linear-gradient(rgba(245,243,236,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(245,243,236,.06) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 1000px 560px at 18% 0%,black,transparent 72%);mask-image:radial-gradient(ellipse 1000px 560px at 18% 0%,black,transparent 72%)}
+.hero-fade{position:absolute;bottom:0;left:0;right:0;height:90px;pointer-events:none;background:linear-gradient(to bottom,transparent,var(--bg))}
+.eyebrow{font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--neon);display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--neon);box-shadow:0 0 0 4px var(--neon-dim)}
+.hero h1{font-family:var(--fd);font-weight:700;font-size:clamp(2rem,6.5vw,4.6rem);line-height:1.03;letter-spacing:-.025em}
+.hero h1 .a{color:var(--t1);display:block}
+.hero h1 .b{color:var(--neon);text-shadow:0 0 48px var(--neon-glow);display:block}
+.hero-sub{max-width:640px;margin-top:22px;font-size:clamp(.95rem,1.8vw,1.1rem);color:var(--t3);line-height:1.7}
+
+/* TEAM */
+.team{padding:44px 0 80px}
+.team h2{font-family:var(--fd);font-weight:700;font-size:1.5rem;color:var(--t1)}
+.team-sub{font-size:.9rem;color:var(--t3);margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--ln);border-radius:18px;padding:24px;display:flex;gap:18px}
+.av{width:76px;height:76px;border-radius:16px;flex-shrink:0;object-fit:cover;border:1px solid var(--ls);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:1.5rem;color:var(--t1)}
+.card h3{font-family:var(--fd);font-weight:700;font-size:1.12rem;color:var(--t1);line-height:1.2}
+.card .role{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--neon);margin-top:6px}
+.card .bio{font-size:.88rem;color:var(--t3);margin-top:10px;line-height:1.55}
+.testi{margin-top:40px;padding:40px 24px;border:1px dashed var(--ln);border-radius:18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.testi .lbl{font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+.testi p{font-size:.92rem;color:var(--t3);max-width:460px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="ho"><div class="hp">
+  <div class="logo"><span class="logo-m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="logo-a">Travexa </span><span class="logo-b">Academy</span></div>
+  <nav class="hnav">
+    <a class="hlnk" href="#">Inicio</a>
+    <a class="hlnk" href="#">Formación</a>
+    <a class="hlnk" href="#">Vivencial</a>
+    <a class="hlnk on" href="#">Instructores</a>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-fade"></div>
+  <div class="wrap" style="position:relative;z-index:1">
+    <div class="eyebrow">Travexa Academy · Instructores</div>
+    <h1><span class="a">No enseña cualquiera.</span><span class="b">Enseña quien ya lo hizo.</span></h1>
+    <p class="hero-sub">Cada instructor tiene trayectoria comprobable en el rubro y una especialidad distinta — desde psicología aplicada a la venta hasta liderazgo, IA y marketing turístico. No es un cuerpo docente genérico: es un equipo diverso de profesionales que hoy están operando en el turismo real.</p>
+  </div>
+</section>
+
+<!-- EQUIPO DOCENTE -->
+<main class="wrap team">
+  <h2>Equipo docente</h2>
+  <p class="team-sub">Referentes que forman a la red de asesores de Travexa.</p>
+
+  <div class="grid">
+    <article class="card">
+      <div class="av" style="background:linear-gradient(135deg,hsl(168 42% 30%),hsl(210 48% 20%))">YR</div>
+      <div>
+        <h3>Yesica Robles</h3>
+        <div class="role">Fundadora · Psicología y PNL</div>
+        <p class="bio">Creadora del sistema 9 Momentos®. Autora de El Asesor que Cierra y Nadie te dijo la verdad. Construyó Travexa desde cero.</p>
+      </div>
+    </article>
+    <article class="card">
+      <div class="av" style="background:linear-gradient(135deg,hsl(28 42% 30%),hsl(70 48% 20%))">JP</div>
+      <div>
+        <h3>Javier Pérez</h3>
+        <div class="role">Liderazgo y mentoría · Huella Infinita</div>
+        <p class="bio">Especialista en liderazgo de equipos comerciales, con trayectoria formando líderes en el rubro.</p>
+      </div>
+    </article>
+    <article class="card">
+      <div class="av" style="background:linear-gradient(135deg,hsl(260 42% 30%),hsl(302 48% 20%))">HC</div>
+      <div>
+        <h3>Hernán Causté</h3>
+        <div class="role">IA aplicada al turismo · TravelUp Academy</div>
+        <p class="bio">Referente en el uso de inteligencia artificial aplicada al día a día del asesor de viajes.</p>
+      </div>
+    </article>
+    <article class="card">
+      <div class="av" style="background:linear-gradient(135deg,hsl(330 42% 30%),hsl(12 48% 20%))">FE</div>
+      <div>
+        <h3>Florencia Endl</h3>
+        <div class="role">Marketing turístico · Ya Academy</div>
+        <p class="bio">Especialista en presencia digital y gestión de proyectos para agencias y asesores.</p>
+      </div>
+    </article>
+  </div>
+
+  <!-- Testimonio: estado vacío diseñado (sin texto de usuario falso) -->
+  <div class="testi">
+    <span class="lbl">Testimonios</span>
+    <p>Espacio para testimonio de alumno sobre un instructor puntual — pendiente de completar.</p>
+  </div>
+</main>
+
+</body>
+</html>

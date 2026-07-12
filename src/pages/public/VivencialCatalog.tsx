@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronDown, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import VivencialCard from '@/components/courses/VivencialCard'
+import VivencialValueBand from '@/components/vivencial/VivencialValueBand'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { useCourses, useWishlist, useToggleWishlist } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
@@ -33,19 +34,6 @@ const DUR_OPTIONS: { value: DurBucket; label: string }[] = [
   { value: 'corto',  label: 'Hasta 7 días' },
   { value: 'medio',  label: '8 a 12 días' },
   { value: 'largo',  label: '13+ días' },
-]
-
-// ── Hero rotating phrases ─────────────────────────────────────────
-
-// IMPORTANTE: toda frase del rotador DEBE entrar en 2 líneas a cada breakpoint.
-// El contenedor reserva alto para 2 líneas (min-height 2.05em) y recorta lo que
-// sobre (overflow hidden). Si una frase nueva no entra en 2 líneas, se va a ver
-// visualmente cortada en QA — eso es a propósito, para que no pase desapercibido.
-const PHRASES = [
-  'viajan para vender mejor.',
-  'conocen el destino primero.',
-  'aprenden viajando, no mirando.',
-  'venden con experiencia real.',
 ]
 
 // ── Salida date formatting (filtro "Fecha de salida") ─────────────
@@ -204,22 +192,8 @@ export default function VivencialCatalog() {
   const [activeDestino, setActiveDestino] = useState<string>('all')
   const [activeFecha,   setActiveFecha]   = useState<string>('all')
   const [showModal,    setShowModal]    = useState(false)
-  const [phraseIdx,    setPhraseIdx]    = useState(0)
-  const [phraseOut,    setPhraseOut]    = useState(false)
 
   const filtersRef = useRef<HTMLDivElement>(null)
-
-  // Rotating hero phrase
-  useEffect(() => {
-    const id = setInterval(() => {
-      setPhraseOut(true)
-      setTimeout(() => {
-        setPhraseIdx(i => (i + 1) % PHRASES.length)
-        setPhraseOut(false)
-      }, 280)
-    }, 3200)
-    return () => clearInterval(id)
-  }, [])
 
   // All vivenciales
   const vivenciales = useMemo(
@@ -352,47 +326,25 @@ export default function VivencialCatalog() {
           </motion.p>
 
           {/* Title */}
-          {/* Floor del clamp bajado a 1.9rem (desde 2.6rem) para que la frase más
-              larga del rotador entre en 2 líneas también en mobile (~375px). El
-              desktop no cambia: sigue tope en 5rem. */}
           <motion.h1
             className="font-display font-bold"
-            style={{ fontSize: 'clamp(1.9rem,7vw,5rem)', lineHeight: 1.02, letterSpacing: '-.025em' }}
+            style={{ fontSize: 'clamp(2rem,7vw,5rem)', lineHeight: 1.02, letterSpacing: '-.025em' }}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.22 }}
           >
-            <span style={{ color: 'var(--text-1)', display: 'block' }}>Formación para asesores que</span>
-            {/* min-height 2.05em = alto reservado para 2 líneas (em-based, escala a cada
-                breakpoint). La frase va en position:absolute para que su cantidad de
-                líneas nunca empuje el layout → sin salto al rotar entre frases. */}
-            <span style={{ display: 'block', minHeight: '2.05em', position: 'relative', overflow: 'hidden', lineHeight: 1.02 }}>
-              <span
-                style={{
-                  color: 'var(--neon)',
-                  textShadow: '0 0 48px var(--neon-glow)',
-                  transition: 'opacity 260ms ease, transform 260ms cubic-bezier(0.23,1,0.32,1)',
-                  opacity: phraseOut ? 0 : 1,
-                  transform: phraseOut ? 'translateY(-10px)' : 'none',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                }}
-              >
-                {PHRASES[phraseIdx]}
-              </span>
-            </span>
+            <span style={{ color: 'var(--text-1)', display: 'block' }}>El turismo no solo se estudia.</span>
+            <span style={{ color: 'var(--neon)', textShadow: '0 0 48px var(--neon-glow)', display: 'block' }}>Se vive.</span>
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
-            style={{ maxWidth: 520, marginTop: 22, fontSize: 'clamp(.95rem,1.8vw,1.1rem)', color: 'var(--text-3)', lineHeight: 1.7 }}
+            style={{ maxWidth: 600, marginTop: 22, fontSize: 'clamp(.95rem,1.8vw,1.1rem)', color: 'var(--text-3)', lineHeight: 1.7 }}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.42 }}
           >
-            Viajá con Yesica y otros asesores de toda Argentina. Conocé el destino por dentro, construí tu argumento de venta y volvé con fotos reales, contactos reales y experiencia de primera mano.
+            No es un viaje de turista: conocés el destino, los hoteles y las actividades como los vas a vender después, y sumás talleres teórico-prácticos con expertos del rubro — role-play, simulaciones de venta y capacitación real, todo en el mismo viaje.
           </motion.p>
 
           {/* Actions */}
@@ -449,6 +401,9 @@ export default function VivencialCatalog() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── OFERTA DE VALOR (4 tarjetas) ──────────────────────── */}
+      <VivencialValueBand />
 
       {/* ── FILTERS ──────────────────────────────────────────── */}
       <div

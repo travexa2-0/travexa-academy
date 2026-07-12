@@ -54,7 +54,7 @@ type TabKey = typeof TABS[number]['key']
 // ── FAQ data ──────────────────────────────────────────────────────
 
 const FAQ_ITEMS = [
-  { q: '¿Cómo reservo mi lugar?', a: 'Tocás "Quiero anotarme" y te contactás con nosotros por WhatsApp. Ahí coordinamos la seña y el pago del viaje.' },
+  { q: '¿Cómo reservo mi lugar?', a: 'Tocás "Quiero mi lugar" y te contactás con nosotros por WhatsApp. Ahí coordinamos la seña y el pago del viaje.' },
   { q: '¿Qué pasa si se llena el cupo?', a: 'El cupo es limitado. Una vez agotado, quedás en lista de espera para la próxima salida del mismo destino.' },
   { q: '¿Puedo cancelar?', a: 'Sí, con reembolso del 100% de la seña si cancelás hasta 30 días antes de la salida. Consultá los términos completos.' },
   { q: '¿Está incluido el vuelo?', a: 'Depende del vivencial. Ver la sección "Qué incluye" para los detalles específicos de este viaje.' },

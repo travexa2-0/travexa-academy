@@ -225,7 +225,7 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
               <div className="field" style={{ marginTop: 18 }}>
                 <label className="f-label">Link del grupo de WhatsApp del viaje</label>
                 <input className="input" type="text" placeholder="https://chat.whatsapp.com/…" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
-                <div className="f-hint">Es el grupo del viaje al que se suman los inscriptos. No es el número de consultas (ese sale del botón “Quiero anotarme”, que va al WhatsApp Business global).</div>
+                <div className="f-hint">Es el grupo del viaje al que se suman los inscriptos. No es el número de consultas (ese sale del botón “Quiero mi lugar”, que va al WhatsApp Business global).</div>
               </div>
             </div>
           )}

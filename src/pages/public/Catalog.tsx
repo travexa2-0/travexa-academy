@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ChevronDown, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import CourseCard from '@/components/courses/CourseCard'
+import FormacionValueSection from '@/components/courses/FormacionValueSection'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { useCourses, useCategories, useWishlist, useToggleWishlist } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
@@ -307,15 +308,15 @@ export default function Catalog() {
               style={{ fontSize: 'clamp(2.4rem,6vw,4.4rem)', lineHeight: 1.03, letterSpacing: '-.025em' }}
               initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.22 }}
             >
-              <span style={{ color: 'var(--text-1)', display: 'block' }}>Formación práctica para</span>
-              <span style={{ color: 'var(--neon)', textShadow: '0 0 48px var(--neon-glow)', display: 'block' }}>vender más y mejor.</span>
+              <span style={{ color: 'var(--text-1)', display: 'block' }}>Formación práctica que se</span>
+              <span style={{ color: 'var(--neon)', textShadow: '0 0 48px var(--neon-glow)', display: 'block' }}>traduce en más ventas.</span>
             </motion.h1>
 
             <motion.p
-              style={{ maxWidth: 520, marginTop: 22, fontSize: 'clamp(.95rem,1.8vw,1.1rem)', color: 'var(--text-3)', lineHeight: 1.7 }}
+              style={{ maxWidth: 540, marginTop: 22, fontSize: 'clamp(.95rem,1.8vw,1.1rem)', color: 'var(--text-3)', lineHeight: 1.7 }}
               initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.42 }}
             >
-              Cursos grabados y en vivo dictados por Yesica e instructores del sector. A tu ritmo, con certificado — aplicás lo que aprendés desde la primera semana.
+              Nada de teoría de manual. Cada curso está armado con casos reales del mercado argentino, pensado para que vendas más — no para juntar diplomas.
             </motion.p>
 
             <motion.div
@@ -384,6 +385,9 @@ export default function Catalog() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── Oferta de valor + métricas reales de Formación ── */}
+      <FormacionValueSection />
 
       {/* ── Main content ── */}
       <main ref={resultsRef} className="max-w-[1200px] mx-auto px-[22px]">

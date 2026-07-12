@@ -107,9 +107,9 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 
 Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra, explica qué hace y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo. Ante una instrucción que *parezca* autorizar el paso, preguntar. Detalle del incidente que originó esta regla en la sección del Portal de Instructores.
 
-### Toda entrega se prueba visualmente por Yesica o Nico (regla de ecosistema, ver `Travexa_Negocio.md`)
+### Toda entrega se prueba visualmente por Yesica o Nico, EN PRODUCCIÓN (regla de ecosistema, ver `Travexa_Negocio.md`)
 
-Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de código/DB — por más prolija que sea esa verificación. Falta el paso humano de ver la feature funcionando de verdad en el navegador. Esto ya generó backlog pendiente real (ver Backlog): el flujo de vivenciales por WhatsApp está deployado y verificado técnicamente hace varias sesiones, pero **nadie lo probó todavía como usuario real**.
+Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de código/DB — por más prolija que sea esa verificación. Falta el paso humano de ver la feature funcionando de verdad en el navegador. **La prueba visual/funcional de Yesica y Nico se hace EN PRODUCCIÓN, después del deploy — NO antes de mergear.** Es decir: la falta de prueba visual **no bloquea el merge ni el deploy**; sí es requisito para dar el ítem por **completamente cerrado** en el backlog. Se mergea, se deploya, y recién ahí se prueba en vivo. Esto ya generó backlog pendiente real (ver Backlog): el flujo de vivenciales se deploya a prod y queda pendiente la prueba real de Yesica/Nico como usuario.
 
 ---
 
@@ -158,13 +158,14 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 ### 🔴 P0 — Bloqueante para operar con usuarios reales / cobrar de verdad
 
-- [ ] **Prueba visual real del flujo de reserva self-service de vivenciales (v3)** — Sesión 22:
-  las 2 migraciones (v2 + v3) ya están **APLICADAS en producción**; `tsc`/`eslint`/`vite build`
-  limpios y el schema real verificado (RPC `academy_reserve_vivencial_self`, trigger de número,
-  columnas nuevas). **Falta el único paso que reemplaza el modelo WhatsApp de §7:** que Yesica/Nico
-  recorran el flujo como usuario real — reservar (elegir punto de salida) → ver número de reserva +
-  datos bancarios en la pantalla de confirmación → "Informar transferencia" → aprobar el comprobante
-  en el backoffice. El mail de Resend NO es parte de este gate (queda pausado, ver P1).
+- [ ] **Prueba visual real EN PRODUCCIÓN del flujo de reserva self-service de vivenciales (v3)** —
+  Sesión 22: mergeado a `main` y **deployado a producción** (`academy.travexa.com.ar`); las 2
+  migraciones (v2 + v3) están aplicadas y el schema real verificado. Según el principio #13, esta
+  prueba **NO bloqueó el merge/deploy** — se hace en vivo. **Es el único paso que falta para dar por
+  reemplazado el modelo WhatsApp de §7:** que Yesica/Nico recorran el flujo como usuario real —
+  reservar (elegir punto de salida) → ver número de reserva + datos bancarios en la pantalla de
+  confirmación → "Informar transferencia" → aprobar el comprobante en el backoffice. El mail de
+  Resend NO es parte de este gate (queda pausado, ver P1).
 - [ ] **Confirmar Auth para el dominio nuevo** (Sesión 18): Supabase Auth → Site URL = `https://academy.travexa.com.ar`; Redirect URLs incluye `https://academy.travexa.com.ar/**` (mínimo `/auth/callback` y `/actualizar-contrasena`); Google Cloud → OAuth Client → Authorized JavaScript origins incluye `https://academy.travexa.com.ar`. El código ya arma el `redirectTo` con `window.location.origin`, así que del lado del código está listo — falta el allowlist de los dashboards. **Verificar login end-to-end (email + Google) desde el dominio nuevo antes de dar el cutover por cerrado.**
 - [ ] `MP_ACCESS_TOKEN` cargado en Supabase Secrets — bloquea el cobro real de **cursos** (vivenciales no lo necesitan).
 - [ ] Reactivar "Confirm email" en Supabase Auth (protección contra account-takeover en el auto-linking Google↔password).
@@ -859,7 +860,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 10. **Los vivenciales no se cobran dentro de la plataforma.** El saldo nunca se edita a mano.
 11. **Comentarios y reseñas:** responde el admin (cualquier curso) o el instructor dueño del curso. El `pagado` de un payout y los campos de dinero nunca se escriben desde el frontend — los protegen triggers.
 12. **Los cambios de DB se proponen, no se aplican.** Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo.
-13. **Toda entrega se prueba visualmente por Yesica o Nico antes de darse por cerrada.** Verificación técnica (build, deploy, código, DB) no reemplaza este paso.
+13. **Toda entrega se prueba visualmente por Yesica o Nico EN PRODUCCIÓN, después del deploy.** La prueba visual no bloquea el merge/deploy; se mergea, se deploya y recién ahí se prueba en vivo. Verificación técnica (build, deploy, código, DB) no reemplaza ese paso humano, pero tampoco hay que probar antes de deployar. El ítem queda "completamente cerrado" solo tras la prueba en prod.
 14. **Actualizar este archivo con cada sesión** (ver instrucciones abajo).
 
 ---

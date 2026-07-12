@@ -32,3 +32,7 @@ _ref/
 # docs de negocio/técnico viven en la carpeta padre (~/Projects/travexa/),
 # no deben trackearse acá: eran copias internas duplicadas por error.
 /Travexa_*.md
+
+# Skills de diseño de referencia — Claude Code las usa localmente en cualquier
+# sesión, pero NO van a control de versiones (el repo es público). No borrar del disco.
+/SKILL-*.md

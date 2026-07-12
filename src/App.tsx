@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import ErrorBoundary from '@/components/layout/ErrorBoundary'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import OnboardingGate from '@/components/layout/OnboardingGate'
 import AdminGate from '@/components/layout/AdminGate'
@@ -19,6 +20,7 @@ const Catalog             = lazy(() => import('@/pages/public/Catalog'))
 const CourseDetail        = lazy(() => import('@/pages/public/CourseDetail'))
 const VivencialCatalog    = lazy(() => import('@/pages/public/VivencialCatalog'))
 const VivencialDetail     = lazy(() => import('@/pages/public/VivencialDetail'))
+const Instructores        = lazy(() => import('@/pages/public/Instructores'))
 const PerfilPublico     = lazy(() => import('@/pages/public/PerfilPublico'))
 const Privacidad        = lazy(() => import('@/pages/public/Privacidad'))
 const Terminos          = lazy(() => import('@/pages/public/Terminos'))
@@ -96,6 +98,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* OnboardingGate global: único decisor del gate de onboarding para todas las rutas */}
@@ -110,6 +113,7 @@ export default function App() {
               <Route path="/cursos/:slug" element={<CourseDetail />} />
               <Route path="/vivencial" element={<VivencialCatalog />} />
               <Route path="/vivencial/:slug" element={<VivencialDetail />} />
+              <Route path="/instructores" element={<Instructores />} />
               <Route path="/u/:username" element={<PerfilPublico />} />
               <Route path="/privacidad" element={<Privacidad />} />
               <Route path="/terminos" element={<Terminos />} />
@@ -170,6 +174,7 @@ export default function App() {
             </Route>
           </Routes>
           </Suspense>
+          </ErrorBoundary>
 
           <Toaster
             position="bottom-right"

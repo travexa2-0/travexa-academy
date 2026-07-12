@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 12 Julio 2026 — Sesión 22 (Vivenciales v3: migraciones v2+v3 APLICADAS en prod; mail Resend en pausa/backlog; falta solo la prueba visual del flujo self-service)**
+**Actualizado: 12 Julio 2026 — Sesión 24 (Vivenciales v2/v3 —reserva self-service— + copy fixes e /instructores mergeados a `main` y deployados a producción. Migraciones v2+v3 aplicadas. Mail Resend en pausa/backlog. Pendiente: prueba visual del flujo self-service EN PROD por Yesica/Nico)**
 
 > Este archivo es la **fuente de verdad única** para Claude Code en el proyecto Academy.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -138,6 +138,8 @@ Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de 
 | Sesión 20 | **Vivenciales v3 (PROPUESTA, a confirmar): reserva automática desde la plataforma** — gate de login en todo comprar/reservar, flujo de reserva con elección de punto de salida → pantalla de confirmación con datos bancarios, número de reserva, "Informar transferencia" enriquecido, vista por viajero en backoffice. Reemplaza el cierre por WhatsApp de §7 (NO borrado, pendiente confirmación Yesica/Nico). Migración PROPUESTA sin aplicar. Mail (punto 4) y liquidación PDF (punto 6) pendientes de aprobar approach. Ver §7c |
 | Sesión 21 | **Confirmaciones de Nico aplicadas sobre v2/v3** (ambas migraciones aún sin aplicar): (1) `punto_embarque` renombrado a **`detalle_encuentro`** en todo el código, migración y doc; (2) **DNI del cliente** movido a `academy_profiles` vía onboarding (paso 1 obligatorio) + leído en backoffice y PDF de liquidación; (3) cerradas las 2 decisiones de diseño de v2 (embebido + reuso `incluye`/`no_incluye`); (4) confirmada **1 sola cuenta** bancaria; (5) pulido de builders (ids estables + input de archivo por fila). Mail Resend + PDF client-side quedaron implementados en Sesión 20. Ver §7b/§7c |
 | Sesión 22 | **Migraciones v2 + v3 APLICADAS en producción** (por Claude IA vía MCP, con aprobación de Nico) — schema real verificado contra el código (`tsc`/`eslint`/`vite build` limpios; RPC self-service, trigger de número y columnas nuevas presentes). **Mail Resend en pausa:** `send-reserva-email` queda escrita, sin deployar, disparo fire-and-forget (no bloquea la reserva) → movido a P1. Único pendiente para reemplazar §7: la **prueba visual del flujo self-service** por Yesica/Nico. Ver §7c |
+| Sesión 23 | **Correcciones de copy/contenido + página nueva + 2 bugs visuales, shippeado a `main` (producción).** (1) **Formación (`/cursos`)**: nuevo hero ("Formación práctica que se traduce en más ventas.") + bloque de 3 tarjetas de oferta de valor + tira de 3 métricas reales (usuarios activos/cursos completados/certificados) vía RPC público **propuesto** `academy_public_formacion_stats` (sin aplicar → la tira se oculta; nunca hardcodea). (2) **Vivencial (`/vivencial`)**: nuevo hero ("El turismo no solo se estudia. Se vive.") + 4 tarjetas de oferta de valor. (3) **Página pública nueva `/instructores`** (nav + hero + equipo docente traído de `academy_instructors` real, no hardcodeado, + placeholder de testimonio). (4) **Bug carrusel Home** "Los cursos más elegidos": centrado real + loop seamless solo cuando el set desborda (medición JS) + cards más grandes/jerárquicas. (5) **Bug footer/CTA final**: fondo del footer alineado al degradé del CTA (var(--bg2)) + sin borde, en la Home. Prototipos `academy_catalogo.html` y nuevo `academy_instructores.html` actualizados. Pendientes: cargar los 3 instructores nuevos (INSERT propuesto) + aplicar RPC de métricas + prueba visual. Ver Backlog P1 |
+| Sesión 24 | **Merge de v2/v3 (reserva self-service de vivenciales) + copy fixes/instructores de Sesión 23 → `main`, deployado a producción.** Se reconciliaron ambos frentes (el botón de vivencial queda como **"Reservar mi lugar"** del flujo self-service, reemplazando el "Quiero mi lugar" WhatsApp de §7; se preservó el guard de `nivel` null de Sesión 23). Migraciones v2+v3 ya aplicadas. `.gitignore` ignora `SKILL-*.md`. Principio #13 actualizado: la prueba visual se hace EN PRODUCCIÓN, no bloquea el merge. Pendiente único para cerrar el reemplazo de §7: prueba visual del flujo self-service en prod. Ver §7c |
 
 ### ✅ Infraestructura lista
 
@@ -159,7 +161,7 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 ### 🔴 P0 — Bloqueante para operar con usuarios reales / cobrar de verdad
 
 - [ ] **Prueba visual real EN PRODUCCIÓN del flujo de reserva self-service de vivenciales (v3)** —
-  Sesión 22: mergeado a `main` y **deployado a producción** (`academy.travexa.com.ar`); las 2
+  Sesión 24: mergeado a `main` y **deployado a producción** (`academy.travexa.com.ar`); las 2
   migraciones (v2 + v3) están aplicadas y el schema real verificado. Según el principio #13, esta
   prueba **NO bloqueó el merge/deploy** — se hace en vivo. **Es el único paso que falta para dar por
   reemplazado el modelo WhatsApp de §7:** que Yesica/Nico recorran el flujo como usuario real —
@@ -175,6 +177,9 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 ### 🟡 P1 — Producto: pilares incompletos o features a medio construir
 
+- [ ] **Métricas ilustrativas de Formación (`/cursos`) — RPC público propuesto sin aplicar (Sesión 23).** La tira muestra usuarios activos / cursos completados / certificados emitidos. `academy_profiles`/`academy_enrollments`/`academy_certificates` tienen RLS por-usuario → un count client-side devolvería el conteo del propio viewer (engañoso). Por eso el frontend (`useFormacionStats`) llama a un agregado `SECURITY DEFINER` **`academy_public_formacion_stats()`** que todavía **NO existe** (propuesto, sin aplicar): hasta que Nico lo aplique la tira se **oculta** (nunca hardcodea 191/567/422 ni muestra ceros). Además, con el volumen real actual (completados=0, certificados=0) la tira seguiría oculta hasta tener datos. SQL propuesto: ver mensaje de la Sesión 23 / crear como migración cuando se apruebe.
+- [ ] **Cargar los 3 instructores nuevos en `academy_instructors` (Sesión 23).** La página `/instructores` ya está en producción y lee de la tabla real. Hoy solo figura Yesica (fila real existente, no se tocó). Falta que Nico aplique el **INSERT propuesto** (Javier Pérez, Hernán Causté, Florencia Endl) — ver el SQL en el mensaje de la Sesión 23. Después, prueba visual de la página con los 4.
+- [ ] **Prototipo `academy_vivencial.html`: alinear del todo con el flujo v3 (Sesión 24).** El proto todavía arrastra el layout self-service legacy / CTA viejo; el producto ya usa "Reservar mi lugar" → pantalla de confirmación. Actualizar el proto para que refleje el flujo real de reserva self-service.
 - [ ] **Configurar Resend para el mail de reserva (Sesión 22, en pausa):** verificar dominio en Resend, generar API key, cargar los secrets `RESEND_API_KEY` + `RESERVA_FROM` en Supabase y deployar la edge function `send-reserva-email` (ya escrita, sin deployar). Ya NO bloquea nada: el flujo de reserva funciona sin el mail (disparo fire-and-forget).
 - [ ] **Confirmar que el mail de reserva sale bien una vez deployado (Sesión 22):** probar que llega el mail de "reserva confirmada" con número, resumen, monto y datos bancarios, después de configurar Resend.
 - [ ] **DNI del cliente en perfil (Sesión 21):** columna `academy_profiles.dni` (en la migración v3) + campo obligatorio en el onboarding + lectura en backoffice/PDF. Reemplaza el "—" que salía antes en la liquidación. Ya implementado en código; una vez aplicada la migración v3, los usuarios nuevos lo cargan en el onboarding. Los usuarios **ya existentes** no tienen DNI hasta que completen/reediten el perfil → evaluar pedirlo retroactivamente (banner o gate suave) si Yesica lo necesita para liquidaciones viejas.
@@ -819,7 +824,8 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 ### Públicas ✅
 - `/` — Home pública. Post-login sigue en `/cursos`, no en `/`.
 - `/cursos`, `/cursos/:slug` — Catálogo y detalle.
-- `/vivencial`, `/vivencial/:slug` — CTA "Quiero anotarme" (WhatsApp).
+- `/vivencial`, `/vivencial/:slug` — CTA "Reservar mi lugar" (reserva self-service v3, ver §7c). `/reserva/:slug` = confirmación.
+- `/instructores` — Equipo docente (lee de `academy_instructors` real). Nav principal. (Sesión 23)
 - `/login`, `/registro`, `/auth/callback`.
 - `/pago-confirmado`, `/pago-error`.
 - `/u/:username` — Perfil público del alumno.

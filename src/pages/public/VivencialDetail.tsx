@@ -538,10 +538,12 @@ export default function VivencialDetail() {
                       {/* Info grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         {[
-                          { label: 'Nivel',       value: course.nivel ? course.nivel.charAt(0).toUpperCase() + course.nivel.slice(1) : 'Todos' },
+                          // nivel es null para vivenciales (es un campo de cursos): solo lo mostramos si existe.
+                          ...(course.nivel ? [{ label: 'Nivel', value: course.nivel.charAt(0).toUpperCase() + course.nivel.slice(1) }] : []),
                           { label: 'Idioma',      value: 'Español' },
                           { label: 'Cupo máximo', value: max > 0 ? `${max} asesores` : 'Sin límite' },
                           { label: 'País',        value: course.vivencial_pais ?? 'Por confirmar' },
+                          // Salida y alojamiento se muestran en sus secciones dedicadas (puntos de salida / hoteles) más abajo.
                         ].map(item => (
                           <div key={item.label} style={{ background: 'rgba(0,0,0,.03)', borderRadius: 10, padding: '14px 16px' }}>
                             <p className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: '#8FA3AB', marginBottom: 5 }}>{item.label}</p>

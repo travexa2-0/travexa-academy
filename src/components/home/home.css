@@ -189,17 +189,24 @@
   .marquee-mask::before, .marquee-mask::after{ content:''; position:absolute; top:0; bottom:0; width:70px; z-index:2; pointer-events:none; }
   .marquee-mask::before{ left:0; background:linear-gradient(90deg, var(--content-bg), transparent); }
   .marquee-mask::after{ right:0; background:linear-gradient(270deg, var(--content-bg), transparent); }
-  .course-track{ display:flex; gap:18px; width:max-content; animation:home-marquee 42s linear infinite; }
-  .marquee-mask:hover .course-track{ animation-play-state:paused; }
+  .course-track{ display:flex; gap:20px; }
+  /* modo scroll: un set no entra en el contenedor → marquee continuo.
+     El set va duplicado en el DOM y se traslada -50% (una copia) en loop. */
+  .course-track.is-scroll{ width:max-content; animation:home-marquee 42s linear infinite; }
+  /* modo centrado: el catálogo entra entero → fila centrada, sin loop
+     (evita el salto y las cards pegadas al borde izquierdo). Sin flex-wrap: así
+     el ancho natural del set se puede medir (si desborda, pasa a modo scroll). */
+  .course-track.is-centered{ width:100%; justify-content:center; }
+  .marquee-mask:hover .course-track.is-scroll{ animation-play-state:paused; }
   .course-card{
-    flex:0 0 auto; width:296px; position:relative; overflow:hidden;
-    background:var(--content-white); border-radius:18px;
+    flex:0 0 auto; width:clamp(288px, 82vw, 344px); position:relative; overflow:hidden;
+    background:var(--content-white); border-radius:20px;
     border:1px solid var(--content-line);
-    box-shadow:0 1px 2px rgba(18,39,51,0.04), 0 14px 32px -20px rgba(18,39,51,0.22);
+    box-shadow:0 1px 2px rgba(18,39,51,0.04), 0 18px 40px -20px rgba(18,39,51,0.26);
     transition:transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
   }
-  .course-card:hover{ transform:translateY(-5px); box-shadow:0 20px 44px -18px rgba(18,39,51,0.3); }
-  .course-thumb{ position:relative; height:150px; background-size:cover; background-position:center; overflow:hidden; background-color:var(--bg3); }
+  .course-card:hover{ transform:translateY(-6px); box-shadow:0 26px 52px -18px rgba(18,39,51,0.34); }
+  .course-thumb{ position:relative; height:190px; background-size:cover; background-position:center; overflow:hidden; background-color:var(--bg3); }
   .course-badges{ position:absolute; top:10px; left:10px; display:flex; gap:6px; z-index:2; }
   .badge-pill{ font-family:var(--font-mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; padding:5px 9px; border-radius:999px; color:#fff; background:rgba(10,30,41,0.72); backdrop-filter:blur(6px); }
   .badge-pill.live{ background:var(--live); display:flex; align-items:center; gap:5px; }
@@ -215,14 +222,14 @@
   }
   .course-card:hover .course-hover-info{ opacity:1; }
   .course-hover-info p{ font-size:12.5px; color:var(--text-2); line-height:1.5; }
-  .course-body{ padding:16px 17px 18px; }
-  .course-body h4{ font-family:var(--font-display); font-size:0.98rem; font-weight:600; color:var(--content-ink); line-height:1.3; }
+  .course-body{ padding:18px 19px 20px; }
+  .course-body h4{ font-family:var(--font-display); font-size:1.1rem; font-weight:600; color:var(--content-ink); line-height:1.28; }
   .course-instructor{ font-size:12.5px; color:var(--content-ink-soft); margin-top:4px; }
   .course-meta{ display:flex; align-items:center; gap:5px; margin-top:11px; font-size:12px; color:var(--content-ink-soft); }
   .course-meta .star{ color:var(--gold); }
   .course-meta .dot{ opacity:.5; }
   .course-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:13px; padding-top:13px; border-top:1px solid var(--content-line); }
-  .course-price{ font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:var(--content-ink); }
+  .course-price{ font-family:var(--font-display); font-weight:700; font-size:1.18rem; color:var(--content-ink); }
   .course-price.free{ color:var(--primary); }
   .chip-level{ font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; text-transform:uppercase; color:var(--content-ink-soft); background:#EDF1EF; padding:4px 8px; border-radius:6px; }
   .catalogo-foot{ margin-top:26px; text-align:center; }
@@ -397,8 +404,13 @@
   .cta-final p{ margin-top:16px; font-size:1.02rem; color:var(--text-2); }
   .cta-final .hero-cta{ justify-content:center; margin-top:32px; }
 
-  /* Footer: ahora es el componente compartido src/components/layout/Footer.tsx
-     (footer.css), reutilizado por la Home y las páginas legales. */
+  /* Footer: componente compartido (Footer.tsx / footer.css). En la Home va justo
+     debajo del CTA final, cuyo degradé termina en var(--bg2). Por defecto el
+     footer usa var(--bg) + border-top, lo que generaba un corte de color y una
+     línea visible entre ambos. Acá (solo en la Home) se alinea el fondo del
+     footer al final del degradé del CTA y se saca el borde, para que el CTA y el
+     footer se lean como un solo bloque continuo. */
+  .site-footer{ background:var(--bg2); border-top:none; }
 
   /* ============ SECCIONES A PANTALLA COMPLETA ============ */
   /* Cada sección mide exactamente una pantalla (100dvh, sin snap) con su

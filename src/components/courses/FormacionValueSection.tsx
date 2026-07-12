@@ -25,12 +25,18 @@ const VALUE_CARDS: { icon: React.ReactNode; title: string; desc: string }[] = [
   },
 ]
 
-// Tira de métricas reales. Solo se muestran los tiles con dato > 0 (nunca un
-// cero crudo ni el número inventado de la referencia). Si no hay ningún dato
-// real todavía, no se renderiza nada.
+// Volumen mínimo de usuarios para que la tira sea prueba social creíble. Por
+// debajo de este piso la sección se oculta entera (la regla no es solo "ocultar
+// en cero" sino también con números bajos: mostrar "3 usuarios" es peor que no
+// mostrar nada). Subir/bajar según criterio de negocio.
+const MIN_USUARIOS = 50
+
+// Tira de métricas reales. Se oculta si no hay volumen creíble; si se muestra,
+// solo aparecen los tiles con dato > 0 (nunca un cero crudo ni el número
+// inventado de la referencia).
 function MetricsStrip() {
   const { data: stats } = useFormacionStats()
-  if (!stats) return null
+  if (!stats || stats.usuariosActivos < MIN_USUARIOS) return null
 
   const tiles = [
     { n: stats.usuariosActivos, label: 'Usuarios activos', icon: <Users className="h-4 w-4" /> },

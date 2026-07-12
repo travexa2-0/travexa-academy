@@ -13,7 +13,7 @@ import { useCoursePayment, type MetodoPago } from '@/hooks/usePayment'
 import { usePricingConfig } from '@/hooks/usePricing'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { courseLiveState } from '@/lib/liveState'
-import { displayName } from '@/lib/utils'
+import { displayName, loginRedirect } from '@/lib/utils'
 import { liveLessonState } from '@/types'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
 
@@ -634,7 +634,8 @@ export default function CourseDetail() {
   }
 
   const handleEnroll = useCallback(() => {
-    if (!user) { navigate('/registro', { state: { from: `/cursos/${slug}` } }); return }
+    // Gate de compra: sin sesión, al login con retorno al mismo curso.
+    if (!user) { navigate(loginRedirect(`/cursos/${slug}`)); return }
     if (course?.tipo_acceso === 'gratuito' || enrolled) { navigate(`/cursos/${slug}/aprender`); return }
     // Curso pago: elegir método de pago antes de ir a Mercado Pago.
     setShowPayModal(true)

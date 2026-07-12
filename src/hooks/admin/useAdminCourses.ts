@@ -40,6 +40,11 @@ function normalize(row: CourseRow): Course {
     incluye: row.incluye ?? null,
     no_incluye: row.no_incluye ?? null,
     vivencial_itinerario: row.vivencial_itinerario ?? [],
+    vivencial_localidades: row.vivencial_localidades ?? [],
+    vivencial_puntos_salida: row.vivencial_puntos_salida ?? [],
+    vivencial_hoteles: row.vivencial_hoteles ?? [],
+    vivencial_tipo_traslado: row.vivencial_tipo_traslado ?? [],
+    vivencial_regimen_alimentos: row.vivencial_regimen_alimentos ?? [],
     category: row.category ?? undefined,
     instructor: row.instructor ?? undefined,
   } as Course

@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import Overlay from './Overlay'
 import ManualEnrollmentForm from './ManualEnrollmentForm'
 import VivencialInscriptoRow from './VivencialInscriptoRow'
-import { formatArs, formatDate } from '../format'
+import { formatArs, formatUsd, formatDate } from '../format'
 import { secondsToDuration } from './wizardData'
 import { useAdminCourse, useTogglePublish, useArchiveCourse, useHardDeleteCourse } from '@/hooks/admin/useAdminCourses'
 import { useCourseEnrollments } from '@/hooks/admin/useAdminEnrollments'
@@ -76,7 +76,7 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
           {tab === 'info' && (
             <div className="so-panel active">
               <div className="stat-mini-grid">
-                <div className="stat-mini"><div className="v">{c.tipo_acceso === 'gratuito' ? 'Gratis' : formatArs(c.precio_ars)}</div><div className="l">{c.tipo_acceso === 'gratuito' ? 'Acceso libre' : `US$ ${c.precio_usd ?? 0}`}</div></div>
+                <div className="stat-mini"><div className="v">{c.tipo_acceso === 'gratuito' ? 'Gratis' : formatArs(c.precio_ars)}</div><div className="l">{c.tipo_acceso === 'gratuito' ? 'Acceso libre' : formatUsd(c.precio_usd)}</div></div>
                 <div className="stat-mini"><div className="v">{isViv ? (c.vivencial_cupo_disponible ?? '—') : (c.total_lecciones || 0)}</div><div className="l">{isViv ? 'lugares libres' : 'lecciones'}</div></div>
                 <div className="stat-mini"><div className="v">{c.total_alumnos || (enrollments?.length ?? 0)}</div><div className="l">inscriptos</div></div>
               </div>
@@ -160,7 +160,7 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
               {(enrollments ?? []).length === 0
                 ? <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Todavía no hay inscriptos.</div>
                 : isViv
-                  ? (enrollments ?? []).map(e => <VivencialInscriptoRow key={e.id} e={e} courseId={c.id} />)
+                  ? (enrollments ?? []).map(e => <VivencialInscriptoRow key={e.id} e={e} course={c} />)
                   : (enrollments ?? []).map(e => (
                       <div key={e.id} className="row-flex" style={{ padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 7 }}>
                         <div className="tbl-avatar">{(e.profile?.nombre ?? e.profile?.email ?? '?').slice(0, 2).toUpperCase()}</div>

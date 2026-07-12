@@ -8,6 +8,7 @@ import OnboardingGate from '@/components/layout/OnboardingGate'
 import AdminGate from '@/components/layout/AdminGate'
 import InstructorGate from '@/components/layout/InstructorGate'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
+import { safeRedirectPath, POST_LOGIN_REDIRECT_KEY } from '@/lib/utils'
 
 const Home                = lazy(() => import('@/pages/Home'))
 const Login               = lazy(() => import('@/pages/public/Login'))
@@ -29,6 +30,7 @@ const Player            = lazy(() => import('@/pages/private/Player'))
 const Profile           = lazy(() => import('@/pages/private/Profile'))
 const Onboarding        = lazy(() => import('@/pages/private/Onboarding'))
 const VivencialDetalle  = lazy(() => import('@/pages/private/VivencialDetalle'))
+const ReservaConfirmada = lazy(() => import('@/pages/private/ReservaConfirmada'))
 const AdminLayout       = lazy(() => import('@/pages/admin/AdminLayout'))
 const AdminResumen      = lazy(() => import('@/pages/admin/Resumen'))
 const AdminCursos       = lazy(() => import('@/pages/admin/Cursos'))
@@ -69,7 +71,15 @@ function AuthCallback() {
 
   // Un admin aterriza directo en el backoffice, salteando el onboarding de alumno.
   if (!loading && user && !adminLoading) {
-    return <Navigate to={isAdmin ? '/admin/resumen' : '/cursos'} replace />
+    // Gate de comprar/reservar: si venías de una acción que exigía login, el destino
+    // quedó stasheado antes del round-trip de Google OAuth. El admin igual va al backoffice.
+    let stashed: string | null = null
+    try {
+      stashed = safeRedirectPath(sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY))
+      sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY)
+    } catch { /* no-op */ }
+    const dest = isAdmin ? '/admin/resumen' : (stashed ?? '/cursos')
+    return <Navigate to={dest} replace />
   }
   if (timedOut && !user) return <Navigate to="/login" replace />
   return <PageLoader />
@@ -115,6 +125,7 @@ export default function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/mis-cursos" element={<MisCursos />} />
                 <Route path="/viaje/:slug" element={<VivencialDetalle />} />
+                <Route path="/reserva/:slug" element={<ReservaConfirmada />} />
                 <Route path="/cursos/:slug/aprender" element={<Player />} />
                 <Route path="/cursos/:slug/aprender/:lessonId" element={<Player />} />
                 <Route path="/mi-cuenta" element={<Navigate to="/perfil" replace />} />

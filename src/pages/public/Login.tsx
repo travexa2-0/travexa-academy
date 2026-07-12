@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Eye, EyeOff, CheckCircle2, Loader2, BookOpen, Globe, MapPin, Compass } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
 import { EASE_OUT, shakeX } from '@/lib/motion'
+import { safeRedirectPath, POST_LOGIN_REDIRECT_KEY } from '@/lib/utils'
 
 const HERO_QUOTES = [
   { quote: 'El turismo no es un lujo, es una necesidad del alma moderna.', author: 'Travexa Academy' },
@@ -19,9 +20,13 @@ export default function Login() {
   const { signIn, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  // Sin destino explícito, pasamos por /auth/callback: es el único punto que decide
-  // admin (→ /admin/resumen) vs alumno (→ /cursos, luego OnboardingGate si falta onboarding).
-  const from = (location.state as { from?: string } | null)?.from ?? '/auth/callback'
+  const [params] = useSearchParams()
+  // Destino post-login. Prioridad: ?redirect= (gate de comprar/reservar/anotarme) →
+  // state.from (navegaciones internas viejas) → /auth/callback, que es el único punto
+  // que decide admin (→ /admin/resumen) vs alumno (→ /cursos, luego OnboardingGate).
+  const redirectParam = safeRedirectPath(params.get('redirect'))
+  const stateFrom = safeRedirectPath((location.state as { from?: string } | null)?.from)
+  const from = redirectParam ?? stateFrom ?? '/auth/callback'
   // Llega true tras completar /actualizar-contrasena; mostramos un aviso de éxito.
   const passwordReset = (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
   const shouldReduce = useReducedMotion()
@@ -60,6 +65,10 @@ export default function Login() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true)
+    // Persistimos el destino: Google vuelve a /auth/callback y ahí lo recuperamos.
+    if (redirectParam) {
+      try { sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, redirectParam) } catch { /* no-op */ }
+    }
     const { error } = await signInWithGoogle()
     if (error) {
       setError('No se pudo conectar con Google.')

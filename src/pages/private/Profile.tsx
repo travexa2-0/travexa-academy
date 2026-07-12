@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAcademyProfile, useBadges, useCertificates, useReferrals, validateAvatarFile } from '@/hooks/useProfile'
 import AvatarCropModal from '@/components/profile/AvatarCropModal'
 import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
+import PagoProgressBar from '@/components/vivencial/PagoProgressBar'
 import { initialsFrom, avatarGradient } from '@/lib/avatar'
 import { useMyEnrollments } from '@/hooks/useCourses'
 import {
@@ -800,7 +801,8 @@ function VivencialesTab({ vivenciales, reviewedSet, uid, onChanged, onDetail, on
         const c = e.course!
         const dias = daysUntil(c.vivencial_fecha_salida!)
         const cupo = c.vivencial_cupo_disponible != null ? cupoEstado(c.vivencial_cupo_disponible) : null
-        const pendiente = e.monto_pendiente_ars ?? 0
+        const total = e.monto_total_ars ?? c.precio_ars ?? 0
+        const pagado = e.monto_señado_ars ?? 0
         return (
           <motion.div key={e.id} variants={item} initial="initial" animate="animate" className="rounded-2xl border overflow-hidden mb-3.5" style={{ background: 'var(--bg-2)', borderColor: 'rgba(201,154,58,.35)' }}>
             <div className="relative" style={{ height: 160 }}>
@@ -826,15 +828,18 @@ function VivencialesTab({ vivenciales, reviewedSet, uid, onChanged, onDetail, on
                   {c.vivencial_ciudad_salida && <Line icon={<MapPin className="h-3 w-3" />}>Sale desde {c.vivencial_ciudad_salida}</Line>}
                   {cupo && <Line icon={<Users className="h-3 w-3" />}><span style={{ color: cupo.cls === 'ok' ? 'var(--text-2)' : 'var(--urg)' }}>{cupo.label}</span></Line>}
                 </div>
-                <div className="text-right">
-                  <div className="inline-flex items-center gap-1.5 font-mono text-[9px] tracking-wide uppercase rounded px-2 py-0.5 mb-1.5"
-                    style={{ color: e.seña_pagada ? '#22c55e' : 'var(--urg)', background: e.seña_pagada ? 'rgba(34,197,94,.1)' : 'rgba(239,107,53,.1)', border: `1px solid ${e.seña_pagada ? 'rgba(34,197,94,.25)' : 'rgba(239,107,53,.25)'}` }}>
-                    {e.seña_pagada ? '✓ Seña pagada' : 'Seña pendiente'}
+                {e.numero_reserva && (
+                  <div className="inline-flex items-center gap-1.5 font-mono text-[9px] tracking-wide uppercase rounded px-2 py-1"
+                    style={{ color: GOLD, background: 'var(--gold-soft)', border: '1px solid rgba(201,154,58,.3)' }}>
+                    # {e.numero_reserva}
                   </div>
-                  {pendiente > 0 && <div className="text-[.78rem]" style={{ color: 'var(--text-3)' }}>Saldo: <strong style={{ color: 'var(--urg)' }}>{money(pendiente)}</strong></div>}
-                </div>
+                )}
               </div>
-              {/* CTA de pago con estados (subir comprobante / comprobante en revisión / pagado) */}
+              {/* Barra de progreso de pago: Total / Pagado / Saldo pendiente */}
+              <div className="mt-3">
+                <PagoProgressBar total={total} pagado={pagado} compact />
+              </div>
+              {/* CTA de pago con estados (informar transferencia / en revisión / pagado) */}
               <div className="mt-3">
                 <VivencialPagoCTA course={c} enrollment={e} userId={uid} variant="perfil" onChanged={onChanged} />
               </div>

@@ -318,6 +318,37 @@ img{display:block;max-width:100%}
 @media(hover:hover)and(pointer:fine){.cta-wa:hover{background:rgba(37,211,102,.14);border-color:rgba(37,211,102,.55)}}
 .cta-wa svg{width:16px;height:16px;fill:#25D366}
 
+/* CTA v2 — desglose de precio + cuota estimada */
+.cta-total-lbl{font-family:var(--fm);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:4px}
+.cta-price-big{font-family:var(--fd);font-size:1.7rem;font-weight:700;color:var(--t1);line-height:1;letter-spacing:-.01em}
+.cta-breakdown{margin-top:12px;padding-top:12px;border-top:1px dashed var(--ln);display:flex;flex-direction:column;gap:6px}
+.cta-bd-line{display:flex;align-items:center;justify-content:space-between;font-size:.8rem;color:var(--t2)}
+.cta-bd-op{color:var(--t3);font-family:var(--fm)}
+.cta-bd-final{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--ln);font-size:.9rem;font-weight:700;color:var(--t1)}
+.cta-total-ars{font-size:.78rem;color:var(--t3);text-align:right;margin-top:4px}
+.cta-cuota{background:var(--neon-dim);border:1px solid rgba(0,229,200,.22);border-radius:10px;padding:10px 12px;margin:14px 0}
+.cta-cuota-top{display:flex;align-items:baseline;justify-content:space-between}
+.cta-cuota-val{font-family:var(--fd);font-weight:700;font-size:1.02rem;color:var(--neon)}
+.cta-cuota-mo{font-size:.72rem;color:var(--t3);font-weight:400}
+.cta-cuota-n{font-family:var(--fm);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+.cta-cuota-note{font-size:.68rem;color:var(--t3);margin-top:4px;line-height:1.4}
+
+/* Tags de traslado / régimen (área de contenido, texto oscuro) */
+.viv-tag{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;border-radius:8px;padding:6px 11px}
+.viv-tag svg{width:14px;height:14px}
+.viv-tag-tr{color:var(--pr);background:rgba(14,107,92,.09);border:1px solid rgba(14,107,92,.18)}
+.viv-tag-rg{color:#8A6D1F;background:rgba(201,154,58,.12);border:1px solid rgba(201,154,58,.28)}
+
+/* Hoteles */
+.hoteles-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.hoteles-grid{grid-template-columns:1fr}}
+.hotel-card{background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06);border-radius:12px;overflow:hidden}
+.hotel-card img{width:100%;height:120px;object-fit:cover;display:block}
+.hotel-card-body{padding:12px 14px}
+.hotel-card-name{display:flex;align-items:center;gap:7px;font-size:.88rem;font-weight:600;color:#0A1E29}
+.hotel-card-noches{font-family:var(--fm);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8FA3AB;margin-top:4px}
+.hotel-card-link{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;color:var(--pr);font-weight:600;margin-top:6px;text-decoration:none}
+
 /* DETAIL WHITE SECTION */
 .ds{background:#F2F5F4;padding-bottom:0}
 .ds-inner{background:#fff;border-radius:16px 16px 0 0;padding:30px 32px;min-height:480px}
@@ -508,12 +539,13 @@ img{display:block;max-width:100%}
         </div>
       </div>
       <div class="frow">
-        <span class="fgt">Duración</span>
-        <div class="fpills" id="fpDur">
-          <button class="fp" data-d="all">Todos</button>
-          <button class="fp" data-d="corto">Hasta 7 días</button>
-          <button class="fp" data-d="medio">8 a 12 días</button>
-          <button class="fp" data-d="largo">13+ días</button>
+        <span class="fgt">Traslado</span>
+        <div class="fpills" id="fpTraslado">
+          <button class="fp fp-all" data-t="all">Todos</button>
+          <button class="fp" data-t="Bus">Bus</button>
+          <button class="fp" data-t="Aéreo">Aéreo</button>
+          <button class="fp" data-t="Navegación">Navegación</button>
+          <button class="fp" data-t="Crucero">Crucero</button>
         </div>
       </div>
     </div>
@@ -554,7 +586,7 @@ img{display:block;max-width:100%}
         <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="dmeta-fecha">2 ago — 9 ago 2026</span></div>
         <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span id="dmeta-dur">8 días / 7 noches</span></div>
         <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span id="dmeta-cupo">Quedan 4 lugares</span></div>
-        <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="dmeta-salida">Sale desde Buenos Aires</span></div>
+        <div class="dmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="dmeta-salida">Sale desde Buenos Aires (EZE) · Córdoba (COR)</span></div>
       </div>
       <div class="dshare">
         <button class="dsbtn" onclick="copyLink()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copiar link</button>
@@ -602,8 +634,56 @@ img{display:block;max-width:100%}
                   <p style="font-size:.88rem;font-weight:600;color:#0A1E29">18 asesores</p>
                 </div>
                 <div style="background:rgba(0,0,0,.03);border-radius:10px;padding:14px 16px">
-                  <p style="font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8FA3AB;margin-bottom:5px">Salida desde</p>
-                  <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Buenos Aires (EZE)</p>
+                  <p style="font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8FA3AB;margin-bottom:5px">País</p>
+                  <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Perú</p>
+                </div>
+              </div>
+
+              <!-- Traslado + régimen (tags visuales) -->
+              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:18px">
+                <span class="viv-tag viv-tag-tr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-.2"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg> Aéreo</span>
+                <span class="viv-tag viv-tag-tr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6v6M15 6v6M2 12h19.6M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.3-.7-.7-.8L12 12 4 6H2v6.3M4 18h1"/></svg> Bus</span>
+                <span class="viv-tag viv-tag-rg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h1M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/></svg> Desayuno</span>
+                <span class="viv-tag viv-tag-rg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h1M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/></svg> Media Pensión</span>
+              </div>
+
+              <!-- Puntos de salida (ciudad + punto de embarque) -->
+              <p style="font-family:var(--fd);font-size:.95rem;font-weight:700;color:#0A1E29;margin:22px 0 12px">Puntos de salida</p>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(0,0,0,.03);border-radius:10px;padding:12px 14px">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--pr)" stroke-width="2" style="margin-top:2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <div>
+                    <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Buenos Aires (EZE)</p>
+                    <p style="font-size:.82rem;color:#4A6070;line-height:1.5;margin-top:2px">Terminal A, mostrador Travexa, 3hs antes del vuelo.</p>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(0,0,0,.03);border-radius:10px;padding:12px 14px">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--pr)" stroke-width="2" style="margin-top:2px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <div>
+                    <p style="font-size:.88rem;font-weight:600;color:#0A1E29">Córdoba (COR)</p>
+                    <p style="font-size:.82rem;color:#4A6070;line-height:1.5;margin-top:2px">Hall central, 2:30hs antes. Conexión a EZE incluida.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Alojamiento (todos los hoteles con noches, foto y link) -->
+              <p style="font-family:var(--fd);font-size:.95rem;font-weight:700;color:#0A1E29;margin:22px 0 12px">Alojamiento</p>
+              <div class="hoteles-grid">
+                <div class="hotel-card">
+                  <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=72" alt="Palacio del Inka">
+                  <div class="hotel-card-body">
+                    <div class="hotel-card-name"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--pr)" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> Palacio del Inka, Cusco</div>
+                    <p class="hotel-card-noches">4 noches</p>
+                    <a class="hotel-card-link" href="#" target="_blank" rel="noopener">Ver hotel <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg></a>
+                  </div>
+                </div>
+                <div class="hotel-card">
+                  <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=72" alt="Tambo del Valle">
+                  <div class="hotel-card-body">
+                    <div class="hotel-card-name"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--pr)" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> Tambo del Valle Sagrado</div>
+                    <p class="hotel-card-noches">3 noches</p>
+                    <a class="hotel-card-link" href="#" target="_blank" rel="noopener">Ver hotel <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg></a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -721,20 +801,36 @@ img{display:block;max-width:100%}
               <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
               Reserva tu lugar
             </div>
-            <div class="cta-sena" id="ctaSena">$ 450.000 ARS</div>
-            <div class="cta-sena-lbl">Seña para confirmar tu lugar</div>
-            <div class="cta-total">Total del viaje: <strong id="ctaTotal">$ 3.200.000 ARS</strong> · Saldo a 60 días</div>
+
+            <!-- Desglose de precio (base + impuestos + gastos admin = total) -->
+            <div class="cta-total-lbl">Precio</div>
+            <div class="cta-price-big" id="ctaBase">US$ 2.000</div>
+            <div class="cta-breakdown">
+              <div class="cta-bd-line"><span><span class="cta-bd-op">+</span> Impuestos</span><span id="ctaImp">US$ 172</span></div>
+              <div class="cta-bd-line"><span><span class="cta-bd-op">+</span> Gastos administrativos (2%)</span><span id="ctaGastos">US$ 43</span></div>
+            </div>
+            <div class="cta-bd-final"><span>Total final a pagar</span><span id="ctaTotal">US$ 2.215</span></div>
+            <div class="cta-total-ars" id="ctaTotalArs">≈ $ 3.212.000 ARS</div>
+
+            <!-- Cuota estimada (informativa — los vivenciales no se cobran en la plataforma) -->
+            <div class="cta-cuota" title="Valor estimado e informativo. El pago se coordina por WhatsApp, no dentro de Travexa.">
+              <div class="cta-cuota-top">
+                <span class="cta-cuota-val" id="ctaCuota">≈ $ 459.000 ARS<span class="cta-cuota-mo">/mes</span></span>
+                <span class="cta-cuota-n" id="ctaCuotaN">7 cuotas est.</span>
+              </div>
+              <p class="cta-cuota-note">Estimado informativo. El pago se coordina por WhatsApp, no dentro de Travexa.</p>
+            </div>
 
             <div class="cta-cupo">
               <div class="cta-cupo-bar-wrap"><div class="cta-cupo-bar" id="ctaCupoBar" style="width:77%"></div></div>
               <div class="cta-cupo-txt" id="ctaCupoTxt">⚠ Quedan 4 de 18 lugares</div>
             </div>
 
-            <button class="btn btn-neon btn-lg" style="width:100%;margin-bottom:8px">Reservar con seña</button>
+            <!-- CTA principal: cierre de venta por WhatsApp (no se cobra en la plataforma) -->
+            <button class="btn btn-neon btn-lg" style="width:100%;margin-bottom:8px" onclick="consultarWA()">Quiero anotarme</button>
 
             <div class="cta-sep"></div>
             <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Vuelos incluidos desde Buenos Aires</div>
-            <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Pago en cuotas disponible</div>
             <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Certificado Travexa Academy</div>
             <div class="cta-ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Cancelación con reembolso hasta 30 días antes</div>
 
@@ -754,10 +850,10 @@ img{display:block;max-width:100%}
   <!-- MOBILE CTA -->
   <div class="mob-cta" id="mobCta">
     <div class="mob-cta-price">
-      <span class="mob-cta-sena" id="mobCtaSena">$ 450.000 ARS</span>
-      <span class="mob-cta-lbl" id="mobCtaLbl">seña · quedan 4 lugares</span>
+      <span class="mob-cta-sena" id="mobCtaSena">US$ 2.215</span>
+      <span class="mob-cta-lbl" id="mobCtaLbl">total · quedan 4 lugares</span>
     </div>
-    <button class="btn btn-neon" style="flex-shrink:0">Reservar lugar</button>
+    <button class="btn btn-neon" style="flex-shrink:0" onclick="consultarWA()">Quiero anotarme</button>
   </div>
 
 </div><!-- /pgd -->
@@ -799,6 +895,9 @@ const viajes = [
     senaARS:450000,
     totalARS:3200000,
     ciudadSalida:'Buenos Aires (EZE)',
+    puntosSalida:[{ciudad:'Buenos Aires (EZE)',puntoEmbarque:'Terminal A, mostrador Travexa, 3hs antes'},{ciudad:'Córdoba (COR)',puntoEmbarque:'Hall central, 2:30hs antes'}],
+    traslado:['Aéreo','Bus'],
+    regimen:['Desayuno','Media Pensión'],
   },
   {
     id:'cartagena-san-andres',
@@ -1039,11 +1138,12 @@ window.addEventListener('scroll',()=>{
 },{passive:true});
 
 /* ── FILTERS ── */
-let activeRegion='all', activeDur='all';
+let activeRegion='all', activeTraslado='all';
 function applyFilters(){
   let data = viajes;
   if(activeRegion!=='all') data = data.filter(v=>v.region===activeRegion);
-  if(activeDur!=='all') data = data.filter(v=>durLabel(v.duracion)===activeDur);
+  // Filtro por tipo de traslado (reemplaza al de duración).
+  if(activeTraslado!=='all') data = data.filter(v=>(v.traslado||[]).includes(activeTraslado));
   renderCards(data);
 }
 
@@ -1055,11 +1155,12 @@ document.getElementById('fpRegion').addEventListener('click',e=>{
   if(activeRegion==='all') btn.classList.add('fp-all');
   applyFilters();
 });
-document.getElementById('fpDur').addEventListener('click',e=>{
-  const btn = e.target.closest('[data-d]'); if(!btn) return;
-  activeDur = btn.dataset.d;
-  document.querySelectorAll('[data-d]').forEach(b=>b.classList.remove('on'));
+document.getElementById('fpTraslado').addEventListener('click',e=>{
+  const btn = e.target.closest('[data-t]'); if(!btn) return;
+  activeTraslado = btn.dataset.t;
+  document.querySelectorAll('[data-t]').forEach(b=>b.classList.remove('on','fp-all'));
   btn.classList.add('on');
+  if(activeTraslado==='all') btn.classList.add('fp-all');
   applyFilters();
 });
 
@@ -1081,17 +1182,19 @@ function showDetail(id){
   const disp = v.cupoDisp; const total = v.cupoMax;
   const estado = cupoEstado(disp);
   document.getElementById('dmeta-cupo').textContent = disp===0 ? 'Agotado' : 'Quedan '+disp+' lugares';
-  document.getElementById('dmeta-salida').textContent = 'Sale desde '+v.ciudadSalida;
-  document.getElementById('ctaSena').textContent = fmt(v.senaARS);
-  document.getElementById('ctaTotal').textContent = fmt(v.totalARS);
+  // Puntos de salida múltiples (fallback a ciudadSalida legacy).
+  const ciudades = (v.puntosSalida && v.puntosSalida.length) ? v.puntosSalida.map(p=>p.ciudad) : [v.ciudadSalida];
+  document.getElementById('dmeta-salida').textContent = 'Sale desde '+ciudades.join(' · ');
+  // Total en ARS bajo el desglose (los valores USD del desglose quedan estáticos en el proto).
+  const ctaTotalArs = document.getElementById('ctaTotalArs');
+  if(ctaTotalArs) ctaTotalArs.textContent = '≈ '+fmt(v.totalARS);
 
   const pct = Math.round((1 - disp/total)*100);
   document.getElementById('ctaCupoBar').style.width = pct+'%';
   document.getElementById('ctaCupoBar').className = 'cta-cupo-bar '+estado.cls;
   document.getElementById('ctaCupoTxt').textContent = (estado.urgent?'⚠ ':'')+estado.label+' de '+total;
   document.getElementById('ctaCupoTxt').className = 'cta-cupo-txt'+(estado.urgent?'':' calm');
-  document.getElementById('mobCtaSena').textContent = fmt(v.senaARS);
-  document.getElementById('mobCtaLbl').textContent = disp===0 ? 'agotado' : 'seña · quedan '+disp+' lugares';
+  document.getElementById('mobCtaLbl').textContent = disp===0 ? 'agotado' : 'total · quedan '+disp+' lugares';
 
   document.getElementById('pgc').style.display='none';
   document.getElementById('pgd').classList.add('show');

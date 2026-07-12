@@ -1059,3 +1059,41 @@
 
   /* ── Added for the React port ── */
   .cmdk-group{font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); padding:8px 10px 4px;}
+
+  /* ── Vivencial v2: repeatable builders (puntos de salida / hoteles) ── */
+  .repeat-row{
+    display:flex; align-items:flex-start; gap:10px;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:14px 14px 14px 16px; margin-bottom:9px;
+  }
+  .repeat-row-body{flex:1; min-width:0;}
+  .hotel-photo-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .hotel-photo-thumb{width:64px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--line); flex-shrink:0;}
+  .hotel-photo-empty{display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--ink-faint); background:var(--surface-2);}
+
+  /* ── Vivencial v2: multi-select checkboxes (traslado / régimen) ── */
+  .check-grid{display:flex; flex-wrap:wrap; gap:8px;}
+  .check-item{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 13px; border-radius:10px;
+    border:1px solid var(--line-strong); background:var(--surface);
+    font-size:12.8px; color:var(--ink-soft); cursor:pointer;
+    transition:border-color .14s var(--ease-out), background .14s var(--ease-out), color .14s var(--ease-out);
+    user-select:none;
+  }
+  .check-item:hover{border-color:var(--ink-faint);}
+  .check-item input{width:15px; height:15px; accent-color:var(--teal-mid); margin:0; cursor:pointer;}
+  .check-item.checked{border-color:var(--teal-mid); background:var(--teal-soft); color:var(--teal-deep); font-weight:600;}
+
+  /* ── Vivencial v2: price breakdown ── */
+  .price-breakdown{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:14px;
+    padding:18px 20px; margin-top:8px;
+  }
+  .price-breakdown .pb-total-lbl{font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+  .price-breakdown .pb-total{font-family:var(--font-display); font-weight:700; font-size:2rem; letter-spacing:-.01em; color:var(--ink); line-height:1; font-variant-numeric:tabular-nums;}
+  .price-breakdown .pb-total-ars{font-size:13px; color:var(--ink-soft); margin-top:4px;}
+  .price-breakdown .pb-lines{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line-strong); display:flex; flex-direction:column; gap:7px;}
+  .price-breakdown .pb-line{display:flex; align-items:center; justify-content:space-between; font-size:12.8px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .price-breakdown .pb-line .pb-op{color:var(--ink-faint); font-family:var(--font-mono);}
+  .price-breakdown .pb-final{display:flex; align-items:center; justify-content:space-between; margin-top:11px; padding-top:11px; border-top:1px solid var(--line-strong); font-weight:700; color:var(--ink); font-size:14px; font-variant-numeric:tabular-nums;}

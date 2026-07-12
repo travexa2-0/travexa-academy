@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, supabaseWrite } from '@/lib/supabase'
 import type { Enrollment, EnrollmentWithProfile, Profile, TipoAccesoEnrollment } from '@/types'
 
-type ProfileLite = Pick<Profile, 'id' | 'nombre' | 'apellido' | 'email' | 'avatar_url'>
+type ProfileLite = Pick<Profile, 'id' | 'nombre' | 'apellido' | 'email' | 'avatar_url' | 'telefono'>
 
 // Enrollments for one course, with each student's profile merged in JS
 // (no reliable PostgREST FK embed between academy_enrollments and profiles).
+// Para la vista por viajero del backoffice también resolvemos fecha_nacimiento
+// (academy_profiles) además de los datos de contacto de profiles.
 async function fetchEnrollments(courseId: string): Promise<EnrollmentWithProfile[]> {
   const { data, error } = await supabase
     .from('academy_enrollments')
@@ -20,11 +22,25 @@ async function fetchEnrollments(courseId: string): Promise<EnrollmentWithProfile
 
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, nombre, apellido, email, avatar_url')
+    .select('id, nombre, apellido, email, avatar_url, telefono')
     .in('id', userIds)
 
+  const { data: academyProfiles } = await supabase
+    .from('academy_profiles')
+    .select('user_id, fecha_nacimiento, dni')
+    .in('user_id', userIds)
+
   const byId = new Map((profiles as ProfileLite[] | null ?? []).map(p => [p.id, p]))
-  return enrollments.map(e => ({ ...e, profile: byId.get(e.user_id) }))
+  const academyByUser = new Map(
+    (academyProfiles as { user_id: string; fecha_nacimiento: string | null; dni: string | null }[] | null ?? [])
+      .map(a => [a.user_id, a]),
+  )
+  return enrollments.map(e => ({
+    ...e,
+    profile: byId.get(e.user_id),
+    fecha_nacimiento: academyByUser.get(e.user_id)?.fecha_nacimiento ?? null,
+    dni: academyByUser.get(e.user_id)?.dni ?? null,
+  }))
 }
 
 export function useCourseEnrollments(courseId: string | undefined) {

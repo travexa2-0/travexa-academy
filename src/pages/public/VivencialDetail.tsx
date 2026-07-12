@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ChevronDown, Check, X, MapPin, CalendarDays, Clock, Users } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Check, X, MapPin, CalendarDays, Clock, Users, Bus, Plane, Ship, Sailboat, Utensils, Hotel as HotelIcon, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -14,7 +14,13 @@ import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPa
 import { cupoEstado } from '@/lib/cupo'
 import { displayName } from '@/lib/utils'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
-import type { ItinerarioDia, Enrollment } from '@/types'
+import { cuotaEstimadaArs, mesesHastaSalida } from '@/lib/vivencial'
+import type { ItinerarioDia, Enrollment, VivencialPuntoSalida, VivencialHotel } from '@/types'
+
+// Ícono por tipo de traslado.
+const TRASLADO_ICON: Record<string, typeof Bus> = {
+  'Bus': Bus, 'Aéreo': Plane, 'Navegación': Sailboat, 'Crucero': Ship,
+}
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -54,11 +60,11 @@ type TabKey = typeof TABS[number]['key']
 // ── FAQ data ──────────────────────────────────────────────────────
 
 const FAQ_ITEMS = [
-  { q: '¿Cómo reservo mi lugar?', a: 'Tocás "Quiero anotarme" y te contactás con nosotros por WhatsApp. Ahí coordinamos la seña y el pago del viaje.' },
+  { q: '¿Cómo reservo mi lugar?', a: 'Tocás "Reservar mi lugar", elegís desde dónde salís y confirmás. Tu lugar queda reservado al instante y te mostramos los datos bancarios para transferir.' },
   { q: '¿Qué pasa si se llena el cupo?', a: 'El cupo es limitado. Una vez agotado, quedás en lista de espera para la próxima salida del mismo destino.' },
   { q: '¿Puedo cancelar?', a: 'Sí, con reembolso del 100% de la seña si cancelás hasta 30 días antes de la salida. Consultá los términos completos.' },
   { q: '¿Está incluido el vuelo?', a: 'Depende del vivencial. Ver la sección "Qué incluye" para los detalles específicos de este viaje.' },
-  { q: '¿Cómo se paga el viaje?', a: 'El pago se coordina por WhatsApp: podés abonarlo en un pago por transferencia o en cuotas cómodas, siempre antes de viajar. Te acompañamos en cada paso.' },
+  { q: '¿Cómo se paga el viaje?', a: 'La reserva no cobra nada. Después transferís (en un pago o en partes, siempre antes de viajar) y subís el comprobante desde tu perfil. Yesica lo revisa y confirma tu pago.' },
 ]
 
 // ── Subcomponents ─────────────────────────────────────────────────
@@ -280,10 +286,28 @@ export default function VivencialDetail() {
   const waDigits = cleanWhatsappNumber(whatsappBusiness ?? '') || '5491112345678'
   const waUrl   = `https://wa.me/${waDigits}?text=${encodeURIComponent(`Hola! Quiero consultar por el vivencial ${course.titulo} (${fmtDate(course.vivencial_fecha_salida)}). ¿Me pasás más info?`)}`
 
+  // Puntos de salida y hoteles múltiples, con fallback a las columnas legacy.
+  const puntos: VivencialPuntoSalida[] = course.vivencial_puntos_salida?.length
+    ? course.vivencial_puntos_salida
+    : course.vivencial_ciudad_salida
+      ? [{ ciudad: course.vivencial_ciudad_salida, detalle_encuentro: course.vivencial_punto_encuentro ?? '' }]
+      : []
+  const hoteles: VivencialHotel[] = course.vivencial_hoteles?.length
+    ? course.vivencial_hoteles
+    : course.vivencial_hotel
+      ? [{ nombre: course.vivencial_hotel, noches, link: '', foto_url: null }]
+      : []
+  const salidaCiudades = puntos.map(p => p.ciudad).filter(Boolean)
+  const salidaLabel = salidaCiudades.length ? salidaCiudades.join(' · ') : 'Por confirmar'
+  const traslado = course.vivencial_tipo_traslado ?? []
+  const regimen = course.vivencial_regimen_alimentos ?? []
+  const cuota = cuotaEstimadaArs(course)
+  const mesesCuota = mesesHastaSalida(course.vivencial_fecha_salida)
+
   const incluyeLines = richTextLines(course.incluye)
   const ctaFeatures = incluyeLines.length > 0
     ? incluyeLines.slice(0, 4)
-    : ['Cupos limitados por salida', 'Acompañamiento Travexa Academy', 'Certificado Travexa Academy', 'Cierre de venta por WhatsApp']
+    : ['Cupos limitados por salida', 'Acompañamiento Travexa Academy', 'Certificado Travexa Academy', 'Reserva online, pago por transferencia']
 
   function handleCopyLink() {
     navigator.clipboard.writeText(window.location.href).catch(() => {})
@@ -291,7 +315,7 @@ export default function VivencialDetail() {
   }
 
   function handleShareWA() {
-    const msg = `*Travexa Academy* — ${course!.titulo}\n\n${dias} días / ${noches} noches. Sale ${fmtDate(course!.vivencial_fecha_salida)} desde ${course!.vivencial_ciudad_salida ?? 'Argentina'}.\nSeña: ${fmtARS(course!.vivencial_precio_seña_ars)}\n\n${window.location.href}`
+    const msg = `*Travexa Academy* — ${course!.titulo}\n\n${dias} días / ${noches} noches. Sale ${fmtDate(course!.vivencial_fecha_salida)} desde ${salidaCiudades.join(' · ') || 'Argentina'}.\nSeña: ${fmtARS(course!.vivencial_precio_seña_ars)}\n\n${window.location.href}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -374,10 +398,10 @@ export default function VivencialDetail() {
                 {disp === 0 ? 'Agotado' : `Quedan ${disp} lugares`}
               </span>
             )}
-            {course.vivencial_ciudad_salida && (
+            {salidaCiudades.length > 0 && (
               <span className="flex items-center gap-[5px] font-mono" style={{ fontSize: 10, color: 'var(--text-2)' }}>
                 <MapPin className="w-3 h-3" style={{ color: 'var(--text-3)' }} />
-                Sale desde {course.vivencial_ciudad_salida}
+                Sale desde {salidaLabel}
               </span>
             )}
           </div>
@@ -417,6 +441,43 @@ export default function VivencialDetail() {
           >
             {/* ── LEFT COLUMN ── */}
             <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', padding: '30px 32px', minHeight: 480 }}>
+
+              {/* ── DATOS CLAVE (bloque destacado) ── */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px]" style={{ marginBottom: 18 }}>
+                {[
+                  { icon: CalendarDays, label: 'Fechas', value: `${fmtDate(course.vivencial_fecha_salida)} — ${fmtDate(course.vivencial_fecha_regreso)}` },
+                  { icon: Clock, label: 'Duración', value: dias > 0 ? `${dias} días / ${noches} noches` : 'Por confirmar' },
+                  { icon: Users, label: 'Cupos', value: max > 0 ? (disp === 0 ? 'Agotado' : `Quedan ${disp} de ${max}`) : 'Sin límite' },
+                  { icon: MapPin, label: salidaCiudades.length > 1 ? 'Sale desde' : 'Salida', value: salidaLabel },
+                ].map(item => (
+                  <div key={item.label} style={{ background: 'rgba(14,107,92,.06)', border: '1px solid rgba(14,107,92,.12)', borderRadius: 12, padding: '14px 15px' }}>
+                    <div className="flex items-center gap-[6px]" style={{ marginBottom: 8 }}>
+                      <item.icon style={{ width: 15, height: 15, color: 'var(--primary)' }} />
+                      <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: '#6A8590' }}>{item.label}</span>
+                    </div>
+                    <p className="font-display font-bold" style={{ fontSize: '.98rem', color: '#0A1E29', lineHeight: 1.25, letterSpacing: '-.01em' }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Traslado + régimen como tags visuales */}
+              {(traslado.length > 0 || regimen.length > 0) && (
+                <div className="flex flex-wrap items-center gap-[7px]" style={{ marginBottom: 22 }}>
+                  {traslado.map(t => {
+                    const Icon = TRASLADO_ICON[t] ?? Bus
+                    return (
+                      <span key={`t-${t}`} className="inline-flex items-center gap-[6px]" style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--primary)', background: 'rgba(14,107,92,.09)', border: '1px solid rgba(14,107,92,.18)', borderRadius: 8, padding: '6px 11px' }}>
+                        <Icon style={{ width: 14, height: 14 }} /> {t}
+                      </span>
+                    )
+                  })}
+                  {regimen.map(r => (
+                    <span key={`r-${r}`} className="inline-flex items-center gap-[6px]" style={{ fontSize: '.78rem', fontWeight: 600, color: '#8A6D1F', background: 'rgba(201,154,58,.12)', border: '1px solid rgba(201,154,58,.28)', borderRadius: 8, padding: '6px 11px' }}>
+                      <Utensils style={{ width: 13, height: 13 }} /> {r}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Tabs */}
               <div style={{ position: 'relative', borderBottom: '1px solid rgba(0,0,0,.1)', marginBottom: 24, overflowX: 'auto' }}>
@@ -477,11 +538,10 @@ export default function VivencialDetail() {
                       {/* Info grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         {[
-                          { label: 'Nivel',         value: course.nivel.charAt(0).toUpperCase() + course.nivel.slice(1) },
-                          { label: 'Idioma',        value: 'Español' },
-                          { label: 'Cupo máximo',   value: max > 0 ? `${max} asesores` : 'Sin límite' },
-                          { label: 'Salida desde',  value: course.vivencial_ciudad_salida ?? 'Por confirmar' },
-                          ...(course.vivencial_hotel ? [{ label: 'Hotel', value: course.vivencial_hotel }] : []),
+                          { label: 'Nivel',       value: course.nivel ? course.nivel.charAt(0).toUpperCase() + course.nivel.slice(1) : 'Todos' },
+                          { label: 'Idioma',      value: 'Español' },
+                          { label: 'Cupo máximo', value: max > 0 ? `${max} asesores` : 'Sin límite' },
+                          { label: 'País',        value: course.vivencial_pais ?? 'Por confirmar' },
                         ].map(item => (
                           <div key={item.label} style={{ background: 'rgba(0,0,0,.03)', borderRadius: 10, padding: '14px 16px' }}>
                             <p className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: '#8FA3AB', marginBottom: 5 }}>{item.label}</p>
@@ -489,6 +549,54 @@ export default function VivencialDetail() {
                           </div>
                         ))}
                       </div>
+
+                      {/* Puntos de salida (ciudad + punto de embarque) */}
+                      {puntos.length > 0 && (
+                        <div style={{ marginTop: 22 }}>
+                          <p className="font-display font-bold" style={{ fontSize: '.95rem', color: '#0A1E29', marginBottom: 12 }}>Puntos de salida</p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {puntos.map((p, i) => (
+                              <div key={i} className="flex items-start gap-[10px]" style={{ background: 'rgba(0,0,0,.03)', borderRadius: 10, padding: '12px 14px' }}>
+                                <MapPin style={{ width: 15, height: 15, color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
+                                <div>
+                                  <p style={{ fontSize: '.88rem', fontWeight: 600, color: '#0A1E29' }}>{p.ciudad}</p>
+                                  {p.detalle_encuentro && <p style={{ fontSize: '.82rem', color: '#4A6070', lineHeight: 1.5, marginTop: 2 }}>{p.detalle_encuentro}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hoteles */}
+                      {hoteles.length > 0 && (
+                        <div style={{ marginTop: 22 }}>
+                          <p className="font-display font-bold" style={{ fontSize: '.95rem', color: '#0A1E29', marginBottom: 12 }}>Alojamiento</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {hoteles.map((h, i) => (
+                              <div key={i} style={{ background: 'rgba(0,0,0,.03)', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(0,0,0,.06)' }}>
+                                {h.foto_url && (
+                                  <img src={h.foto_url} alt={h.nombre} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                                )}
+                                <div style={{ padding: '12px 14px' }}>
+                                  <div className="flex items-center gap-[7px]" style={{ marginBottom: h.noches ? 4 : 0 }}>
+                                    <HotelIcon style={{ width: 14, height: 14, color: 'var(--primary)', flexShrink: 0 }} />
+                                    <p style={{ fontSize: '.88rem', fontWeight: 600, color: '#0A1E29' }}>{h.nombre}</p>
+                                  </div>
+                                  {h.noches > 0 && (
+                                    <p className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.06em', color: '#8FA3AB' }}>{h.noches} noche{h.noches !== 1 ? 's' : ''}</p>
+                                  )}
+                                  {h.link && (
+                                    <a href={h.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-[5px]" style={{ fontSize: '.8rem', color: 'var(--primary)', fontWeight: 600, marginTop: 6 }}>
+                                      Ver hotel <ExternalLink style={{ width: 12, height: 12 }} />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -711,9 +819,28 @@ export default function VivencialDetail() {
                     <div style={{ fontSize: '.75rem', color: 'var(--text-3)', marginTop: 2, marginBottom: 4 }}>Seña para confirmar tu lugar</div>
                   </>
                 )}
-                {course.vivencial_precio_seña_ars && course.precio_ars && (
+                {course.precio_ars ? (
                   <div style={{ fontSize: '.82rem', color: 'var(--text-3)', marginBottom: 14 }}>
-                    Total del viaje: <strong style={{ color: 'var(--text-2)' }}>{fmtARS(course.precio_ars)}</strong> · Saldo a 60 días
+                    Total del viaje: <strong style={{ color: 'var(--text-2)' }}>{fmtARS(course.precio_ars)}</strong>
+                  </div>
+                ) : null}
+
+                {/* Cuota estimada — informativa, no es un plan de pago en la plataforma */}
+                {cuota != null && (
+                  <div
+                    className="rounded-[10px]"
+                    style={{ background: 'var(--neon-dim)', border: '1px solid rgba(0,229,200,.22)', padding: '10px 12px', marginBottom: 14 }}
+                    title="Valor estimado e informativo. Los vivenciales se coordinan y pagan por WhatsApp, no se cobran dentro de Travexa."
+                  >
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-display font-bold" style={{ fontSize: '1.02rem', color: 'var(--neon)' }}>
+                        ≈ {fmtARS(cuota)}<span style={{ fontSize: '.72rem', color: 'var(--text-3)', fontWeight: 400 }}> /mes</span>
+                      </span>
+                      <span className="font-mono uppercase" style={{ fontSize: '9px', color: 'var(--text-3)', letterSpacing: '.05em' }}>{mesesCuota} cuotas est.</span>
+                    </div>
+                    <p style={{ fontSize: '.68rem', color: 'var(--text-3)', marginTop: 4, lineHeight: 1.4 }}>
+                      Estimado informativo. El pago se coordina por WhatsApp, no dentro de Travexa.
+                    </p>
                   </div>
                 )}
 

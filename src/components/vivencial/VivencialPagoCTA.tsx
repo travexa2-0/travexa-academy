@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRightLeft, CheckCircle2, Clock, MessageCircle, CreditCard, CalendarClock } from 'lucide-react'
-import {
-  useVivencialPaymentsFor,
-  useWhatsappBusiness,
-  buildAnotarmeWaUrl,
-} from '@/hooks/useVivencialPago'
-import { useAcademyProfile } from '@/hooks/useProfile'
+import { useQueryClient } from '@tanstack/react-query'
+import { ArrowRightLeft, CheckCircle2, Clock, Plane, CreditCard, CalendarClock } from 'lucide-react'
+import { useVivencialPaymentsFor } from '@/hooks/useVivencialPago'
+import { loginRedirect } from '@/lib/utils'
 import TransferModal from './TransferModal'
+import PuntoSalidaModal from './PuntoSalidaModal'
 import type { Course, Enrollment } from '@/types'
 
 type Variant = 'cta-card' | 'boarding' | 'perfil'
@@ -32,11 +30,11 @@ function fmtFechaLimite(d: string): string {
 
 export default function VivencialPagoCTA({ course, enrollment, userId, variant = 'cta-card', onChanged }: Props) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data: payments } = useVivencialPaymentsFor(enrollment?.id)
-  const { data: whatsappBusiness } = useWhatsappBusiness()
-  const { data: academyProfile } = useAcademyProfile(userId)
 
   const [modalMode, setModalMode] = useState<'sena' | 'saldo' | null>(null)
+  const [showPunto, setShowPunto] = useState(false)
 
   const total = enrollment?.monto_total_ars ?? course.precio_ars ?? 0
   const pagado = enrollment?.monto_señado_ars ?? 0
@@ -50,9 +48,6 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
   const btnPrimary = { background: 'var(--primary)', color: 'var(--text-1)' } as const
   const showSaldoLine = variant !== 'boarding'
 
-  // El comprobante siempre pasa por el enrollment ya creado (Yesica lo carga por
-  // "inscripción manual"). Si por algún motivo no existe, el modal cae al RPC de
-  // reserva como fallback defensivo.
   const openComprobante = () => setModalMode(pagado > 0 ? 'saldo' : 'sena')
 
   // ── Estado: pago completado ─────────────────────────────────────
@@ -64,7 +59,7 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
     )
   }
 
-  // ── Estado: inscripto (con o sin pagos) → subir comprobante ─────
+  // ── Estado: inscripto (con o sin pagos) → informar transferencia ─
   if (hasEnrollment) {
     return (
       <div className="space-y-2.5">
@@ -81,7 +76,7 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
           </div>
         ) : (
           <button onClick={openComprobante} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm" style={btnPrimary}>
-            <ArrowRightLeft className="h-4 w-4" /> Subir comprobante
+            <ArrowRightLeft className="h-4 w-4" /> Informar transferencia
           </button>
         )}
 
@@ -103,14 +98,19 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
     )
   }
 
-  // ── Estado: sin enrollment → informativo + "Quiero anotarme" ────
-  const anotarmeUrl = whatsappBusiness
-    ? buildAnotarmeWaUrl(whatsappBusiness, course.titulo, academyProfile?.genero)
-    : null
+  // ── Estado: sin enrollment → informativo + "Reservar mi lugar" ───
+  // Gate de login: sin sesión, va a /login?redirect=<url actual> y vuelve al mismo
+  // vivencial. La reserva NO cobra: el pago es transferencia coordinada con Yesica.
+  const reservar = () => {
+    if (!userId) { navigate(loginRedirect()); return }
+    setShowPunto(true)
+  }
 
-  const anotarme = () => {
-    if (!userId) { navigate('/registro'); return }
-    if (anotarmeUrl) window.open(anotarmeUrl, '_blank', 'noopener,noreferrer')
+  const onReserved = () => {
+    setShowPunto(false)
+    void queryClient.invalidateQueries({ queryKey: ['vivencial-enrollment', userId, course.id] })
+    void queryClient.invalidateQueries({ queryKey: ['vivencial-detalle', userId, course.slug] })
+    navigate(`/reserva/${course.slug}`)
   }
 
   const tagStyle = { background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--text-2)', borderWidth: 1 } as const
@@ -124,7 +124,7 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
         </div>
         <div className="flex items-center gap-2 py-2.5 px-3 rounded-xl text-sm" style={tagStyle}>
           <CreditCard className="h-4 w-4 shrink-0" style={{ color: 'var(--primary-l)' }} />
-          <span>Cuotas cómoda — pagás cuando querés, siempre antes de viajar</span>
+          <span>Pagás en partes cuando querés, siempre antes de viajar</span>
         </div>
         {señaSugerida > 0 && (
           <div className="flex items-center gap-2 py-2 px-3 rounded-xl text-xs" style={tagStyle}>
@@ -135,12 +135,16 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
       </div>
 
       <button
-        onClick={anotarme}
+        onClick={reservar}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm"
         style={btnPrimary}
       >
-        <MessageCircle className="h-4 w-4" /> Quiero anotarme
+        <Plane className="h-4 w-4" /> Reservar mi lugar
       </button>
+
+      {showPunto && (
+        <PuntoSalidaModal open onClose={() => setShowPunto(false)} course={course} onReserved={onReserved} />
+      )}
     </div>
   )
 }

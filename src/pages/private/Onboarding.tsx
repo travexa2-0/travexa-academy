@@ -47,6 +47,7 @@ export default function Onboarding() {
 
   // Step 1
   const [telefono, setTelefono] = useState('')
+  const [dni, setDni] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [genero, setGenero] = useState('')
 
@@ -68,6 +69,7 @@ export default function Onboarding() {
     hydrated.current = true
 
     const tel = profilesRow.telefono ?? ''
+    const doc = academyProfile.dni ?? ''
     const nac = academyProfile.fecha_nacimiento ?? ''
     const gen = academyProfile.genero ?? ''
     const ciu = academyProfile.ciudad ?? ''
@@ -76,6 +78,7 @@ export default function Onboarding() {
     const dest = (academyProfile.destinos_principales ?? []).join(', ')
 
     setTelefono(tel)
+    setDni(doc)
     setFechaNacimiento(nac)
     setGenero(gen)
     setCiudad(ciu)
@@ -85,7 +88,7 @@ export default function Onboarding() {
     setRefCode(academyProfile.referral_code ?? null)
 
     // Resume at the first step with missing data
-    if (!tel || !nac) setStep(1)
+    if (!tel || !doc || !nac) setStep(1)
     else if (!ciu || !tv || !exp) setStep(2)
     else setStep(3)
   }, [academyProfile, profilesRow])
@@ -111,7 +114,7 @@ export default function Onboarding() {
     return () => { active = false }
   }, [step, user, refCode, academyProfile?.referral_code, qc])
 
-  const step1Valid = telefono.trim() !== '' && fechaNacimiento.trim() !== ''
+  const step1Valid = telefono.trim() !== '' && dni.trim() !== '' && fechaNacimiento.trim() !== ''
   const step2Valid = ciudad.trim() !== '' && tipoVendedor.trim() !== '' && anosExperiencia.trim() !== ''
 
   const fillPct = useMemo(() => ((step - 1) / 2) * 100, [step])
@@ -125,6 +128,7 @@ export default function Onboarding() {
       const { error: e1 } = await db().from('profiles').update({ telefono: telefono.trim() }).eq('id', user.id)
       if (e1) throw new Error(e1.message)
       const { error: e2 } = await db().from('academy_profiles').update({
+        dni: dni.trim() || null,
         fecha_nacimiento: fechaNacimiento || null,
         genero: genero || null,
       }).eq('user_id', user.id)
@@ -270,10 +274,17 @@ export default function Onboarding() {
                 <h1 className="ob-title">¡Bienvenida/o a Travexa Academy!</h1>
                 <p className="ob-sub">Completá tu perfil para aparecer primero en el ranking y que te reconozcamos como asesor.</p>
 
-                <div className="ob-field">
-                  <label htmlFor="f-tel">Teléfono / WhatsApp</label>
-                  <input id="f-tel" type="tel" placeholder="+54 9 11 1234-5678"
-                    value={telefono} onChange={e => setTelefono(e.target.value)} required />
+                <div className="ob-row-2">
+                  <div className="ob-field">
+                    <label htmlFor="f-tel">Teléfono / WhatsApp</label>
+                    <input id="f-tel" type="tel" placeholder="+54 9 11 1234-5678"
+                      value={telefono} onChange={e => setTelefono(e.target.value)} required />
+                  </div>
+                  <div className="ob-field">
+                    <label htmlFor="f-dni">DNI</label>
+                    <input id="f-dni" type="text" inputMode="numeric" placeholder="30.123.456"
+                      value={dni} onChange={e => setDni(e.target.value)} required />
+                  </div>
                 </div>
                 <div className="ob-row-2">
                   <div className="ob-field">

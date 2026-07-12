@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Header from '@/components/layout/Header'
 import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
+import PagoProgressBar from '@/components/vivencial/PagoProgressBar'
+import LiquidacionButton from '@/components/vivencial/LiquidacionButton'
 import type { Course, Enrollment } from '@/types'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { staggerContainer, staggerItem, EASE_OUT } from '@/lib/motion'
@@ -80,8 +82,6 @@ async function fetchVivencialData(userId: string, slug: string) {
 function BoardingPass({ course, enrollment, userId, onChanged }: { course: Course; enrollment: Enrollment | null; userId?: string; onChanged?: () => void }) {
   const totalPago  = enrollment?.monto_total_ars ?? course.precio_ars ?? 0
   const señado     = enrollment?.monto_señado_ars ?? 0
-  const pendiente  = enrollment?.monto_pendiente_ars ?? (totalPago - señado)
-  const pct        = totalPago > 0 ? Math.round((señado / totalPago) * 100) : 0
 
   return (
     <div
@@ -101,6 +101,9 @@ function BoardingPass({ course, enrollment, userId, onChanged }: { course: Cours
             </h2>
             {course.instructor && (
               <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>{course.instructor.nombre}</p>
+            )}
+            {enrollment?.numero_reserva && (
+              <p className="font-mono text-xs mt-1.5" style={{ color: 'var(--gold)' }}># {enrollment.numero_reserva}</p>
             )}
           </div>
           {course.thumbnail_url && (
@@ -148,39 +151,18 @@ function BoardingPass({ course, enrollment, userId, onChanged }: { course: Cours
           </div>
         </div>
 
-        {/* Estado de pago */}
+        {/* Estado de pago: Total / Pagado / Saldo pendiente */}
         {totalPago > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span style={{ color: 'var(--text-3)' }}>Pago</span>
-              <span className="font-mono font-bold" style={{ color: pct === 100 ? 'var(--success)' : 'var(--pending)' }}>
-                {pct}% abonado
-              </span>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--card)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: pct === 100 ? 'var(--success)' : 'var(--pending)' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.8, ease: EASE_OUT }}
-              />
-            </div>
-            <div className="flex justify-between text-xs font-mono">
-              <span style={{ color: 'var(--success)' }}>
-                {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(señado)} señado
-              </span>
-              {pendiente > 0 && (
-                <span style={{ color: 'var(--pending)' }}>
-                  {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(pendiente)} pendiente
-                </span>
-              )}
-            </div>
-          </div>
+          <PagoProgressBar total={totalPago} pagado={señado} />
         )}
 
-        {/* CTA pago con estados (seña / transferir saldo / cuotas / pagado) */}
+        {/* CTA pago con estados (informar transferencia / en revisión / pagado) */}
         <VivencialPagoCTA course={course} enrollment={enrollment} userId={userId} variant="boarding" onChanged={onChanged} />
+
+        {/* Liquidación de reserva (PDF) */}
+        {enrollment?.activo && (
+          <LiquidacionButton course={course} enrollment={enrollment} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border" style={{ borderColor: 'var(--line)', color: 'var(--text-2)' }} />
+        )}
       </div>
     </div>
   )

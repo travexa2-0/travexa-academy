@@ -6,34 +6,6 @@ import VivencialCard from '@/components/courses/VivencialCard'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { useCourses, useWishlist, useToggleWishlist } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Course } from '@/types'
-
-// ── Duration helpers ──────────────────────────────────────────────
-
-function calcDias(c: Course): number {
-  if (!c.vivencial_fecha_salida || !c.vivencial_fecha_regreso) return 0
-  const [y1, m1, d1] = c.vivencial_fecha_salida.split('-').map(Number)
-  const [y2, m2, d2] = c.vivencial_fecha_regreso.split('-').map(Number)
-  return (
-    Math.round(
-      (new Date(y2, m2 - 1, d2).getTime() - new Date(y1, m1 - 1, d1).getTime()) / 86400000
-    ) + 1
-  )
-}
-
-type DurBucket = 'all' | 'corto' | 'medio' | 'largo'
-function durBucket(dias: number): DurBucket {
-  if (dias <= 7)  return 'corto'
-  if (dias <= 12) return 'medio'
-  return 'largo'
-}
-
-const DUR_OPTIONS: { value: DurBucket; label: string }[] = [
-  { value: 'all',    label: 'Todos' },
-  { value: 'corto',  label: 'Hasta 7 días' },
-  { value: 'medio',  label: '8 a 12 días' },
-  { value: 'largo',  label: '13+ días' },
-]
 
 // ── Hero rotating phrases ─────────────────────────────────────────
 
@@ -199,10 +171,10 @@ export default function VivencialCatalog() {
   const { data: wishlist = [] } = useWishlist(user?.id)
   const toggleWishlist = useToggleWishlist(user?.id)
 
-  const [activeRegion,  setActiveRegion]  = useState<string>('all')
-  const [activeDur,     setActiveDur]     = useState<DurBucket>('all')
-  const [activeDestino, setActiveDestino] = useState<string>('all')
-  const [activeFecha,   setActiveFecha]   = useState<string>('all')
+  const [activeRegion,   setActiveRegion]   = useState<string>('all')
+  const [activeTraslado, setActiveTraslado] = useState<string>('all')
+  const [activeDestino,  setActiveDestino]  = useState<string>('all')
+  const [activeFecha,    setActiveFecha]    = useState<string>('all')
   const [showModal,    setShowModal]    = useState(false)
   const [phraseIdx,    setPhraseIdx]    = useState(0)
   const [phraseOut,    setPhraseOut]    = useState(false)
@@ -240,6 +212,15 @@ export default function VivencialCatalog() {
     return opts
   }, [vivenciales])
 
+  // Traslado options — solo los valores realmente presentes en los vivenciales
+  // publicados (integridad de datos: si ninguno usa "Crucero", no aparece).
+  const trasladoOptions = useMemo(() => {
+    const order = ['Bus', 'Aéreo', 'Navegación', 'Crucero']
+    const seen = new Set<string>()
+    vivenciales.forEach(v => (v.vivencial_tipo_traslado ?? []).forEach(t => seen.add(t)))
+    return order.filter(t => seen.has(t))
+  }, [vivenciales])
+
   // Destino options — DISTINCT vivencial_pais de los vivenciales publicados.
   // Nunca hardcodeado: si no hay vivenciales con país, el array queda vacío y el
   // select no se renderiza (integridad de datos).
@@ -273,15 +254,15 @@ export default function VivencialCatalog() {
     return opts.sort((a, b) => a.value.localeCompare(b.value))
   }, [vivenciales])
 
-  // Filtered list — Región, Duración, Destino y Fecha se combinan con AND.
+  // Filtered list — Región, Traslado, Destino y Fecha se combinan con AND.
   const filtered = useMemo(() => {
     let list = vivenciales
-    if (activeRegion !== 'all')  list = list.filter(v => v.category?.slug === activeRegion)
-    if (activeDur !== 'all')     list = list.filter(v => durBucket(calcDias(v)) === activeDur)
-    if (activeDestino !== 'all') list = list.filter(v => v.vivencial_pais?.trim() === activeDestino)
-    if (activeFecha !== 'all')   list = list.filter(v => v.vivencial_fecha_salida?.slice(0, 7) === activeFecha)
+    if (activeRegion !== 'all')   list = list.filter(v => v.category?.slug === activeRegion)
+    if (activeTraslado !== 'all') list = list.filter(v => (v.vivencial_tipo_traslado ?? []).includes(activeTraslado))
+    if (activeDestino !== 'all')  list = list.filter(v => v.vivencial_pais?.trim() === activeDestino)
+    if (activeFecha !== 'all')    list = list.filter(v => v.vivencial_fecha_salida?.slice(0, 7) === activeFecha)
     return list
-  }, [vivenciales, activeRegion, activeDur, activeDestino, activeFecha])
+  }, [vivenciales, activeRegion, activeTraslado, activeDestino, activeFecha])
 
   // Hero stats by year
   const statCounts = useMemo(() => {
@@ -512,37 +493,39 @@ export default function VivencialCatalog() {
             </div>
           )}
 
-          {/* Row 2: Duración */}
-          <div className="flex items-center gap-[14px]">
-            <span className="font-display font-bold whitespace-nowrap shrink-0 min-w-[84px]" style={{ fontSize: '12.5px', color: 'var(--text-1)' }}>
-              Duración
-            </span>
-            <div className="flex items-center gap-[7px] overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-              {DUR_OPTIONS.map(opt => {
-                const active = activeDur === opt.value
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => setActiveDur(opt.value)}
-                    className="font-mono uppercase shrink-0 flex items-center"
-                    style={{
-                      fontSize: '9.5px', letterSpacing: '.07em', padding: '5px 12px', borderRadius: 99,
-                      border: '1px solid',
-                      minHeight: 32,
-                      whiteSpace: 'nowrap',
-                      fontWeight: active ? 600 : 400,
-                      background:  active && opt.value === 'all' ? 'var(--text-1)' : active ? 'var(--neon-dim)' : 'transparent',
-                      color:       active && opt.value === 'all' ? 'var(--bg)'     : active ? 'var(--neon)'     : 'var(--text-3)',
-                      borderColor: active && opt.value === 'all' ? 'var(--text-1)' : active ? 'rgba(0,229,200,.35)' : 'var(--line)',
-                      transition:  'color 140ms ease, background 140ms ease, border-color 140ms ease',
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                )
-              })}
+          {/* Row 2: Tipo de traslado — solo si hay valores reales en la DB */}
+          {trasladoOptions.length > 0 && (
+            <div className="flex items-center gap-[14px]">
+              <span className="font-display font-bold whitespace-nowrap shrink-0 min-w-[84px]" style={{ fontSize: '12.5px', color: 'var(--text-1)' }}>
+                Traslado
+              </span>
+              <div className="flex items-center gap-[7px] overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {[{ value: 'all', label: 'Todos' }, ...trasladoOptions.map(t => ({ value: t, label: t }))].map(opt => {
+                  const active = activeTraslado === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setActiveTraslado(opt.value)}
+                      className="font-mono uppercase shrink-0 flex items-center"
+                      style={{
+                        fontSize: '9.5px', letterSpacing: '.07em', padding: '5px 12px', borderRadius: 99,
+                        border: '1px solid',
+                        minHeight: 32,
+                        whiteSpace: 'nowrap',
+                        fontWeight: active ? 600 : 400,
+                        background:  active && opt.value === 'all' ? 'var(--text-1)' : active ? 'var(--neon-dim)' : 'transparent',
+                        color:       active && opt.value === 'all' ? 'var(--bg)'     : active ? 'var(--neon)'     : 'var(--text-3)',
+                        borderColor: active && opt.value === 'all' ? 'var(--text-1)' : active ? 'rgba(0,229,200,.35)' : 'var(--line)',
+                        transition:  'color 140ms ease, background 140ms ease, border-color 140ms ease',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Row 3: Destino + Fecha de salida (selects, mismo patrón que /cursos).
               Cada select se muestra solo si hay valores reales en la DB; con la DB

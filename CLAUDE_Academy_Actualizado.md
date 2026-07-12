@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 11 Julio 2026 — Sesión 18 + reorganización documental**
+**Actualizado: 12 Julio 2026 — Sesión 22 (Vivenciales v3: migraciones v2+v3 APLICADAS en prod; mail Resend en pausa/backlog; falta solo la prueba visual del flujo self-service)**
 
 > Este archivo es la **fuente de verdad única** para Claude Code en el proyecto Academy.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -25,6 +25,8 @@
 5. [Estado actual del proyecto](#estado-actual-del-proyecto)
 6. [Backlog priorizado](#backlog-priorizado)
 7. [Vivenciales — cierre de venta por WhatsApp (Sesión 15)](#vivenciales--cierre-de-venta-por-whatsapp-sesión-15)
+7b. [Vivenciales v2 — destino, precio y filtros (Sesión 19)](#vivenciales-v2--destino-precio-y-filtros-sesión-19)
+7c. [Vivenciales v3 — reserva automática desde la plataforma (Sesión 20, PROPUESTA)](#vivenciales-v3--reserva-automática-desde-la-plataforma-sesión-20-propuesta)
 8. [Portal de instructores (Sesión 16)](#portal-de-instructores-instructor--sesión-16)
 9. [Home pública (Sesión 14)](#home-pública--sesión-14)
 10. [Video de lecciones: grabado + en vivo (Sesión 17)](#video-de-lecciones-grabado--en-vivo-sesión-17)
@@ -132,6 +134,10 @@ Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de 
 | Sesión 16 | **Portal de instructores (`/instructor/*`)**, liquidaciones mensuales, auto-link por email. ⚠️ Incluye una desviación de proceso registrada (origen de la regla "DB se propone"). Ver §8 |
 | Sesión 17 | **Video de lecciones grabado/en vivo unificado en el player** + admin carga video/`live_url`/`fecha_vivo`/portada por lección. Rama de trabajo, sin mergear. **Hotfix a producción** del crash de `/cursos` (`NIVEL_STYLES[nivel]` sin fallback). Ver §10 |
 | Sesión 18 | **Cutover de dominio propio: `academy.travexa.com.ar` en producción.** ⚠️ Pendiente confirmar allowlist de Auth. Ver §11 |
+| Sesión 19 | **Vivenciales v2: wizard rediseñado (país/localidades, puntos de salida y hoteles múltiples, desglose de precio) + filtros públicos (traslado) + detalle enriquecido + prototipo actualizado.** Migración PROPUESTA sin aplicar. Ver §12 |
+| Sesión 20 | **Vivenciales v3 (PROPUESTA, a confirmar): reserva automática desde la plataforma** — gate de login en todo comprar/reservar, flujo de reserva con elección de punto de salida → pantalla de confirmación con datos bancarios, número de reserva, "Informar transferencia" enriquecido, vista por viajero en backoffice. Reemplaza el cierre por WhatsApp de §7 (NO borrado, pendiente confirmación Yesica/Nico). Migración PROPUESTA sin aplicar. Mail (punto 4) y liquidación PDF (punto 6) pendientes de aprobar approach. Ver §7c |
+| Sesión 21 | **Confirmaciones de Nico aplicadas sobre v2/v3** (ambas migraciones aún sin aplicar): (1) `punto_embarque` renombrado a **`detalle_encuentro`** en todo el código, migración y doc; (2) **DNI del cliente** movido a `academy_profiles` vía onboarding (paso 1 obligatorio) + leído en backoffice y PDF de liquidación; (3) cerradas las 2 decisiones de diseño de v2 (embebido + reuso `incluye`/`no_incluye`); (4) confirmada **1 sola cuenta** bancaria; (5) pulido de builders (ids estables + input de archivo por fila). Mail Resend + PDF client-side quedaron implementados en Sesión 20. Ver §7b/§7c |
+| Sesión 22 | **Migraciones v2 + v3 APLICADAS en producción** (por Claude IA vía MCP, con aprobación de Nico) — schema real verificado contra el código (`tsc`/`eslint`/`vite build` limpios; RPC self-service, trigger de número y columnas nuevas presentes). **Mail Resend en pausa:** `send-reserva-email` queda escrita, sin deployar, disparo fire-and-forget (no bloquea la reserva) → movido a P1. Único pendiente para reemplazar §7: la **prueba visual del flujo self-service** por Yesica/Nico. Ver §7c |
 
 ### ✅ Infraestructura lista
 
@@ -152,8 +158,14 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 ### 🔴 P0 — Bloqueante para operar con usuarios reales / cobrar de verdad
 
+- [ ] **Prueba visual real del flujo de reserva self-service de vivenciales (v3)** — Sesión 22:
+  las 2 migraciones (v2 + v3) ya están **APLICADAS en producción**; `tsc`/`eslint`/`vite build`
+  limpios y el schema real verificado (RPC `academy_reserve_vivencial_self`, trigger de número,
+  columnas nuevas). **Falta el único paso que reemplaza el modelo WhatsApp de §7:** que Yesica/Nico
+  recorran el flujo como usuario real — reservar (elegir punto de salida) → ver número de reserva +
+  datos bancarios en la pantalla de confirmación → "Informar transferencia" → aprobar el comprobante
+  en el backoffice. El mail de Resend NO es parte de este gate (queda pausado, ver P1).
 - [ ] **Confirmar Auth para el dominio nuevo** (Sesión 18): Supabase Auth → Site URL = `https://academy.travexa.com.ar`; Redirect URLs incluye `https://academy.travexa.com.ar/**` (mínimo `/auth/callback` y `/actualizar-contrasena`); Google Cloud → OAuth Client → Authorized JavaScript origins incluye `https://academy.travexa.com.ar`. El código ya arma el `redirectTo` con `window.location.origin`, así que del lado del código está listo — falta el allowlist de los dashboards. **Verificar login end-to-end (email + Google) desde el dominio nuevo antes de dar el cutover por cerrado.**
-- [ ] **Revisión visual end-to-end del flujo de vivenciales por WhatsApp** — deployado y verificado a nivel de código/DB hace varias sesiones, pero nadie lo probó todavía como usuario real (botón "Quiero anotarme" → WhatsApp, alta + carga de pago en backoffice, subida de comprobante del viajero).
 - [ ] `MP_ACCESS_TOKEN` cargado en Supabase Secrets — bloquea el cobro real de **cursos** (vivenciales no lo necesitan).
 - [ ] Reactivar "Confirm email" en Supabase Auth (protección contra account-takeover en el auto-linking Google↔password).
 - [ ] SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real.
@@ -162,6 +174,9 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 ### 🟡 P1 — Producto: pilares incompletos o features a medio construir
 
+- [ ] **Configurar Resend para el mail de reserva (Sesión 22, en pausa):** verificar dominio en Resend, generar API key, cargar los secrets `RESEND_API_KEY` + `RESERVA_FROM` en Supabase y deployar la edge function `send-reserva-email` (ya escrita, sin deployar). Ya NO bloquea nada: el flujo de reserva funciona sin el mail (disparo fire-and-forget).
+- [ ] **Confirmar que el mail de reserva sale bien una vez deployado (Sesión 22):** probar que llega el mail de "reserva confirmada" con número, resumen, monto y datos bancarios, después de configurar Resend.
+- [ ] **DNI del cliente en perfil (Sesión 21):** columna `academy_profiles.dni` (en la migración v3) + campo obligatorio en el onboarding + lectura en backoffice/PDF. Reemplaza el "—" que salía antes en la liquidación. Ya implementado en código; una vez aplicada la migración v3, los usuarios nuevos lo cargan en el onboarding. Los usuarios **ya existentes** no tienen DNI hasta que completen/reediten el perfil → evaluar pedirlo retroactivamente (banner o gate suave) si Yesica lo necesita para liquidaciones viejas.
 - [ ] Testimonios reales para `TestimonialsSection` de la Home (hoy `SHOW_TESTIMONIALS = false`, activar cuando existan reseñas).
 - [ ] Ajustes finales de la Home (checklist de Sesión 14, ver §9).
 - [ ] Mergear Fase 2 del hero animado (`feat/plane-takeoff-hero`) a `main`.
@@ -183,7 +198,6 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 - [ ] **Dar de baja `academy_subscriptions`** (tabla) + edge functions `create-subscription-academy` y `confirm-subscription-academy` — sin uso, leftover del modelo pre-pivote. Escribir la migración de baja como propuesta (ver principio "DB se propone"), no aplicar directo.
 - [ ] Sacar el valor `'suscripcion'` del enum de `academy_payments.tipo` una vez confirmado que no se usa.
-- [ ] Actualizar prototipo `academy_vivencial.html` para reflejar el CTA de WhatsApp (hoy desactualizado respecto a producción).
 
 ### 🔵 P3 — Más adelante / infraestructura de fondo
 
@@ -192,6 +206,10 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 ---
 
 ## VIVENCIALES — CIERRE DE VENTA POR WHATSAPP (Sesión 15)
+
+> ⚠️ **Posible reemplazo en curso:** la Sesión 20 propone automatizar la reserva desde la
+> plataforma (ver **§7c**), lo que reemplazaría esta sección. Se mantiene como modelo vigente
+> hasta que Yesica/Nico prueben y confirmen v3. Mientras tanto, esto es lo que describe producción.
 
 ### Contexto y decisión de negocio
 
@@ -234,6 +252,151 @@ Travexa no factura vivenciales — son montos altos (viajes reales) y, a diferen
 ### Bug preexistente encontrado y corregido en esta sesión (no introducido en ella)
 
 En `mp-webhook-academy`, la rama de pagos de curso escribía el status crudo de Mercado Pago en inglés directo en la columna `estado` (CHECK constraint solo en español) — el `update` fallaba en silencio. Corregido con un mapeo compartido (`estadoMap`/`toEstado()`) + logging de errores. No afectó datos reales.
+
+---
+
+## VIVENCIALES v2 — DESTINO, PRECIO Y FILTROS (Sesión 19)
+
+Iteración sobre el feedback de Yesica al wizard de creación de vivenciales y a la página pública. **No cambia el modelo de cobro** (los vivenciales siguen sin cobrarse en la plataforma — §7). Toca ubicación, salida/alojamiento múltiples, desglose de precio y filtros públicos.
+
+### Qué se hizo
+
+**Backoffice — `VivencialWizard` (`/admin/vivenciales`):**
+- **País:** dropdown de lista fija (`PAISES` en `types/index.ts`), no input libre.
+- **Localidades:** multi-select tipo tags (Enter/coma para agregar) — alimentan el filtro público por localidad.
+- **Puntos de salida:** repetible (`PuntosSalidaBuilder`), cada fila `{ ciudad, detalle_encuentro }` (renombrado desde `punto_embarque` en Sesión 21). `detalle_encuentro` es texto libre y **cubre embarque + punto de encuentro** (no hay campo separado).
+- **Hoteles:** repetible (`HotelesBuilder`), cada fila `{ nombre, noches, link, foto_url }`. La foto sube al bucket existente `academy-media` (no se creó bucket nuevo).
+- **Incluye / No incluye:** ya eran texto enriquecido (`RichTextArea` + `lib/richText`) desde antes — se mantiene. Secciones vacías no se renderizan en público.
+- **Precio:** 3 inputs (base USD, impuestos USD monto fijo, gastos admin %) con **desglose en vivo** (PRECIO grande → + Impuestos → + Gastos administrativos → Total final a pagar). El total se calcula al guardar y se persiste en `precio_usd`/`precio_ars` (que pasan a ser el TOTAL FINAL): `total = base + impuestos + (base + impuestos) * gastos_admin_pct / 100`. Sin trigger de DB.
+- **Tipo de traslado / Régimen de alimentos:** checkboxes multi-select. Alimentan los filtros públicos.
+- **Fix de moneda:** `format.ts` unificado — `formatArs` ahora lleva espacio (`$ 1.234`) y se agregó `formatUsd` (`US$ 1.234`). Se eliminó el hack de `US$` + número crudo que generaba el símbolo pegado en el desglose.
+
+**Público — listado (`/vivencial`):**
+- Filtro por **tipo de traslado** (reemplaza al de **duración**, eliminado del todo).
+- **Hover sobre la card** → preview con la descripción del viaje (solo si hay descripción real).
+- **Cuota mensual estimada** en la card: `total_final / meses restantes hasta la salida` (`lib/vivencial.ts`). Si falta <1 mes o la fecha pasó → "Pago único". **Es informativa**, no un plan de pago (los vivenciales no se cobran en la plataforma).
+
+**Público — detalle (`/vivencial/:slug`):**
+- Bloque de **datos clave agrandado** (fechas, duración, cupos, sale desde) con soporte de **múltiples ciudades de salida**.
+- **Sección de alojamiento**: lista todos los hoteles con noches, link y foto.
+- **Traslado / régimen** como tags visuales con íconos.
+- **Cuota estimada informativa** en la tarjeta CTA.
+- Incluye/No incluye: texto libre con negrita, oculto si no hay contenido (ya estaba).
+
+**Prototipo:** `academy_vivencial.html` actualizado — CTA de pago viejo (self-service) reemplazado por "Quiero anotarme" → WhatsApp, + desglose de precio, cuota estimada, hoteles, tags de traslado/régimen, salidas múltiples y filtro de traslado. (Cierra el ítem de backlog P2 que lo marcaba desactualizado.)
+
+### Cambios de schema (PROPUESTOS — NO aplicados)
+
+Migración `supabase/migrations/20260712000000_vivencial_v2_fields.sql`, 100% aditiva. **No corrida** (regla "DB se propone"). Hasta que Nico la aplique, el wizard v2 falla al guardar (escribe columnas que aún no existen) — esperado.
+
+Columnas nuevas en `academy_courses`: `vivencial_localidades text[]` (+GIN), `vivencial_puntos_salida jsonb`, `vivencial_hoteles jsonb`, `vivencial_precio_base_usd/ars`, `vivencial_impuestos_usd/ars`, `vivencial_gastos_admin_pct`, `vivencial_tipo_traslado text[]` (+GIN), `vivencial_regimen_alimentos text[]`. `vivencial_pais` ya existía (se reutiliza).
+
+Columnas **deprecadas, no borradas** (se siguen poblando con la 1ª entrada para compatibilidad): `vivencial_ciudad_salida`, `vivencial_punto_encuentro`, `vivencial_hotel`.
+
+### Decisiones de diseño — CONFIRMADAS por Nico (Sesión 21)
+
+1. **"Punto de encuentro" no es campo separado — CONFIRMADO.** Se resuelve con el texto libre de cada punto dentro de `vivencial_puntos_salida`. El campo se **renombró de `punto_embarque` a `detalle_encuentro`** (Sesión 21) para reflejar que cubre a la vez el punto de embarque y las instrucciones de encuentro (ej: "Terminal 2, mostrador Aerolíneas Argentinas, 3hs antes"). La columna legacy `vivencial_punto_encuentro` queda intacta.
+2. **Se reutilizan `incluye` / `no_incluye` — CONFIRMADO.** No se crean `vivencial_incluye_texto` / `vivencial_no_incluye_texto`: esas columnas ya son `text` y ya se usan como texto enriquecido, columnas nuevas serían un duplicado.
+
+### Pendiente de verificación (regla de ecosistema)
+
+La migración v2 ya está **aplicada** (Sesión 22) y todo pasa `tsc -b`, `eslint` y `vite build`
+limpios, pero **falta la prueba visual real de Yesica o Nico** del wizard v2 + detalle público. No dar por cerrado.
+
+---
+
+## VIVENCIALES v3 — RESERVA AUTOMÁTICA DESDE LA PLATAFORMA (Sesión 20-22)
+
+> ⚠️ **DECISIÓN DE NEGOCIO A CONFIRMAR por Yesica/Nico.** Este flujo **reemplaza** el
+> "cierre de venta por WhatsApp" documentado en **§7**. §7 **NO se borró** a propósito:
+> queda como el modelo vigente hasta que Yesica/Nico prueben v3 y confirmen el cambio.
+> **Estado (Sesión 22):** las migraciones v2 + v3 están **APLICADAS en producción** y el
+> código pasa `tsc`/`eslint`/`vite build` contra el schema real. Lo único que falta para
+> reemplazar §7 es la **prueba visual real del flujo self-service** (regla de ecosistema).
+
+### Qué cambia (y qué NO)
+
+- **Cambia:** el usuario **reserva solo desde la plataforma**. El botón del vivencial deja
+  de ser "Quiero anotarme" → WhatsApp y pasa a ser **"Reservar mi lugar"** → elige punto de
+  salida → confirma → pantalla de confirmación in-app con **número de reserva**, resumen del
+  viaje, monto total y **datos bancarios** para transferir. La comunicación de esos datos se
+  automatiza (antes Yesica los pasaba por chat).
+- **NO cambia:** **Travexa sigue sin cobrar vivenciales con Mercado Pago.** El pago sigue
+  siendo transferencia/depósito bancario coordinado manualmente por Yesica, sobre el **mismo
+  ledger `academy_vivencial_payments`** y el mismo trigger de recálculo de saldo. Yesica
+  sigue aprobando/rechazando comprobantes desde el backoffice, sin cambios en esa parte.
+
+### Alcance implementado (frontend, contra migración PROPUESTA)
+
+1. **Gate de login en todo comprar/reservar** (no solo vivenciales): cualquier acción que
+   exige sesión manda a `/login?redirect=<url actual>` y vuelve al mismo lugar tras loguearse.
+   Helpers `loginRedirect()` / `safeRedirectPath()` en `lib/utils.ts`. El destino se preserva
+   a través del round-trip de Google OAuth vía `sessionStorage` (`POST_LOGIN_REDIRECT_KEY`),
+   recuperado en `AuthCallback` (`App.tsx`). Corregido en `CourseDetail` (cursos) y en el CTA
+   de vivenciales. Las cards del catálogo solo navegan al detalle (no compran) — sin gate.
+2. **Flujo de reserva** (`VivencialPagoCTA` + `PuntoSalidaModal`): login gate → elegir punto
+   de salida (de `vivencial_puntos_salida`, con fallback a `vivencial_ciudad_salida`) → RPC
+   `academy_reserve_vivencial_self` (crea enrollment, descuenta cupo, guarda punto elegido,
+   trigger asigna número) → redirige a `/reserva/:slug`.
+3. **Pantalla de confirmación** (`ReservaConfirmada`, ruta `/reserva/:slug`): celebración,
+   número de reserva, resumen, monto total y datos bancarios de `travexa_datos_transferencia`
+   (setting que estaba sin uso — ahora se usa; `normalizeCuentas()` soporta 1 o varias cuentas).
+4. **Perfil + `/viaje/:slug`**: barra **Total / Pagado / Saldo** (`PagoProgressBar`), número
+   de reserva, y botón **"Informar transferencia"** (antes "Subir comprobante") con formulario
+   enriquecido: método (Depósito/Transferencia), depositante, DNI, fecha, N° de cupón, selector
+   de cuenta destino (si hay más de una) e importe + comprobante. Entra a
+   `academy_vivencial_payments` con `estado='pendiente'`, igual que antes.
+5. **Backoffice — vista por viajero** (`VivencialInscriptoRow`): header con nombre, número de
+   reserva, estado e ícono de **Liquidación PDF**; barra Pagado/Total + Saldo; 3 columnas
+   (Detalles del Paquete, Precios [comisiones **N/A** en vivenciales de Academy], Datos del
+   Cliente). El modal "Cargar pago" existente se mantiene, con resumen Total/Cobrado/Saldo.
+
+### Cambios de schema (APLICADOS en producción — Sesión 22)
+
+Migración `supabase/migrations/20260712010000_vivencial_reserva_self_service.sql`, 100% aditiva,
+**aplicada** (junto con la v2 `20260712000000`). Verificado contra el schema real: el RPC, el
+trigger y las columnas existen; el código compila y buildea contra prod.
+
+- `academy_enrollments.numero_reserva text` (UNIQUE parcial) — formato `VIV-{año}-{consecutivo}`,
+  asignado por trigger `academy_assign_numero_reserva` a toda inscripción de vivencial (cubre
+  self-service, alta manual de Yesica y fallback). Secuencia global `academy_reserva_seq`.
+- `academy_enrollments.punto_salida_elegido text` — punto de salida que eligió el viajero.
+- RPC `academy_reserve_vivencial_self(p_course_id, p_punto_salida)` — clon de
+  `academy_reserve_vivencial_spot` que además persiste el punto elegido.
+- `academy_vivencial_payments`: `metodo`, `depositante_nombre`, `depositante_dni`,
+  `cupon_numero`, `cuenta_destino` (todas nullable).
+- `academy_profiles.dni text` — DNI del cliente capturado en el onboarding (Sesión 21).
+
+### Mail y PDF — approach implementado; mail EN PAUSA (Sesión 22)
+
+- **Punto 4 — mail de "reserva confirmada" (Resend, EN PAUSA):** edge function
+  `supabase/functions/send-reserva-email/index.ts` (Resend API HTTP, sin SMTP) queda **escrita
+  pero sin deployar** por decisión de Nico (Sesión 22). Se dispara
+  fire-and-forget desde el cliente (`sendReservaEmail()`) al reservar — nunca rompe la reserva.
+  **Falta para que envíe de verdad:** setear secrets `RESEND_API_KEY` y `RESERVA_FROM` en
+  Supabase + dominio verificado en Resend + **deployar la function** (lo hace Nico). Sin
+  `RESEND_API_KEY`, la function responde `{sent:false}` sin error. Esto resuelve, para el caso
+  transaccional, el ítem P0 de "SMTP propio".
+- **Punto 6 — liquidación PDF (client-side, confirmado):** `lib/liquidacionPdf.ts`
+  (`jsPDF` + `html2canvas`, deps agregadas) genera el PDF con los bloques del formato de
+  referencia (Operador/Proveedor, Pasajero Responsable, Fechas y Condiciones, Detalle de
+  Pasajeros, Servicios Contratados, Cuenta de la Reserva, Detalle de Pagos Recibidos, Total
+  Pagado/Resta Pagar, términos de cancelación). Descargable desde el backoffice (ícono en
+  `VivencialInscriptoRow`) y desde el viaje del viajero (`LiquidacionButton`). No importa código
+  de `travexa-catalogo` (que usa el mismo enfoque), es una implementación propia de Academy.
+  El **DNI del cliente** ya se lee desde `academy_profiles.dni` (capturado en el onboarding,
+  Sesión 21) — reemplaza el "—" que salía antes.
+
+### Decisiones — estado (Sesión 21)
+
+1. **La decisión de negocio en sí** (reserva automática vs. WhatsApp) — **pendiente** de la prueba
+   visual real de Yesica/Nico. Es lo único que falta para reemplazar §7.
+2. `numero_reserva`: secuencia global con año informativo (no reinicia por año) — CONFIRMADO.
+3. `travexa_datos_transferencia`: **CONFIRMADO que alcanza con 1 sola cuenta** — no se agrega
+   soporte de array (el código igual lo tolera sin costo).
+4. **DNI del cliente — RESUELTO:** se captura en el onboarding (obligatorio, paso 1) hacia
+   `academy_profiles.dni` y se lee desde ahí en backoffice y PDF. "Observaciones" del cliente
+   sigue sin existir en el schema (fuera de alcance por ahora).
 
 ---
 
@@ -438,7 +601,7 @@ IBM Plex Mono 400 → badges, datos, timestamps
 profiles          → id, email, nombre, apellido, avatar_url, telefono (compartido con Core)
 academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referral_code,
                     puntos, creditos, nivel, tipo_cuenta,
-                    fecha_nacimiento, genero, tipo_vendedor, anos_experiencia,
+                    fecha_nacimiento, dni (Sesión 21, migración v3 sin aplicar), genero, tipo_vendedor, anos_experiencia,
                     destinos_principales (array), onboarding_completo (bool, default false),
                     streak_actual, streak_maximo, total_cursos_completados, total_vivenciales
 ```
@@ -461,12 +624,19 @@ academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
                         live_date, live_url, live_duration_minutes, fotos (JSONB),
                         incluye (JSONB), no_incluye (JSONB),
                         vivencial_fecha_salida, vivencial_fecha_regreso,
-                        vivencial_ciudad_salida, vivencial_punto_encuentro,
-                        vivencial_cupo_maximo, vivencial_cupo_disponible,
-                        vivencial_itinerario (JSONB), vivencial_hotel,
+                        vivencial_pais, vivencial_region, vivencial_cupo_maximo, vivencial_cupo_disponible,
+                        vivencial_itinerario (JSONB),
+                        incluye (TEXT, texto enriquecido), no_incluye (TEXT, texto enriquecido),
                         vivencial_precio_seña_ars, vivencial_precio_seña_usd (referencia interna),
                         vivencial_precio_cuotas_ars, vivencial_precio_cuotas_usd (sin uso en UI),
-                        vivencial_whatsapp_url (link al grupo de WhatsApp del viaje)
+                        vivencial_whatsapp_url (link al grupo de WhatsApp del viaje),
+                        -- Sesión 19 (PROPUESTAS, ver §7b — migración sin aplicar):
+                        vivencial_localidades (TEXT[]), vivencial_puntos_salida (JSONB {ciudad,detalle_encuentro}),
+                        vivencial_hoteles (JSONB {nombre,noches,link,foto_url}),
+                        vivencial_precio_base_usd/ars, vivencial_impuestos_usd/ars, vivencial_gastos_admin_pct,
+                        vivencial_tipo_traslado (TEXT[]), vivencial_regimen_alimentos (TEXT[]),
+                        -- precio_usd/precio_ars = TOTAL FINAL (base+impuestos+gastos admin, calculado en el wizard)
+                        -- DEPRECADAS (no borrar): vivencial_ciudad_salida, vivencial_punto_encuentro, vivencial_hotel
 academy_modules       → course_id, titulo, orden
 academy_lessons       → module_id, course_id, titulo, video_url, duracion_segundos,
                         orden, es_preview (bool), recursos (JSONB),

@@ -102,6 +102,7 @@ export interface AcademyProfile {
   // gamificación económica + datos del asesor
   creditos: number
   fecha_nacimiento: string | null
+  dni: string | null                        // capturado en onboarding (migración PROPUESTA)
   genero: string | null
   tipo_vendedor: string | null
   anos_experiencia: string | null
@@ -189,6 +190,43 @@ export interface ItinerarioDia {
   titulo: string
   descripcion: string
 }
+
+// ── Punto de salida (vivencial) ──
+// `detalle_encuentro` es texto libre que cubre a la vez el punto de embarque y
+// las instrucciones de encuentro (ej: "Terminal 2, mostrador Aerolíneas
+// Argentinas, 3hs antes del vuelo"). Absorbe el viejo "punto de encuentro": no
+// hay campo separado. `id` es solo client-side (key estable en el builder), no
+// se persiste en el JSONB.
+export interface VivencialPuntoSalida {
+  ciudad: string
+  detalle_encuentro: string
+  id?: string
+}
+
+// ── Hotel del vivencial ──
+// `id` es solo client-side (key estable en el builder), no se persiste.
+export interface VivencialHotel {
+  nombre: string
+  noches: number
+  link: string
+  foto_url: string | null
+  id?: string
+}
+
+// Opciones fijas de los filtros de vivencial (alimentan backoffice y público).
+export const TIPO_TRASLADO_OPTIONS = ['Bus', 'Aéreo', 'Navegación', 'Crucero'] as const
+export const REGIMEN_ALIMENTOS_OPTIONS = [
+  'Desayuno', 'Almuerzo', 'Merienda', 'Cena', 'Media Pensión', 'Pensión Completa', 'All Inclusive',
+] as const
+
+// Lista fija de países para el dropdown del wizard (no input libre).
+export const PAISES = [
+  'Argentina', 'Uruguay', 'Chile', 'Brasil', 'Paraguay', 'Bolivia', 'Perú', 'Ecuador',
+  'Colombia', 'Venezuela', 'México', 'Estados Unidos', 'Canadá', 'Cuba', 'República Dominicana',
+  'Panamá', 'Costa Rica', 'España', 'Portugal', 'Francia', 'Italia', 'Reino Unido', 'Alemania',
+  'Grecia', 'Turquía', 'Egipto', 'Marruecos', 'Sudáfrica', 'Emiratos Árabes Unidos', 'Tailandia',
+  'Japón', 'China', 'India', 'Indonesia', 'Australia', 'Nueva Zelanda',
+] as const
 
 // ── Perfil resumido embebido en joins (reseñas, comentarios) ──
 export interface ProfileMini {
@@ -293,14 +331,26 @@ export interface Course {
   // vivencial
   vivencial_fecha_salida: string | null
   vivencial_fecha_regreso: string | null
-  vivencial_ciudad_salida: string | null
+  vivencial_ciudad_salida: string | null   // DEPRECADA — usar vivencial_puntos_salida
   vivencial_pais: string | null
   vivencial_region: string | null
-  vivencial_punto_encuentro: string | null
+  vivencial_localidades: string[]           // filtro público por localidad
+  vivencial_punto_encuentro: string | null  // DEPRECADA — absorbido en detalle_encuentro
   vivencial_cupo_maximo: number | null
   vivencial_cupo_disponible: number | null
   vivencial_itinerario: ItinerarioDia[]
-  vivencial_hotel: string | null
+  vivencial_hotel: string | null            // DEPRECADA — usar vivencial_hoteles
+  vivencial_puntos_salida: VivencialPuntoSalida[]
+  vivencial_hoteles: VivencialHotel[]
+  // Desglose de precio. precio_usd/precio_ars pasan a ser el TOTAL FINAL:
+  // total = base + impuestos + (base + impuestos) * gastos_admin_pct / 100
+  vivencial_precio_base_usd: number | null
+  vivencial_precio_base_ars: number | null
+  vivencial_impuestos_usd: number | null    // monto fijo
+  vivencial_impuestos_ars: number | null    // monto fijo
+  vivencial_gastos_admin_pct: number | null // porcentaje, ej. 2.5
+  vivencial_tipo_traslado: string[]         // Bus | Aéreo | Navegación | Crucero
+  vivencial_regimen_alimentos: string[]
   vivencial_precio_seña_ars: number | null
   vivencial_precio_seña_usd: number | null
   vivencial_precio_cuotas_ars: number | null
@@ -399,6 +449,9 @@ export interface Enrollment {
   monto_pendiente_ars: number | null
   pago_completado: boolean
   fecha_limite_pago: string | null
+  // Reserva automática v3 (migración PROPUESTA 20260712010000, ver §7c):
+  numero_reserva: string | null        // VIV-{año}-{consecutivo}, lo pone un trigger
+  punto_salida_elegido: string | null  // punto de salida/embarque que eligió el viajero
   // joined
   course?: Course
 }
@@ -406,6 +459,9 @@ export interface Enrollment {
 // ── academy_vivencial_payments ──
 export type VivencialPaymentEstado = 'pendiente' | 'aprobado' | 'rechazado'
 export type VivencialPaymentTipo = 'sena' | 'transferencia'
+
+// Método real del pago informado (distinto de `tipo`, que es seña vs saldo).
+export type MetodoTransferencia = 'deposito' | 'transferencia'
 
 export interface VivencialPayment {
   id: string
@@ -422,6 +478,23 @@ export interface VivencialPayment {
   revisado_at: string | null
   created_at: string
   updated_at: string
+  // Datos del formulario "Informar transferencia" (migración PROPUESTA 20260712010000).
+  // Nullable: los pagos que carga Yesica desde el backoffice pueden no traerlos.
+  metodo: MetodoTransferencia | null
+  depositante_nombre: string | null
+  depositante_dni: string | null
+  cupon_numero: string | null
+  cuenta_destino: string | null
+}
+
+// ── travexa_datos_transferencia (setting key/value) ──
+// Hoy es un único objeto. Si en el futuro se guarda un array, el form muestra un
+// selector de cuenta destino. `normalizeCuentas()` (lib/vivencial) unifica ambos shapes.
+export interface CuentaTransferencia {
+  titular: string
+  banco: string
+  cbu: string
+  alias: string
 }
 
 // ── academy_lesson_progress ──
@@ -574,7 +647,10 @@ export interface AdminSettings {
 
 // Inscripción con el perfil del alumno resuelto (para la tabla de inscriptos)
 export interface EnrollmentWithProfile extends Enrollment {
-  profile?: Pick<Profile, 'id' | 'nombre' | 'apellido' | 'email' | 'avatar_url'>
+  profile?: Pick<Profile, 'id' | 'nombre' | 'apellido' | 'email' | 'avatar_url' | 'telefono'>
+  // Datos del asesor (academy_profiles) para la vista por viajero del backoffice.
+  fecha_nacimiento?: string | null
+  dni?: string | null
 }
 
 // KPIs del panel de Resumen

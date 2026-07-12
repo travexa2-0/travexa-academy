@@ -5,6 +5,7 @@ import { es } from 'date-fns/locale'
 import { useNavigate } from 'react-router-dom'
 import type { Course } from '@/types'
 import { cupoEstado } from '@/lib/cupo'
+import { cuotaEstimadaArs, mesesHastaSalida } from '@/lib/vivencial'
 
 interface Props {
   course: Course
@@ -48,6 +49,9 @@ export default function VivencialCard({ course: c, isWishlisted, onToggleWishlis
   const estado = cupoEstado(disp)
   const pct   = max > 0 ? Math.round((1 - disp / max) * 100) : 0
   const thumb = c.thumbnail_url ?? c.fotos?.[0] ?? ''
+  // Cuota mensual estimada (informativa — los vivenciales no se cobran en la plataforma).
+  const cuota = cuotaEstimadaArs(c)
+  const meses = mesesHastaSalida(c.vivencial_fecha_salida)
 
   return (
     <motion.article
@@ -82,6 +86,23 @@ export default function VivencialCard({ course: c, isWishlisted, onToggleWishlis
           className="absolute inset-0 z-[1] pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, rgba(6,13,20,.04) 0%, rgba(6,13,20,.22) 40%, rgba(6,13,20,.88) 100%)' }}
         />
+
+        {/* Hover preview — descripción del viaje (solo si hay descripción real) */}
+        {c.descripcion && (
+          <div
+            className="absolute inset-0 z-[5] flex items-end p-[14px] opacity-0 group-hover:opacity-100 transition-opacity duration-[280ms] pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(6,13,20,.96) 0%, rgba(6,13,20,.86) 55%, rgba(6,13,20,.4) 100%)' }}
+          >
+            <p
+              style={{
+                fontSize: '.82rem', lineHeight: 1.55, color: 'var(--text-2)',
+                display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              }}
+            >
+              {c.descripcion}
+            </p>
+          </div>
+        )}
 
         {/* Badges — top left */}
         <div className="absolute top-[9px] left-[9px] z-[4] flex flex-wrap items-start gap-[5px]" style={{ right: 36 }}>
@@ -182,6 +203,29 @@ export default function VivencialCard({ course: c, isWishlisted, onToggleWishlis
             </div>
           )}
         </div>
+
+        {/* Cuota mensual estimada (informativa) */}
+        {cuota != null ? (
+          <div
+            className="flex items-baseline justify-between"
+            style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed var(--line)' }}
+            title="Valor estimado e informativo. Los vivenciales se coordinan y pagan por WhatsApp, no se cobran dentro de Travexa."
+          >
+            <span className="font-mono uppercase" style={{ fontSize: 9, color: 'var(--text-3)', letterSpacing: '.05em' }}>
+              ≈ {meses} cuotas est.
+            </span>
+            <span className="font-display font-bold" style={{ fontSize: '.9rem', color: 'var(--neon)' }}>
+              {fmtARS(cuota)}<span className="font-mono" style={{ fontSize: 9, color: 'var(--text-3)', fontWeight: 400 }}>/mes</span>
+            </span>
+          </div>
+        ) : c.precio_ars ? (
+          <div
+            className="font-mono uppercase"
+            style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed var(--line)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '.05em' }}
+          >
+            Pago único · valor informativo
+          </div>
+        ) : null}
 
         {/* Cupo bar */}
         {max > 0 && (

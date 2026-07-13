@@ -224,7 +224,6 @@ export default function VivencialInscriptoRow({ e, course }: { e: EnrollmentWith
     finally { setPdfBusy(false) }
   }
 
-  const destino = [course.vivencial_pais, ...(course.vivencial_localidades ?? [])].filter(Boolean).join(' · ') || '—'
   const gastosAdmin = course.vivencial_gastos_admin_pct != null ? `${course.vivencial_gastos_admin_pct}%` : '—'
 
   const doLiberar = async () => {
@@ -265,18 +264,8 @@ export default function VivencialInscriptoRow({ e, course }: { e: EnrollmentWith
             </div>
           </div>
 
-          {/* 3 columnas */}
+          {/* Columnas (sin "Detalles del paquete": ya estamos dentro del paquete) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 12 }}>
-            <InfoCard
-              title="Detalles del paquete"
-              rows={[
-                { label: 'Paquete', value: course.titulo },
-                { label: 'Destino', value: destino },
-                { label: 'Salida', value: formatDate(course.vivencial_fecha_salida) },
-                { label: 'Regreso', value: formatDate(course.vivencial_fecha_regreso) },
-                { label: 'Embarque', value: e.punto_salida_elegido ?? course.vivencial_ciudad_salida ?? '—' },
-              ]}
-            />
             <InfoCard
               title="Precios (comisiones N/A)"
               rows={[

@@ -46,9 +46,11 @@ export default function Home() {
         instructorsCount={instructorsCount}
         loading={isLoading}
       />
-      <ValuePropsGrid coursesCount={coursesCount} />
-      <FeaturedCoursesMarquee courses={formacion} loading={isLoading} />
+      {/* Orden de negocio: después de los números va Vivenciales (prioritario),
+          después Formación/cursos, y recién después "Qué encontrás". */}
       <VivencialHighlight vivencial={vivencial} loading={isLoading} />
+      <FeaturedCoursesMarquee courses={formacion} loading={isLoading} />
+      <ValuePropsGrid coursesCount={coursesCount} />
       <HowItWorks />
       <TestimonialsSection />
       <GamificationSection />

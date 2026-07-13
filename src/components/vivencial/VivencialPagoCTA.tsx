@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowRightLeft, CheckCircle2, Clock, Plane, CreditCard, CalendarClock } from 'lucide-react'
+import { ArrowRightLeft, CheckCircle2, Clock, Plane, CreditCard } from 'lucide-react'
 import { useVivencialPaymentsFor } from '@/hooks/useVivencialPago'
 import { loginRedirect } from '@/lib/utils'
 import TransferModal from './TransferModal'
@@ -126,12 +126,6 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
           <CreditCard className="h-4 w-4 shrink-0" style={{ color: 'var(--primary-l)' }} />
           <span>Pagás en partes cuando querés, siempre antes de viajar</span>
         </div>
-        {señaSugerida > 0 && (
-          <div className="flex items-center gap-2 py-2 px-3 rounded-xl text-xs" style={tagStyle}>
-            <CalendarClock className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--gold)' }} />
-            <span>Seña sugerida: {fmtARS(señaSugerida)}</span>
-          </div>
-        )}
       </div>
 
       <button

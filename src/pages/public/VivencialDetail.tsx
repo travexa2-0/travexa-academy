@@ -14,7 +14,8 @@ import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPa
 import { cupoEstado } from '@/lib/cupo'
 import { displayName } from '@/lib/utils'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
-import { cuotaEstimadaArs, mesesHastaSalida } from '@/lib/vivencial'
+import { mesesHastaSalida } from '@/lib/vivencial'
+import { formatUsd } from '@/pages/admin/format'
 import type { ItinerarioDia, Enrollment, VivencialPuntoSalida, VivencialHotel } from '@/types'
 
 // Ícono por tipo de traslado.
@@ -56,6 +57,15 @@ const TABS = [
 ] as const
 
 type TabKey = typeof TABS[number]['key']
+
+// Beneficios fijos de la card de reserva — iguales para todos los vivenciales.
+// NO se leen de la DB (antes se derivaban de `incluye`, texto libre editable que
+// mostraba datos de prueba). Hardcodeados a propósito.
+const CTA_FEATURES = [
+  'Viaja, disfruta y capacitate profesionalmente',
+  'Instructores con más de 15 años de experiencia',
+  'Convertite en profesional del destino y crecé con Travexa',
+]
 
 // ── FAQ data ──────────────────────────────────────────────────────
 
@@ -301,13 +311,14 @@ export default function VivencialDetail() {
   const salidaLabel = salidaCiudades.length ? salidaCiudades.join(' · ') : 'Por confirmar'
   const traslado = course.vivencial_tipo_traslado ?? []
   const regimen = course.vivencial_regimen_alimentos ?? []
-  const cuota = cuotaEstimadaArs(course)
+  // Cuota mensual sobre el SALDO (total − seña), repartido en los meses que faltan
+  // hasta la salida. Reusa mesesHastaSalida (misma lógica que la cuota del listado).
+  // Si falta <1 mes o no hay saldo → sin cuota → "Pago único".
   const mesesCuota = mesesHastaSalida(course.vivencial_fecha_salida)
-
-  const incluyeLines = richTextLines(course.incluye)
-  const ctaFeatures = incluyeLines.length > 0
-    ? incluyeLines.slice(0, 4)
-    : ['Cupos limitados por salida', 'Acompañamiento Travexa Academy', 'Certificado Travexa Academy', 'Reserva online, pago por transferencia']
+  const señaArs = course.vivencial_precio_seña_ars ?? 0
+  const totalArs = course.precio_ars ?? 0
+  const saldoArs = Math.max(0, totalArs - señaArs)
+  const cuotaSaldoArs = mesesCuota >= 1 && saldoArs > 0 ? Math.round(saldoArs / mesesCuota) : null
 
   function handleCopyLink() {
     navigator.clipboard.writeText(window.location.href).catch(() => {})
@@ -437,7 +448,7 @@ export default function VivencialDetail() {
         <div className="w-full max-w-[1200px] mx-auto px-[22px]">
           <div
             className="grid gap-11 items-start"
-            style={{ gridTemplateColumns: '1fr 300px', paddingTop: 30, paddingBottom: 80 }}
+            style={{ gridTemplateColumns: '1fr 360px', paddingTop: 30, paddingBottom: 80 }}
           >
             {/* ── LEFT COLUMN ── */}
             <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', padding: '30px 32px', minHeight: 480 }}>
@@ -799,7 +810,7 @@ export default function VivencialDetail() {
                 style={{
                   background: 'var(--bg-2)',
                   borderColor: 'var(--line-s)',
-                  padding: 24,
+                  padding: 30,
                   boxShadow: '0 0 0 1px rgba(245,243,236,.05), 0 4px 16px rgba(0,0,0,.32), 0 20px 56px rgba(0,0,0,.5), 0 0 72px rgba(0,229,200,.05)',
                 }}
               >
@@ -812,39 +823,32 @@ export default function VivencialDetail() {
                   Reserva tu lugar
                 </div>
 
-                {/* Price */}
+                {/* Price — la SEÑA es la cifra más grande y prominente de la card */}
                 {course.vivencial_precio_seña_ars && (
                   <>
-                    <div className="font-display font-bold" style={{ fontSize: '1.12rem', color: 'var(--text-1)' }}>
+                    <div className="font-display font-bold" style={{ fontSize: '2.4rem', lineHeight: 1.04, letterSpacing: '-.02em', color: 'var(--text-1)' }}>
                       {fmtARS(course.vivencial_precio_seña_ars)}
                     </div>
-                    <div style={{ fontSize: '.75rem', color: 'var(--text-3)', marginTop: 2, marginBottom: 4 }}>Seña para confirmar tu lugar</div>
+                    <div style={{ fontSize: '.84rem', color: 'var(--text-2)', marginTop: 6, marginBottom: 12, lineHeight: 1.5 }}>
+                      Seña para confirmar tu lugar
+                      {cuotaSaldoArs != null ? (
+                        <> + cuotas cómodas de: <strong style={{ color: 'var(--text-1)' }}>{fmtARS(cuotaSaldoArs)}</strong></>
+                      ) : (
+                        <> · <strong style={{ color: 'var(--text-1)' }}>Pago único</strong></>
+                      )}
+                    </div>
                   </>
                 )}
                 {course.precio_ars ? (
-                  <div style={{ fontSize: '.82rem', color: 'var(--text-3)', marginBottom: 14 }}>
+                  <div style={{ fontSize: '.82rem', color: 'var(--text-3)', marginBottom: course.precio_usd ? 4 : 14 }}>
                     Total del viaje: <strong style={{ color: 'var(--text-2)' }}>{fmtARS(course.precio_ars)}</strong>
                   </div>
                 ) : null}
-
-                {/* Cuota estimada — informativa, no es un plan de pago en la plataforma */}
-                {cuota != null && (
-                  <div
-                    className="rounded-[10px]"
-                    style={{ background: 'var(--neon-dim)', border: '1px solid rgba(0,229,200,.22)', padding: '10px 12px', marginBottom: 14 }}
-                    title="Valor estimado e informativo. Los vivenciales se coordinan y pagan por WhatsApp, no se cobran dentro de Travexa."
-                  >
-                    <div className="flex items-baseline justify-between">
-                      <span className="font-display font-bold" style={{ fontSize: '1.02rem', color: 'var(--neon)' }}>
-                        ≈ {fmtARS(cuota)}<span style={{ fontSize: '.72rem', color: 'var(--text-3)', fontWeight: 400 }}> /mes</span>
-                      </span>
-                      <span className="font-mono uppercase" style={{ fontSize: '9px', color: 'var(--text-3)', letterSpacing: '.05em' }}>{mesesCuota} cuotas est.</span>
-                    </div>
-                    <p style={{ fontSize: '.68rem', color: 'var(--text-3)', marginTop: 4, lineHeight: 1.4 }}>
-                      Estimado informativo. El pago se coordina por WhatsApp, no dentro de Travexa.
-                    </p>
+                {course.precio_usd ? (
+                  <div style={{ fontSize: '.82rem', color: 'var(--text-3)', marginBottom: 14 }}>
+                    O pagá en dólares: <strong style={{ color: 'var(--text-2)' }}>{formatUsd(course.precio_usd)}</strong>
                   </div>
-                )}
+                ) : null}
 
                 {/* Separator */}
                 <div style={{ height: 1, background: 'var(--line)', margin: '14px 0' }} />
@@ -875,11 +879,11 @@ export default function VivencialDetail() {
                 {/* Separator */}
                 <div style={{ height: 1, background: 'var(--line)', margin: '14px 0' }} />
 
-                {/* Feature list */}
-                {ctaFeatures.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 mb-2" style={{ fontSize: '.79rem', color: 'var(--text-2)' }}>
-                    <Check className="shrink-0" style={{ width: 14, height: 14, color: 'var(--neon)' }} />
-                    <span>{renderBold(f, `cta${i}`)}</span>
+                {/* Feature list — 3 items fijos, iguales para todos los vivenciales */}
+                {CTA_FEATURES.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2 mb-2.5" style={{ fontSize: '.82rem', color: 'var(--text-2)', lineHeight: 1.4 }}>
+                    <Check className="shrink-0 mt-[2px]" style={{ width: 15, height: 15, color: 'var(--neon)' }} />
+                    <span>{f}</span>
                   </div>
                 ))}
 

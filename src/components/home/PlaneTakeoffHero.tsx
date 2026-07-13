@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useInstructors } from '@/hooks/useInstructors'
 
 // Hero con avión que despega al hacer scroll (scroll-scrubbing frame a frame
 // sobre <canvas>, técnica Apple/Vercel). Layout de dos columnas: texto con
@@ -186,15 +187,21 @@ export default function PlaneTakeoffHero() {
     }
   }, [staticMode, isMobile, isCollapsed])
 
+  // Fotos reales de instructores activos (academy_instructors). Solo los que
+  // tienen avatar_url cargado: nada de siluetas genéricas que simulen personas
+  // reales (integridad de datos). Si ninguno tiene foto, se muestra solo el texto.
+  const { data: instructors = [] } = useInstructors()
+  const trustFaces = instructors.filter(i => i.avatar_url).slice(0, 5)
+
   const trustAvatars = (
     <div className="hero-trust">
-      <div className="avatar-stack" aria-hidden="true">
-        {[0, 1, 2, 3].map(i => (
-          <span className="av" key={i}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-          </span>
-        ))}
-      </div>
+      {trustFaces.length > 0 && (
+        <div className="avatar-stack">
+          {trustFaces.map(i => (
+            <img key={i.id} src={i.avatar_url!} alt={i.nombre} loading="lazy" />
+          ))}
+        </div>
+      )}
       <div className="trust-text">Formación hecha por y para <b>asesores de viajes</b><br />de toda Argentina</div>
     </div>
   )
@@ -223,7 +230,6 @@ export default function PlaneTakeoffHero() {
               Empezar gratis
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </Link>
-            <span className="hero-cta-sub">Sin tarjeta · Acceso inmediato</span>
           </div>
           {trustAvatars}
         </div>

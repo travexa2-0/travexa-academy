@@ -46,7 +46,9 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
     catch (e) { toast.error((e as Error).message) }
     finally { setConfirmDelete(false) }
   }
-  const openPreview = () => window.open(`/cursos/${c.slug}?preview=1`, '_blank')
+  // El preview debe abrir la página pública real según el tipo: los vivenciales
+  // viven en /vivencial/:slug (layout, tabs y card de reserva propios), no en /cursos.
+  const openPreview = () => window.open(`/${isViv ? 'vivencial' : 'cursos'}/${c.slug}?preview=1`, '_blank')
 
   const statusLabel = c.archivado ? 'Archivado' : c.publicado ? 'Publicado' : 'Borrador'
 

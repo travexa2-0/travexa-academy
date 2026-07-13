@@ -8,7 +8,6 @@ import HotelesBuilder from './HotelesBuilder'
 import { formatArs, formatNum, formatUsd } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useUpsertCourse, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
-import { useAdminSettings } from '@/hooks/admin/useAdminSettings'
 import {
   PAISES, TIPO_TRASLADO_OPTIONS, REGIMEN_ALIMENTOS_OPTIONS,
   type Course, type ItinerarioDia, type VivencialPuntoSalida, type VivencialHotel,
@@ -36,9 +35,12 @@ interface FormState {
   regimen_alimentos: string[]
   thumbnail_url: string | null
   fotos: string[]
-  // Desglose de precio (todo en USD; el ARS se deriva con el tipo de cambio).
+  // Desglose de precio: USD y ARS se cargan a mano, cada uno independiente
+  // (nadie deriva del otro con tipo de cambio). El % de gastos aplica a ambos.
   base_usd: string
+  base_ars: string
   impuestos_usd: string
+  impuestos_ars: string
   gastos_admin_pct: string
   // Seña: dos campos independientes (ninguno derivado del otro) — Yesica carga la
   // que le sirva en cada moneda; ambas son opcionales, solo de referencia.
@@ -79,7 +81,9 @@ function initialState(initial?: Course | null): FormState {
     thumbnail_url: initial?.thumbnail_url ?? null,
     fotos: initial?.fotos ?? [],
     base_usd: initial?.vivencial_precio_base_usd != null ? String(initial.vivencial_precio_base_usd) : '',
+    base_ars: initial?.vivencial_precio_base_ars != null ? String(initial.vivencial_precio_base_ars) : '',
     impuestos_usd: initial?.vivencial_impuestos_usd != null ? String(initial.vivencial_impuestos_usd) : '',
+    impuestos_ars: initial?.vivencial_impuestos_ars != null ? String(initial.vivencial_impuestos_ars) : '',
     gastos_admin_pct: initial?.vivencial_gastos_admin_pct != null ? String(initial.vivencial_gastos_admin_pct) : '',
     sena_usd: initial?.vivencial_precio_seña_usd != null ? String(initial.vivencial_precio_seña_usd) : '',
     sena_ars: initial?.vivencial_precio_seña_ars != null ? String(initial.vivencial_precio_seña_ars) : '',
@@ -107,9 +111,32 @@ function CheckGroup({ options, selected, onToggle }: { options: readonly string[
   )
 }
 
+type PriceCalc = {
+  pct: number
+  baseUsd: number; impUsd: number; gastosUsd: number; totalUsd: number
+  baseArs: number; impArs: number; gastosArs: number; totalArs: number
+}
+
+// Desglose en vivo, ambas monedas independientes. Reusado en el paso Precio y en
+// la preview de Revisión para que muestren exactamente lo mismo.
+function PriceBreakdown({ p }: { p: PriceCalc }) {
+  return (
+    <div className="price-breakdown">
+      <div className="pb-total-lbl">Precio base</div>
+      <div className="pb-total">{formatUsd(p.baseUsd)}</div>
+      <div className="pb-total-ars">{formatArs(p.baseArs)}</div>
+      <div className="pb-lines">
+        <div className="pb-line"><span><span className="pb-op">+</span> Impuestos</span><span>{formatUsd(p.impUsd)} · {formatArs(p.impArs)}</span></div>
+        <div className="pb-line"><span><span className="pb-op">+</span> Gastos administrativos ({p.pct || 0}%)</span><span>{formatUsd(p.gastosUsd)} · {formatArs(p.gastosArs)}</span></div>
+      </div>
+      <div className="pb-final"><span>Total final a pagar</span><span>{formatUsd(p.totalUsd)}</span></div>
+      <div className="pb-total-ars" style={{ textAlign: 'right' }}>{formatArs(p.totalArs)}</div>
+    </div>
+  )
+}
+
 export default function VivencialWizard({ open, onClose, initial, onSaved }: Props) {
   const { data: categories } = useCategories()
-  const { data: settings } = useAdminSettings()
   const upsert = useUpsertCourse()
   const fileRef = useRef<HTMLInputElement>(null)
   const [locDraft, setLocDraft] = useState('')
@@ -118,27 +145,51 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
   const [form, setForm] = useState<FormState>(() => initialState(initial))
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [confirmCancel, setConfirmCancel] = useState(false)
 
-  useEffect(() => { if (open) { setForm(initialState(initial)); setStep(1); setLocDraft('') } }, [open, initial])
+  // Snapshot serializado del estado original, para detectar cambios sin guardar (dirty).
+  const originalRef = useRef('')
+  // El formulario solo se re-inicializa en la transición cerrado→abierto, nunca en cada
+  // render: así ningún dato cargado (fotos incluidas) se pierde al navegar entre pasos ni
+  // cuando el padre re-renderiza con una nueva referencia de `initial`.
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      const init = initialState(initial)
+      setForm(init)
+      originalRef.current = JSON.stringify(init)
+      setStep(1)
+      setLocDraft('')
+      setConfirmCancel(false)
+    }
+    wasOpen.current = open
+  }, [open, initial])
+
+  const dirty = useMemo(() => JSON.stringify(form) !== originalRef.current, [form])
+  // Cerrar pidiendo confirmación solo si hay cambios sin guardar.
+  const requestClose = () => { if (dirty) setConfirmCancel(true); else onClose() }
+  const discardAndClose = () => { setConfirmCancel(false); onClose() }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm(f => ({ ...f, [key]: value }))
   const toggle = (key: 'tipo_traslado' | 'regimen_alimentos', value: string) =>
     setForm(f => ({ ...f, [key]: f[key].includes(value) ? f[key].filter(v => v !== value) : [...f[key], value] }))
-  const tc = settings?.tipo_cambio_usd_ars ?? 1450
-
-  // ── Cálculo del total: base + impuestos + (base+impuestos) * pct/100 ──
-  const price = useMemo(() => {
-    const baseUsd = Number(form.base_usd) || 0
-    const impUsd = Number(form.impuestos_usd) || 0
+  // ── Total por moneda, cada una desde su propio desglose (no hay conversión) ──
+  // total = base + impuestos + (base + impuestos) * pct/100
+  const price = useMemo<PriceCalc>(() => {
     const pct = Number(form.gastos_admin_pct) || 0
-    const subUsd = baseUsd + impUsd
-    const gastosUsd = subUsd * pct / 100
-    const totalUsd = subUsd + gastosUsd
-    return {
-      baseUsd, impUsd, pct, gastosUsd, totalUsd,
-      baseArs: baseUsd * tc, impArs: impUsd * tc, gastosArs: gastosUsd * tc, totalArs: totalUsd * tc,
+    const leg = (base: number, imp: number) => {
+      const sub = base + imp
+      const gastos = sub * pct / 100
+      return { base, imp, gastos, total: sub + gastos }
     }
-  }, [form.base_usd, form.impuestos_usd, form.gastos_admin_pct, tc])
+    const usd = leg(Number(form.base_usd) || 0, Number(form.impuestos_usd) || 0)
+    const ars = leg(Number(form.base_ars) || 0, Number(form.impuestos_ars) || 0)
+    return {
+      pct,
+      baseUsd: usd.base, impUsd: usd.imp, gastosUsd: usd.gastos, totalUsd: usd.total,
+      baseArs: ars.base, impArs: ars.imp, gastosArs: ars.gastos, totalArs: ars.total,
+    }
+  }, [form.base_usd, form.impuestos_usd, form.base_ars, form.impuestos_ars, form.gastos_admin_pct])
 
   // Inputs de moneda con separador de miles: el estado guarda solo dígitos (string),
   // la vista formatea con es-AR ("243.234"). El símbolo va aparte en el prefijo.
@@ -159,7 +210,8 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
       if (form.fecha_regreso < form.fecha_salida) return 'La fecha de regreso no puede ser anterior a la de salida.'
       if ((Number(form.cupo_maximo) || 0) <= 0) return 'El cupo debe ser mayor a 0.'
     }
-    if (s === 2 && (Number(form.base_usd) || 0) <= 0) return 'El precio base debe ser mayor a 0.'
+    // El precio base se puede cargar en USD, en ARS o en ambas; alcanza con una.
+    if (s === 2 && (Number(form.base_usd) || 0) <= 0 && (Number(form.base_ars) || 0) <= 0) return 'Cargá el precio base en al menos una moneda (USD o ARS).'
     return null
   }
   const next = () => { const err = validateStep(step); if (err) { toast.error(err); return } setStep(s => Math.min(STEPS.length, s + 1)) }
@@ -169,14 +221,22 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
     setUploading(true)
     try {
       const url = await uploadMedia(slugify(form.titulo) || 'nuevo', file, 'gallery')
-      set('fotos', [...form.fotos, url])
-      if (!form.thumbnail_url) set('thumbnail_url', url)
+      // La primera foto queda como portada (thumbnail) si aún no hay ninguna.
+      setForm(f => ({ ...f, fotos: [...f.fotos, url], thumbnail_url: f.thumbnail_url ?? url }))
       toast.success('Foto subida')
     } catch (e) { toast.error((e as Error).message) }
     finally { setUploading(false) }
   }
 
-  const finish = async () => {
+  // Quita una foto de la galería; si era la portada, promueve la primera restante.
+  const removeFoto = (url: string) => setForm(f => {
+    const fotos = f.fotos.filter(x => x !== url)
+    return { ...f, fotos, thumbnail_url: f.thumbnail_url === url ? (fotos[0] ?? null) : f.thumbnail_url }
+  })
+
+  // keepOpen=true → guardado incremental: persiste y rebasea el baseline de cambios
+  // sin cerrar el wizard (botón "Guardar cambios"). Sin opción → guarda y cierra.
+  const finish = async ({ keepOpen = false }: { keepOpen?: boolean } = {}) => {
     for (let s = 1; s <= 2; s++) { const err = validateStep(s); if (err) { toast.error(err); setStep(s); return } }
     setSaving(true)
     try {
@@ -235,20 +295,21 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
       const course = await upsert.mutateAsync(payload)
       toast.success(initial ? 'Vivencial actualizado' : 'Vivencial guardado como borrador')
       onSaved?.(course)
-      onClose()
+      if (keepOpen) originalRef.current = JSON.stringify(form) // rebasea el baseline: ya no hay cambios pendientes
+      else onClose()
     } catch (e) { toast.error((e as Error).message) }
     finally { setSaving(false) }
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={requestClose}>
       <div className="modal modal-wide">
         <div className="modal-head">
           <div>
             <h2>{initial ? 'Editar vivencial' : 'Nuevo vivencial'}</h2>
             <div className="sub">Se guarda como borrador. Nadie lo ve hasta que vos lo publiques.</div>
           </div>
-          <button className="modal-close" onClick={onClose}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg></button>
+          <button className="modal-close" onClick={requestClose}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg></button>
         </div>
 
         <div className="route-stepper">
@@ -339,10 +400,23 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
 
               <div className="field">
                 <label className="f-label">Fotos del destino</label>
-                <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) onPickFile(f) }} />
-                <div className="upload-zone" onClick={() => fileRef.current?.click()}>
+                <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = '' }} />
+                {form.fotos.length > 0 && (
+                  <div className="gallery-grid">
+                    {form.fotos.map((url, i) => (
+                      <div className="gallery-thumb" key={url}>
+                        <img src={url} alt={`Foto ${i + 1}`} loading="lazy" />
+                        {form.thumbnail_url === url && <span className="gallery-cover-badge">Portada</span>}
+                        <button type="button" className="gallery-thumb-remove" title="Quitar foto" onClick={() => removeFoto(url)}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="upload-zone" onClick={() => { if (!uploading) fileRef.current?.click() }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-                  <div className="u-title">{uploading ? 'Subiendo…' : 'Subir galería'}</div>
+                  <div className="u-title">{uploading ? 'Subiendo…' : form.fotos.length ? 'Agregar más fotos' : 'Subir galería'}</div>
                   <div className="u-sub">La primera que subas es la portada · {form.fotos.length} cargadas</div>
                 </div>
               </div>
@@ -352,25 +426,22 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
           {step === 2 && (
             <div className="wiz-step-panel active">
               <div className="wiz-step-title">Precio</div>
-              <div className="wiz-step-sub">Cargá base, impuestos y gastos administrativos: el total se calcula solo.</div>
-              <div className="field-row cols-3">
+              <div className="wiz-step-sub">Cargá base e impuestos en cada moneda (USD y ARS son independientes, ninguna se convierte de la otra) y el % de gastos: el total se calcula solo en las dos.</div>
+              <div className="field-row cols-2">
                 <div className="field"><label className="f-label">Precio base (USD)</label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.base_usd)} onChange={e => set('base_usd', onlyDigits(e.target.value))} /></div></div>
+                <div className="field"><label className="f-label">Precio base (ARS)</label><div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.base_ars)} onChange={e => set('base_ars', onlyDigits(e.target.value))} /></div></div>
+              </div>
+              <div className="field-row cols-2">
                 <div className="field"><label className="f-label">Impuestos (USD) <span className="opt">(monto fijo)</span></label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.impuestos_usd)} onChange={e => set('impuestos_usd', onlyDigits(e.target.value))} /></div></div>
+                <div className="field"><label className="f-label">Impuestos (ARS) <span className="opt">(monto fijo)</span></label><div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.impuestos_ars)} onChange={e => set('impuestos_ars', onlyDigits(e.target.value))} /></div></div>
+              </div>
+              <div className="field-row cols-2">
                 <div className="field"><label className="f-label">Gastos administrativos</label><div className="input-prefix-wrap"><span className="input-prefix">%</span><input className="input" type="number" step="0.1" value={form.gastos_admin_pct} onChange={e => set('gastos_admin_pct', e.target.value)} /></div></div>
+                <div className="field" />
               </div>
 
-              {/* Desglose en vivo */}
-              <div className="price-breakdown">
-                <div className="pb-total-lbl">Precio</div>
-                <div className="pb-total">{formatUsd(price.baseUsd)}</div>
-                <div className="pb-total-ars">≈ {formatArs(price.baseArs)} · TC {tc}</div>
-                <div className="pb-lines">
-                  <div className="pb-line"><span><span className="pb-op">+</span> Impuestos</span><span>{formatUsd(price.impUsd)}</span></div>
-                  <div className="pb-line"><span><span className="pb-op">+</span> Gastos administrativos ({price.pct || 0}%)</span><span>{formatUsd(price.gastosUsd)}</span></div>
-                </div>
-                <div className="pb-final"><span>Total final a pagar</span><span>{formatUsd(price.totalUsd)}</span></div>
-                <div className="pb-total-ars" style={{ textAlign: 'right' }}>≈ {formatArs(price.totalArs)}</div>
-              </div>
+              {/* Desglose en vivo — ambas monedas, independientes */}
+              <PriceBreakdown p={price} />
 
               <div className="field-row cols-2" style={{ marginTop: 18 }}>
                 <div className="field"><label className="f-label">Seña sugerida (USD) <span className="opt">(referencia)</span></label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.sena_usd)} onChange={e => set('sena_usd', onlyDigits(e.target.value))} /></div></div>
@@ -415,11 +486,12 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                   </div>
                 </div>
                 <div className="preview-body">
-                  <div className="stat-mini-grid" style={{ marginBottom: 0 }}>
-                    <div className="stat-mini"><div className="v">{formatUsd(price.totalUsd)}</div><div className="l">Total final{(() => { const s = [Number(form.sena_usd) > 0 ? formatUsd(Number(form.sena_usd)) : null, Number(form.sena_ars) > 0 ? formatArs(Number(form.sena_ars)) : null].filter(Boolean).join(' / '); return s ? ` · Seña ${s}` : '' })()}</div></div>
+                  <div className="stat-mini-grid" style={{ marginBottom: 14 }}>
+                    <div className="stat-mini"><div className="v">{formatArs(price.totalArs)}</div><div className="l">Total final (ARS){(() => { const s = Number(form.sena_ars) > 0 ? formatArs(Number(form.sena_ars)) : null; return s ? ` · Seña ${s}` : '' })()}</div></div>
                     <div className="stat-mini"><div className="v">{form.cupo_maximo || 0}</div><div className="l">Cupo máximo</div></div>
                     <div className="stat-mini"><div className="v">{form.puntos_salida.filter(p => p.ciudad.trim()).length}</div><div className="l">Puntos de salida</div></div>
                   </div>
+                  <PriceBreakdown p={price} />
                 </div>
               </div>
               <div className="draft-banner" style={{ marginTop: 18, marginBottom: 0 }}>
@@ -431,14 +503,33 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         </div>
 
         <div className="modal-foot">
+          {/* Navegación en el extremo izquierdo; Cancelar (destructivo) pegado a la acción principal. */}
           <button className="btn btn-ghost" onClick={prev} style={{ visibility: step === 1 ? 'hidden' : 'visible' }}>← Atrás</button>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            {initial && step < STEPS.length && (
+              <button className="btn btn-secondary" onClick={() => finish({ keepOpen: true })} disabled={saving || !dirty} title={dirty ? 'Guardar los cambios ya hechos' : 'No hay cambios sin guardar'}>
+                {saving ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            )}
+            <button className="btn btn-destructive" onClick={requestClose}>Cancelar</button>
             {step < STEPS.length
               ? <button className="btn btn-primary" onClick={next}>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M9 6l6 6-6 6" /></svg></button>
-              : <button className="btn btn-primary" onClick={finish} disabled={saving}>{saving ? 'Guardando…' : (initial ? 'Guardar cambios' : 'Guardar borrador')}</button>}
+              : <button className="btn btn-primary" onClick={() => finish()} disabled={saving || (!!initial && !dirty)}>{saving ? 'Guardando…' : (initial ? 'Guardar cambios' : 'Guardar borrador')}</button>}
           </div>
         </div>
+
+        {confirmCancel && (
+          <div className="wiz-confirm-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setConfirmCancel(false) }}>
+            <div className="wiz-confirm-card" role="dialog" aria-modal="true">
+              <h3>¿Seguro que querés cancelar?</h3>
+              <p>Se perderán los cambios no guardados de este vivencial.</p>
+              <div className="wiz-confirm-actions">
+                <button className="btn btn-secondary" onClick={() => setConfirmCancel(false)}>Volver al editor</button>
+                <button className="btn btn-destructive" onClick={discardAndClose}>Sí, descartar cambios</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Overlay>
   )

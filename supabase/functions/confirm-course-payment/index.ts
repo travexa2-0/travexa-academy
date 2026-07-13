@@ -1,5 +1,20 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { handleCors, jsonResponse } from '../_shared/cors.ts'
+
+// CORS helpers inlineados (función self-contained: sin dependencias relativas a
+// ../_shared, para que el deploy vía MCP no arrastre archivos fuera de la carpeta).
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+}
+function handleCors(req: Request): Response | null {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  return null
+}
+function jsonResponse(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+}
 
 const MP_API = 'https://api.mercadopago.com'
 

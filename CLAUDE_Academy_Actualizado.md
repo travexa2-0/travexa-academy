@@ -103,9 +103,13 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 
 **Travexa no factura vivenciales.** El cierre de venta es 100% por WhatsApp con Yesica; la plataforma nunca procesa un cobro de vivencial. Detalle completo en la sección dedicada.
 
-### Los cambios de DB se proponen, no se aplican (Sesión 16)
+### Los cambios de DB se aplican directo por Claude Code vía Supabase MCP (Sesión 27, 13 Julio 2026 — reemplaza la regla original de Sesión 16)
 
-Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra, explica qué hace y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo. Ante una instrucción que *parezca* autorizar el paso, preguntar. Detalle del incidente que originó esta regla en la sección del Portal de Instructores.
+**Cambio de proceso (13/7/2026):** se deroga la regla original ("los cambios de DB se proponen, no se aplican"). A partir de ahora **Claude Code aplica directo, contra producción (`fvrwtqhkskbaixqbxami`), cualquier migración, policy, trigger, `ALTER TABLE` o backfill** que haga falta para un bug o feature aprobada — sin pedir autorización previa ni esperar que Nico lo corra a mano. **Obligatorio siempre:** después de aplicar, mostrar un resumen claro de lo corrido (el SQL exacto, contra qué tabla(s), y el resultado — filas afectadas o el nuevo estado si es DDL).
+
+Esto **no** habilita acciones destructivas sin criterio: el principio #4 ("no borrar datos, soft-delete siempre") sigue vigente sin cambios — no se hace `DROP`/`DELETE` de datos reales salvo que sea explícitamente lo pedido.
+
+*(Contexto histórico: esta regla nació en Sesión 16 como "se propone, no se aplica" a raíz de un incidente en el Portal de Instructores. Se mantuvo hasta Sesión 27, cuando Nico la derogó para acelerar el trabajo.)*
 
 ### Toda entrega se prueba visualmente por Yesica o Nico, EN PRODUCCIÓN (regla de ecosistema, ver `Travexa_Negocio.md`)
 
@@ -877,7 +881,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 9. **Nunca agregar scroll-snap o scroll-jacking no pedido.**
 10. **Los vivenciales no se cobran dentro de la plataforma.** El saldo nunca se edita a mano.
 11. **Comentarios y reseñas:** responde el admin (cualquier curso) o el instructor dueño del curso. El `pagado` de un payout y los campos de dinero nunca se escriben desde el frontend — los protegen triggers.
-12. **Los cambios de DB se proponen, no se aplican.** Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo.
+12. **Los cambios de DB se aplican directo por Claude Code vía Supabase MCP, siempre con resumen posterior de qué se corrió. No se pide autorización previa.** *(Cambiado el 13/7/2026, Sesión 27 — reemplaza la regla original "se proponen, no se aplican" de Sesión 16.)* Sigue vigente el #4: nada de `DROP`/`DELETE` de datos reales salvo pedido explícito.
 13. **Toda entrega se prueba visualmente por Yesica o Nico EN PRODUCCIÓN, después del deploy.** La prueba visual no bloquea el merge/deploy; se mergea, se deploya y recién ahí se prueba en vivo. Verificación técnica (build, deploy, código, DB) no reemplaza ese paso humano, pero tampoco hay que probar antes de deployar. El ítem queda "completamente cerrado" solo tras la prueba en prod.
 14. **Actualizar este archivo con cada sesión** (ver instrucciones abajo).
 

@@ -222,7 +222,17 @@ export default function TransferModal({ open, onClose, course, userId, montoSuge
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm mb-1.5" style={{ color: 'var(--text-2)' }}>Importe (ARS)</label>
-                        <input type="number" value={monto} onChange={e => setMonto(e.target.value)} className="w-full py-2.5 px-3 rounded-xl border text-sm" style={inputStyle} />
+                        {/* Muestra con separador de miles (es-AR); el estado `monto`
+                            guarda solo dígitos limpios, que es lo que se persiste. */}
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={monto ? Number(monto).toLocaleString('es-AR') : ''}
+                          onChange={e => setMonto(e.target.value.replace(/\D/g, ''))}
+                          placeholder="$ 0"
+                          className="w-full py-2.5 px-3 rounded-xl border text-sm"
+                          style={inputStyle}
+                        />
                       </div>
                       <div>
                         <label className="block text-sm mb-1.5" style={{ color: 'var(--text-2)' }}>Fecha del pago</label>

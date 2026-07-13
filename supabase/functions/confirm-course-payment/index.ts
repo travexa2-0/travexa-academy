@@ -44,7 +44,10 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (!localPayment) return jsonResponse({ error: 'Pago no encontrado en sistema' }, 404)
-    if (localPayment.estado === 'approved') {
+    // La columna `estado` tiene un CHECK en español: se compara y se escribe
+    // 'aprobado', NO 'approved' (el valor en inglés violaba el constraint y el
+    // update fallaba en silencio).
+    if (localPayment.estado === 'aprobado') {
       return jsonResponse({ success: true, already_confirmed: true })
     }
 
@@ -55,7 +58,7 @@ Deno.serve(async (req) => {
     // Actualizar pago
     await supabaseAdmin
       .from('academy_payments')
-      .update({ mp_payment_id: String(payment_id), mp_status: 'approved', estado: 'approved' })
+      .update({ mp_payment_id: String(payment_id), mp_status: 'approved', estado: 'aprobado' })
       .eq('id', localPayment.id)
 
     // Verificar enrollment previo (idempotente)
@@ -67,26 +70,32 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (!existingEnrollment) {
-      await supabaseAdmin.from('academy_enrollments').insert({
+      // tipo_acceso usa el CHECK en español ('pago'), NO 'paid'.
+      const { error: enrollError } = await supabaseAdmin.from('academy_enrollments').insert({
         user_id: localPayment.user_id,
         course_id: localPayment.course_id,
-        tipo_acceso: 'paid',
+        tipo_acceso: 'pago',
         progreso_pct: 0,
         completado: false,
+        activo: true,
       })
 
-      // Incrementar total_alumnos
-      const { data: course } = await supabaseAdmin
-        .from('academy_courses')
-        .select('total_alumnos')
-        .eq('id', localPayment.course_id)
-        .single()
-
-      if (course) {
-        await supabaseAdmin
+      // Solo incrementar total_alumnos si el enrollment se creó de verdad.
+      if (enrollError) {
+        console.error('academy_enrollments insert (curso) error:', enrollError)
+      } else {
+        const { data: course } = await supabaseAdmin
           .from('academy_courses')
-          .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
+          .select('total_alumnos')
           .eq('id', localPayment.course_id)
+          .single()
+
+        if (course) {
+          await supabaseAdmin
+            .from('academy_courses')
+            .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
+            .eq('id', localPayment.course_id)
+        }
       }
     }
 

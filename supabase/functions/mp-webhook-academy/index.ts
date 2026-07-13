@@ -119,23 +119,32 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (!exists) {
-          await supabaseAdmin.from('academy_enrollments').insert({
+          // tipo_acceso usa el CHECK en español ('pago'), NO 'paid' — con el valor
+          // en inglés el insert fallaba y el alumno quedaba sin enrollment.
+          const { error: enrollError } = await supabaseAdmin.from('academy_enrollments').insert({
             user_id: localPayment.user_id,
             course_id: localPayment.course_id,
-            tipo_acceso: 'paid',
+            tipo_acceso: 'pago',
             progreso_pct: 0,
             completado: false,
+            activo: true,
           })
-          const { data: course } = await supabaseAdmin
-            .from('academy_courses')
-            .select('total_alumnos')
-            .eq('id', localPayment.course_id)
-            .single()
-          if (course) {
-            await supabaseAdmin
+          if (enrollError) {
+            // No incrementamos el contador si el enrollment no se creó: así el
+            // header del backoffice no queda mostrando inscriptos fantasma.
+            console.error('academy_enrollments insert (curso) error:', enrollError)
+          } else {
+            const { data: course } = await supabaseAdmin
               .from('academy_courses')
-              .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
+              .select('total_alumnos')
               .eq('id', localPayment.course_id)
+              .single()
+            if (course) {
+              await supabaseAdmin
+                .from('academy_courses')
+                .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
+                .eq('id', localPayment.course_id)
+            }
           }
         }
       }

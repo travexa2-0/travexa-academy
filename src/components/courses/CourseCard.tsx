@@ -298,15 +298,19 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
 
       {/* Footer */}
       <div className="relative px-[14px] py-[13px]">
-        {/* Veces tomado — estrella + número en gold, abajo a la derecha */}
+        {/* Personas capacitadas — estrella + número en gold, abajo a la derecha */}
         {!isVivencial && (
           <div
-            className="absolute bottom-[13px] right-[14px] flex items-center gap-[3px] font-mono font-bold"
-            style={{ color: 'var(--gold)', fontSize: '12px' }}
-            title="Cantidad de veces que se tomó este curso"
+            className="absolute bottom-[12px] right-[14px] flex flex-col items-end leading-none"
+            title="Cantidad de personas capacitadas"
           >
-            <Star className="w-[13px] h-[13px]" style={{ fill: 'var(--gold)', stroke: 'var(--gold)' }} />
-            {vecesTomado(course.id).toLocaleString('es-AR')}
+            <span className="flex items-center gap-[3px] font-mono font-bold" style={{ color: 'var(--gold)', fontSize: '13px' }}>
+              <Star className="w-[13px] h-[13px]" style={{ fill: 'var(--gold)', stroke: 'var(--gold)' }} />
+              {vecesTomado(course.id).toLocaleString('es-AR')}
+            </span>
+            <span className="font-mono uppercase mt-[3px]" style={{ fontSize: '7.5px', letterSpacing: '.06em', color: 'rgba(201,154,58,.72)' }}>
+              personas capacitadas
+            </span>
           </div>
         )}
         <div className="flex items-center justify-between gap-2">

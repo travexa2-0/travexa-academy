@@ -372,10 +372,10 @@ export default function Catalog() {
             </div>
           </motion.div>
         </div>
-
-        {/* ── Fila de métricas destacadas (datos reales, se oculta sin volumen) ── */}
-        <FormacionStatsRow />
       </section>
+
+      {/* ── Fila de métricas destacadas (debajo del hero, full width) ── */}
+      <FormacionStatsRow />
 
       {/* ── Oferta de valor de Formación ── */}
       <FormacionValueSection />

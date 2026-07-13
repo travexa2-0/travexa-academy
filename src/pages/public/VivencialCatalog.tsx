@@ -238,18 +238,6 @@ export default function VivencialCatalog() {
     return list
   }, [vivenciales, activeRegion, activeTraslado, activeDestino, activeFecha])
 
-  // Hero stats by year
-  const statCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    vivenciales.forEach(v => {
-      if (v.vivencial_fecha_salida) {
-        const y = v.vivencial_fecha_salida.slice(0, 4)
-        counts[y] = (counts[y] ?? 0) + 1
-      }
-    })
-    return counts
-  }, [vivenciales])
-
   const scrollToFilters = useCallback(() => {
     const el = filtersRef.current
     if (!el) return
@@ -363,18 +351,6 @@ export default function VivencialCatalog() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.66 }}
           >
-            {['2026', '2027'].map((yr, i) => (
-              <>
-                {i > 0 && <div key={`sep-${yr}`} style={{ width: 1, height: 36, background: 'rgba(245,243,236,.11)' }} />}
-                <div key={yr} className="flex flex-col gap-[2px]">
-                  <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>
-                    {isLoading ? '—' : (statCounts[yr] ?? 0)}
-                  </span>
-                  <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>Destinos en {yr}</span>
-                </div>
-              </>
-            ))}
-            <div style={{ width: 1, height: 36, background: 'rgba(245,243,236,.11)' }} />
             <div className="flex flex-col gap-[2px]">
               <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>87</span>
               <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>Asesores formados</span>
@@ -519,9 +495,9 @@ export default function VivencialCatalog() {
           aria-hidden
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 54, background: 'linear-gradient(to bottom, #0D2230, #fff)', pointerEvents: 'none' }}
         />
-        <div className="w-full max-w-[1200px] mx-auto px-[22px]" style={{ position: 'relative', paddingTop: 36 }}>
-          {/* Lista de vivenciales: una sola columna, cards grandes apiladas */}
-          <div className="flex flex-col gap-8 max-w-[860px] mx-auto">
+        <div className="w-full max-w-[1440px] mx-auto px-[14px] sm:px-[28px]" style={{ position: 'relative', paddingTop: 40 }}>
+          {/* Lista de vivenciales: una sola columna, cards grandes full-width apiladas */}
+          <div className="flex flex-col gap-10">
             {isLoading ? (
               Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
             ) : filtered.length === 0 ? (

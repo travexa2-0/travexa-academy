@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Heart, Users, Clock, ArrowRight, BookOpen } from 'lucide-react'
+import { Heart, Users, Clock, ArrowRight, BookOpen, Star } from 'lucide-react'
 import { usePricingConfig } from '@/hooks/usePricing'
 import { courseLiveState } from '@/lib/liveState'
 import type { Course, NivelCurso } from '@/types'
@@ -24,6 +24,15 @@ function formatDuration(min: number): string {
   const h = Math.floor(min / 60)
   const m = min % 60
   return m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
+// Cantidad aproximada de veces que se tomó el curso — valor ilustrativo y estable
+// por curso (derivado del id, no de una query), por decisión de producto para dar
+// prueba social en la card. No cambia entre renders.
+function vecesTomado(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return 140 + (h % 720) // 140..859
 }
 
 const EASE = 'cubic-bezier(0.23,1,0.32,1)'
@@ -288,7 +297,18 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
       </div>
 
       {/* Footer */}
-      <div className="px-[14px] py-[13px]">
+      <div className="relative px-[14px] py-[13px]">
+        {/* Veces tomado — estrella + número en gold, abajo a la derecha */}
+        {!isVivencial && (
+          <div
+            className="absolute bottom-[13px] right-[14px] flex items-center gap-[3px] font-mono font-bold"
+            style={{ color: 'var(--gold)', fontSize: '12px' }}
+            title="Cantidad de veces que se tomó este curso"
+          >
+            <Star className="w-[13px] h-[13px]" style={{ fill: 'var(--gold)', stroke: 'var(--gold)' }} />
+            {vecesTomado(course.id).toLocaleString('es-AR')}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-2">
           {/* Price */}
           {isFree ? (

@@ -5,7 +5,7 @@ import RichTextArea from './RichTextArea'
 import ItineraryBuilder from './ItineraryBuilder'
 import PuntosSalidaBuilder from './PuntosSalidaBuilder'
 import HotelesBuilder from './HotelesBuilder'
-import { formatArs, formatUsd } from '../format'
+import { formatArs, formatNum, formatUsd } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useUpsertCourse, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings'
@@ -40,7 +40,10 @@ interface FormState {
   base_usd: string
   impuestos_usd: string
   gastos_admin_pct: string
+  // Seña: dos campos independientes (ninguno derivado del otro) — Yesica carga la
+  // que le sirva en cada moneda; ambas son opcionales, solo de referencia.
   sena_usd: string
+  sena_ars: string
   whatsapp: string
   itinerario: ItinerarioDia[]
   incluye: string
@@ -79,6 +82,7 @@ function initialState(initial?: Course | null): FormState {
     impuestos_usd: initial?.vivencial_impuestos_usd != null ? String(initial.vivencial_impuestos_usd) : '',
     gastos_admin_pct: initial?.vivencial_gastos_admin_pct != null ? String(initial.vivencial_gastos_admin_pct) : '',
     sena_usd: initial?.vivencial_precio_seña_usd != null ? String(initial.vivencial_precio_seña_usd) : '',
+    sena_ars: initial?.vivencial_precio_seña_ars != null ? String(initial.vivencial_precio_seña_ars) : '',
     whatsapp: initial?.vivencial_whatsapp_url ?? '',
     itinerario: initial?.vivencial_itinerario ?? [],
     incluye: initial?.incluye ?? '',
@@ -135,7 +139,11 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
       baseArs: baseUsd * tc, impArs: impUsd * tc, gastosArs: gastosUsd * tc, totalArs: totalUsd * tc,
     }
   }, [form.base_usd, form.impuestos_usd, form.gastos_admin_pct, tc])
-  const senaArs = useMemo(() => (Number(form.sena_usd) || 0) * tc, [form.sena_usd, tc])
+
+  // Inputs de moneda con separador de miles: el estado guarda solo dígitos (string),
+  // la vista formatea con es-AR ("243.234"). El símbolo va aparte en el prefijo.
+  const displayInt = (v: string) => (v ? formatNum(Number(v)) : '')
+  const onlyDigits = (raw: string) => raw.replace(/\D/g, '')
 
   const addLocalidad = (raw: string) => {
     const v = raw.trim()
@@ -217,7 +225,7 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         vivencial_impuestos_ars: Math.round(price.impArs),
         vivencial_gastos_admin_pct: price.pct || 0,
         vivencial_precio_seña_usd: Number(form.sena_usd) || 0,
-        vivencial_precio_seña_ars: Math.round(senaArs),
+        vivencial_precio_seña_ars: Number(form.sena_ars) || 0,
         // Cuotas retiradas del flujo; se preservan valores previos sin borrarlos.
         vivencial_precio_cuotas_usd: initial?.vivencial_precio_cuotas_usd ?? null,
         vivencial_precio_cuotas_ars: initial?.vivencial_precio_cuotas_ars ?? null,
@@ -346,8 +354,8 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
               <div className="wiz-step-title">Precio</div>
               <div className="wiz-step-sub">Cargá base, impuestos y gastos administrativos: el total se calcula solo.</div>
               <div className="field-row cols-3">
-                <div className="field"><label className="f-label">Precio base (USD)</label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="number" value={form.base_usd} onChange={e => set('base_usd', e.target.value)} /></div></div>
-                <div className="field"><label className="f-label">Impuestos (USD) <span className="opt">(monto fijo)</span></label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="number" value={form.impuestos_usd} onChange={e => set('impuestos_usd', e.target.value)} /></div></div>
+                <div className="field"><label className="f-label">Precio base (USD)</label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.base_usd)} onChange={e => set('base_usd', onlyDigits(e.target.value))} /></div></div>
+                <div className="field"><label className="f-label">Impuestos (USD) <span className="opt">(monto fijo)</span></label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.impuestos_usd)} onChange={e => set('impuestos_usd', onlyDigits(e.target.value))} /></div></div>
                 <div className="field"><label className="f-label">Gastos administrativos</label><div className="input-prefix-wrap"><span className="input-prefix">%</span><input className="input" type="number" step="0.1" value={form.gastos_admin_pct} onChange={e => set('gastos_admin_pct', e.target.value)} /></div></div>
               </div>
 
@@ -365,8 +373,8 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
               </div>
 
               <div className="field-row cols-2" style={{ marginTop: 18 }}>
-                <div className="field"><label className="f-label">Seña sugerida (USD) <span className="opt">(referencia)</span></label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="number" value={form.sena_usd} onChange={e => set('sena_usd', e.target.value)} /></div></div>
-                <div className="field"><label className="f-label">Equivalente ARS</label><div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="text" value={formatArs(senaArs).replace('$ ', '')} disabled style={{ color: 'var(--ink-faint)' }} /></div></div>
+                <div className="field"><label className="f-label">Seña sugerida (USD) <span className="opt">(referencia)</span></label><div className="input-prefix-wrap"><span className="input-prefix">US$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.sena_usd)} onChange={e => set('sena_usd', onlyDigits(e.target.value))} /></div></div>
+                <div className="field"><label className="f-label">Seña sugerida (ARS) <span className="opt">(referencia)</span></label><div className="input-prefix-wrap"><span className="input-prefix">$</span><input className="input" type="text" inputMode="numeric" value={displayInt(form.sena_ars)} onChange={e => set('sena_ars', onlyDigits(e.target.value))} /></div></div>
               </div>
               <div className="f-hint" style={{ marginTop: 4 }}>La seña es solo de referencia: la ve Yesica para mencionarla por WhatsApp. No dispara ningún cobro automático.</div>
 
@@ -408,7 +416,7 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                 </div>
                 <div className="preview-body">
                   <div className="stat-mini-grid" style={{ marginBottom: 0 }}>
-                    <div className="stat-mini"><div className="v">{formatUsd(price.totalUsd)}</div><div className="l">Total final · Seña US$ {Number(form.sena_usd) || 0}</div></div>
+                    <div className="stat-mini"><div className="v">{formatUsd(price.totalUsd)}</div><div className="l">Total final{(() => { const s = [Number(form.sena_usd) > 0 ? formatUsd(Number(form.sena_usd)) : null, Number(form.sena_ars) > 0 ? formatArs(Number(form.sena_ars)) : null].filter(Boolean).join(' / '); return s ? ` · Seña ${s}` : '' })()}</div></div>
                     <div className="stat-mini"><div className="v">{form.cupo_maximo || 0}</div><div className="l">Cupo máximo</div></div>
                     <div className="stat-mini"><div className="v">{form.puntos_salida.filter(p => p.ciudad.trim()).length}</div><div className="l">Puntos de salida</div></div>
                   </div>

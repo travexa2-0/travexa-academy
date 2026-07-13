@@ -13,7 +13,10 @@ export type CourseLiveState = 'none' | 'upcoming' | 'live' | 'recorded'
 export function courseLiveState(
   course: Pick<Course, 'tipo' | 'live_date' | 'live_duration_minutes' | 'live_url'>,
 ): CourseLiveState {
-  if (course.tipo !== 'en_vivo') return 'none'
+  // La fecha en vivo del curso se deriva de sus lecciones (fecha_vivo), así que
+  // un curso 'grabado' puede tener una clase en vivo (ej: simulación final). Solo
+  // vivencial/ebook nunca tienen bloque en vivo.
+  if (course.tipo === 'vivencial' || course.tipo === 'ebook') return 'none'
   if (!course.live_date || !course.live_duration_minutes) return 'none'
   const start = new Date(course.live_date).getTime()
   if (Number.isNaN(start)) return 'none'

@@ -292,6 +292,11 @@ export interface Course {
   slug: string
   descripcion: string | null
   descripcion_larga: string | null
+  // Campos estructurados del gap analysis (migración PROPUESTA, ver §Cursos). Texto libre (rich).
+  para_quien: string | null
+  no_es_para: string | null
+  objetivos: string | null       // "Qué vas a lograr" — reemplaza el fake de títulos de lección
+  certificacion: string | null   // detalle del mecanismo de certificación por curso
   thumbnail_url: string | null
   trailer_url: string | null
   category_id: string | null
@@ -378,6 +383,7 @@ export interface Lesson {
   module_id: string
   course_id: string
   titulo: string
+  descripcion: string | null   // detalle de la clase (Objetivo/Contenidos/Caso/Te llevás) — migración PROPUESTA
   video_url: string | null
   duracion_segundos: number | null
   orden: number

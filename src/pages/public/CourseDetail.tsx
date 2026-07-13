@@ -266,19 +266,26 @@ function LiveLessonBadge({ lesson }: { lesson: Lesson }) {
 function LessonRow({ lesson, isFirst }: { lesson: Lesson; isFirst: boolean }) {
   const dur = lesson.duracion_segundos ? `${Math.floor(lesson.duracion_segundos / 60)} min` : ''
   return (
-    <div className="flex items-center gap-[10px] px-4 py-[9px] min-h-10 transition-colors hover:bg-black/[.025]">
-      <div className="w-[14px] h-[14px] shrink-0 flex items-center justify-center">
-        {isFirst || lesson.es_preview
-          ? <Play className="w-[13px] h-[13px]" style={{ color: 'var(--primary-l)' }} />
-          : <Lock className="w-[13px] h-[13px]" style={{ color: 'var(--text-3)' }} />
-        }
+    <div className="px-4 py-[9px] transition-colors hover:bg-black/[.025]">
+      <div className="flex items-center gap-[10px] min-h-10">
+        <div className="w-[14px] h-[14px] shrink-0 flex items-center justify-center">
+          {isFirst || lesson.es_preview
+            ? <Play className="w-[13px] h-[13px]" style={{ color: 'var(--primary-l)' }} />
+            : <Lock className="w-[13px] h-[13px]" style={{ color: 'var(--text-3)' }} />
+          }
+        </div>
+        <span className="flex-1 text-[15px]" style={{ color: '#1A3040' }}>{lesson.titulo}</span>
+        <LiveLessonBadge lesson={lesson} />
+        {(isFirst || lesson.es_preview) && (
+          <span className="font-mono text-[8.5px] tracking-[.05em]" style={{ color: 'var(--primary-l)' }}>GRATIS</span>
+        )}
+        {dur && <span className="font-mono text-xs shrink-0" style={{ color: 'var(--text-3)' }}>{dur}</span>}
       </div>
-      <span className="flex-1 text-sm" style={{ color: '#1A3040' }}>{lesson.titulo}</span>
-      <LiveLessonBadge lesson={lesson} />
-      {(isFirst || lesson.es_preview) && (
-        <span className="font-mono text-[8.5px] tracking-[.05em]" style={{ color: 'var(--primary-l)' }}>GRATIS</span>
+      {lesson.descripcion && (
+        <p className="text-[13px] leading-[1.6] mt-1 pl-6" style={{ color: 'var(--text-3)', whiteSpace: 'pre-line' }}>
+          {lesson.descripcion}
+        </p>
       )}
-      {dur && <span className="font-mono text-xs shrink-0" style={{ color: 'var(--text-3)' }}>{dur}</span>}
     </div>
   )
 }
@@ -346,7 +353,7 @@ function Reviews({ course }: { course: Course }) {
                         <div style={{ color: 'var(--gold)', fontSize: '11px' }}>{'★'.repeat(r.rating)}</div>
                       </div>
                     </div>
-                    {r.comentario && <p className="text-sm leading-[1.65]" style={{ color: '#1A3040' }}>{r.comentario}</p>}
+                    {r.comentario && <p className="text-[15px] leading-[1.65]" style={{ color: '#1A3040' }}>{r.comentario}</p>}
                     {r.respuesta && (
                       <div className="mt-3 pl-3 border-l-2" style={{ borderColor: 'var(--primary)' }}>
                         <div className="font-semibold text-xs mb-0.5" style={{ color: 'var(--primary)' }}>Respuesta de Yesica</div>
@@ -722,6 +729,12 @@ export default function CourseDetail() {
   const totalLessons = course.modules?.reduce((a, m) => a + (m.lessons?.length ?? 0), 0) ?? 0
   const contentUnit  = isVivencial ? 'actividades' : 'lecciones'
 
+  // Clases en vivo derivadas de las lecciones (fecha_vivo). Alimenta el listado de fechas del detalle.
+  const liveLessons = (course.modules ?? [])
+    .flatMap(m => m.lessons ?? [])
+    .filter(l => l.fecha_vivo)
+    .sort((a, b) => new Date(a.fecha_vivo!).getTime() - new Date(b.fecha_vivo!).getTime())
+
   const ctaLabel = enrolled ? 'Continuar aprendiendo'
     : isFree      ? 'Acceder gratis'
     : isVivencial ? 'Reservar con seña'
@@ -789,21 +802,28 @@ export default function CourseDetail() {
       )}
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden" style={{ height: 'clamp(240px,40vw,400px)' }}>
-        {course.thumbnail_url && (
-          <img
-            src={course.thumbnail_url}
-            alt={course.titulo}
-            className="w-full h-full object-cover block"
-            style={{ background: '#162F3E' }}
+      {/* La imagen vive en una capa absolute recortada; el contenido va en flujo normal
+          y crece si el título es largo, así nunca se recorta (bug de preview/prod). */}
+      <div className="relative" style={{ minHeight: 'clamp(240px,40vw,400px)' }}>
+        <div className="absolute inset-0 overflow-hidden">
+          {course.thumbnail_url && (
+            <img
+              src={course.thumbnail_url}
+              alt={course.titulo}
+              className="w-full h-full object-cover block"
+              style={{ background: '#162F3E' }}
+            />
+          )}
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(to bottom,rgba(6,13,20,.2) 0%,rgba(6,13,20,.6) 55%,rgba(6,13,20,.97) 100%)' }}
           />
-        )}
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom,rgba(6,13,20,.2) 0%,rgba(6,13,20,.6) 55%,rgba(6,13,20,.97) 100%)' }}
-        />
+        </div>
 
-        <div className="absolute bottom-[28px] left-0 right-0 max-w-[1200px] mx-auto px-[22px]">
+        <div
+          className="relative flex flex-col justify-end max-w-[1200px] mx-auto px-[22px]"
+          style={{ minHeight: 'clamp(240px,40vw,400px)', paddingTop: '72px', paddingBottom: '28px' }}
+        >
           {/* Back */}
           <motion.button
             onClick={() => navigate('/cursos')}
@@ -906,7 +926,7 @@ export default function CourseDetail() {
                       key={tab.key}
                       onClick={() => setActiveTab(tab.key)}
                       className="relative font-medium whitespace-nowrap min-h-11 px-[17px] py-[10px] border-none bg-transparent cursor-pointer transition-colors"
-                      style={{ fontSize: '13px', color: activeTab === tab.key ? 'var(--primary)' : '#6A8590' }}
+                      style={{ fontSize: '14px', color: activeTab === tab.key ? 'var(--primary)' : '#6A8590' }}
                     >
                       {tab.label}
                       {activeTab === tab.key && (
@@ -951,6 +971,36 @@ export default function CourseDetail() {
                                 {course.live_duration_minutes ? ` · ${formatDuration(course.live_duration_minutes)}` : ''}
                               </p>
                             </div>
+                          </div>
+                        )}
+
+                        {/* Fechas en vivo — derivadas de las lecciones (una fila por clase en vivo) */}
+                        {!isVivencial && liveLessons.length > 0 && (
+                          <div className="mb-4 rounded-xl border p-4" style={{ borderColor: '#E2EAEC', background: '#FAFBFC' }}>
+                            <p className="font-mono text-[10px] tracking-[.08em] uppercase mb-3" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                              {liveLessons.length === 1 ? 'Clase en vivo' : 'Fechas en vivo'}
+                            </p>
+                            <ul className="flex flex-col gap-2.5">
+                              {liveLessons.map(l => {
+                                const st = liveLessonState(l)
+                                const d = new Date(l.fecha_vivo!)
+                                return (
+                                  <li key={l.id} className="flex items-start gap-3">
+                                    <CalendarDays className="w-4 h-4 shrink-0 mt-0.5" style={{ color: st === 'en_vivo' ? '#EF4444' : 'var(--primary)' }} />
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-[15px] leading-tight" style={{ color: '#0A1E29' }}>{l.titulo}</p>
+                                      <p className="font-mono text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                                        {d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                        {' · '}
+                                        {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}h
+                                        {st === 'en_vivo' && <span className="ml-2" style={{ color: '#EF4444', fontWeight: 600 }}>EN VIVO AHORA</span>}
+                                        {st === 'grabada' && <span className="ml-2" style={{ color: 'var(--primary)' }}>Grabación disponible</span>}
+                                      </p>
+                                    </div>
+                                  </li>
+                                )
+                              })}
+                            </ul>
                           </div>
                         )}
 
@@ -1015,11 +1065,20 @@ export default function CourseDetail() {
                           </div>
                         )}
 
-                        {/* Description */}
+                        {/* Descripción — corta como bajada destacada, larga como cuerpo del artículo */}
                         {course.descripcion && (
-                          <p style={{ color: '#1A3040', lineHeight: 1.75, fontSize: '.92rem' }}>
+                          <p className="font-display" style={{ color: '#0A1E29', lineHeight: 1.5, fontSize: '1.2rem', fontWeight: 600, letterSpacing: '-.01em' }}>
                             {course.descripcion}
                           </p>
+                        )}
+                        {course.descripcion_larga && (
+                          <div className="mt-4 flex flex-col gap-4">
+                            {course.descripcion_larga.split(/\n{2,}/).map((para, i) => (
+                              <p key={i} style={{ color: '#1A3040', lineHeight: 1.75, fontSize: '1rem', whiteSpace: 'pre-line' }}>
+                                {para.trim()}
+                              </p>
+                            ))}
+                          </div>
                         )}
 
                         {/* Incluye / No incluye — texto libre; la sección se oculta si está vacía */}
@@ -1032,7 +1091,7 @@ export default function CourseDetail() {
                                 </h3>
                                 <ul className="space-y-2">
                                   {richTextLines(course.incluye).map((item, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#1A3040' }}>
+                                    <li key={i} className="flex items-start gap-2 text-[15px]" style={{ color: '#1A3040' }}>
                                       <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
                                       <span>{renderBold(item, `inc${i}`)}</span>
                                     </li>
@@ -1047,7 +1106,7 @@ export default function CourseDetail() {
                                 </h3>
                                 <ul className="space-y-2">
                                   {richTextLines(course.no_incluye).map((item, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#1A3040' }}>
+                                    <li key={i} className="flex items-start gap-2 text-[15px]" style={{ color: '#1A3040' }}>
                                       <X className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
                                       <span>{renderBold(item, `ninc${i}`)}</span>
                                     </li>
@@ -1058,19 +1117,79 @@ export default function CourseDetail() {
                           </div>
                         )}
 
-                        {/* Lo que vas a aprender */}
-                        {!isVivencial && course.modules && course.modules.length > 0 && (
+                        {/* Para quién es / No es para — texto libre; se oculta si está vacío */}
+                        {(hasRichText(course.para_quien) || hasRichText(course.no_es_para)) && (
+                          <div className="grid sm:grid-cols-2 gap-5 mt-5">
+                            {hasRichText(course.para_quien) && (
+                              <div>
+                                <h3 className="font-display font-bold mb-3 flex items-center gap-2" style={{ color: '#0A1E29' }}>
+                                  <Check className="w-4 h-4" style={{ color: 'var(--primary)' }} strokeWidth={2.5} /> Para quién es
+                                </h3>
+                                <ul className="space-y-2">
+                                  {richTextLines(course.para_quien).map((item, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-[15px]" style={{ color: '#1A3040' }}>
+                                      <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--primary)' }} />
+                                      <span>{renderBold(item, `pq${i}`)}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {hasRichText(course.no_es_para) && (
+                              <div>
+                                <h3 className="font-display font-bold mb-3 flex items-center gap-2" style={{ color: '#0A1E29' }}>
+                                  <X className="w-4 h-4 text-red-400" /> No es para
+                                </h3>
+                                <ul className="space-y-2">
+                                  {richTextLines(course.no_es_para).map((item, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-[15px]" style={{ color: '#1A3040' }}>
+                                      <X className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
+                                      <span>{renderBold(item, `nep${i}`)}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Certificación */}
+                        {hasRichText(course.certificacion) && (
                           <div className="mt-5">
-                            <div className="font-mono text-[9px] tracking-[.14em] uppercase mb-[10px]" style={{ color: 'var(--primary-l)' }}>
-                              Lo que vas a aprender
-                            </div>
-                            <ul className="flex flex-col gap-[9px]">
-                              {course.modules.slice(0, 1).flatMap(m => (m.lessons ?? []).slice(0, 4)).map((l, i) => (
-                                <li key={i} className="flex items-start gap-[9px] text-sm" style={{ color: '#1A3040' }}>
-                                  <Check className="w-[14px] h-[14px] shrink-0 mt-[2px]" style={{ color: 'var(--primary-l)' }} strokeWidth={2.5} />
-                                  {l.titulo}
+                            <h3 className="font-display font-bold mb-3 flex items-center gap-2" style={{ color: '#0A1E29' }}>
+                              <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--gold)' }} /> Certificación
+                            </h3>
+                            <ul className="space-y-2">
+                              {richTextLines(course.certificacion).map((item, i) => (
+                                <li key={i} className="flex items-start gap-2 text-[15px]" style={{ color: '#1A3040' }}>
+                                  <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} />
+                                  <span>{renderBold(item, `cert${i}`)}</span>
                                 </li>
                               ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Qué vas a lograr — objetivos reales; si no hay, cae a las primeras lecciones */}
+                        {!isVivencial && (hasRichText(course.objetivos) || (course.modules && course.modules.length > 0)) && (
+                          <div className="mt-5">
+                            <div className="font-mono text-[10px] tracking-[.14em] uppercase mb-[10px]" style={{ color: 'var(--primary-l)' }}>
+                              Qué vas a lograr
+                            </div>
+                            <ul className="flex flex-col gap-[9px]">
+                              {hasRichText(course.objetivos)
+                                ? richTextLines(course.objetivos).map((item, i) => (
+                                    <li key={i} className="flex items-start gap-[9px] text-[15px]" style={{ color: '#1A3040' }}>
+                                      <Check className="w-[14px] h-[14px] shrink-0 mt-[2px]" style={{ color: 'var(--primary-l)' }} strokeWidth={2.5} />
+                                      <span>{renderBold(item, `obj${i}`)}</span>
+                                    </li>
+                                  ))
+                                : (course.modules ?? []).slice(0, 1).flatMap(m => (m.lessons ?? []).slice(0, 4)).map((l, i) => (
+                                    <li key={i} className="flex items-start gap-[9px] text-[15px]" style={{ color: '#1A3040' }}>
+                                      <Check className="w-[14px] h-[14px] shrink-0 mt-[2px]" style={{ color: 'var(--primary-l)' }} strokeWidth={2.5} />
+                                      {l.titulo}
+                                    </li>
+                                  ))}
                             </ul>
                           </div>
                         )}
@@ -1116,7 +1235,7 @@ export default function CourseDetail() {
                           <h3 className="font-display font-bold" style={{ color: '#0A1E29', fontSize: '1rem' }}>
                             {course.instructor.nombre}
                           </h3>
-                          <p className="text-sm leading-[1.7] mt-[7px]" style={{ color: '#1A3040' }}>
+                          <p className="text-[15px] leading-[1.7] mt-[7px]" style={{ color: '#1A3040' }}>
                             {course.instructor.bio ?? 'Instructor especializado en turismo argentino.'}
                           </p>
                         </div>

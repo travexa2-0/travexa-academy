@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import Overlay from './Overlay'
 import RichTextArea from './RichTextArea'
+import ExpandableTextArea from './ExpandableTextArea'
 import ModuleBuilder from './ModuleBuilder'
 import { NIVEL_OPTIONS, ACCESO_OPTIONS } from './wizardData'
 import { useAdminUI } from '../adminContext'
@@ -27,15 +28,15 @@ interface FormState {
   tipo: 'grabado' | 'en_vivo' | 'ebook'
   descripcion: string
   descripcion_larga: string
+  para_quien: string
+  no_es_para: string
+  objetivos: string
+  certificacion: string
   thumbnail_url: string | null
   trailer_url: string
   tipo_acceso: 'pago' | 'gratuito'
   precio_neto_ars: string
   destacado: boolean
-  live_date: string
-  live_time: string
-  live_duration_minutes: string
-  live_url: string
   pdf_url: string | null
   total_paginas: string
   incluye: string
@@ -51,14 +52,13 @@ function toModuleInputs(modules?: Module[]): ModuleInput[] {
     titulo: m.titulo,
     descripcion: m.descripcion ?? null,
     lessons: (m.lessons ?? []).map(l => ({
-      id: l.id, titulo: l.titulo, video_url: l.video_url, duracion_segundos: l.duracion_segundos, es_preview: l.es_preview, recursos: l.recursos,
+      id: l.id, titulo: l.titulo, descripcion: l.descripcion ?? null, video_url: l.video_url, duracion_segundos: l.duracion_segundos, es_preview: l.es_preview, recursos: l.recursos,
       live_url: l.live_url, fecha_vivo: l.fecha_vivo, thumbnail_url: l.thumbnail_url,
     })),
   }))
 }
 
 function initialState(initial?: (Course & { modules?: Module[] }) | null): FormState {
-  const liveDate = initial?.live_date ? new Date(initial.live_date) : null
   return {
     titulo: initial?.titulo ?? '',
     category_id: initial?.category_id ?? '',
@@ -67,15 +67,15 @@ function initialState(initial?: (Course & { modules?: Module[] }) | null): FormS
     tipo: (initial?.tipo === 'en_vivo' ? 'en_vivo' : initial?.tipo === 'ebook' ? 'ebook' : 'grabado'),
     descripcion: initial?.descripcion ?? '',
     descripcion_larga: initial?.descripcion_larga ?? '',
+    para_quien: initial?.para_quien ?? '',
+    no_es_para: initial?.no_es_para ?? '',
+    objetivos: initial?.objetivos ?? '',
+    certificacion: initial?.certificacion ?? '',
     thumbnail_url: initial?.thumbnail_url ?? null,
     trailer_url: initial?.trailer_url ?? '',
     tipo_acceso: (initial?.tipo_acceso === 'gratuito' ? 'gratuito' : 'pago'),
     precio_neto_ars: initial?.precio_neto_ars != null ? String(initial.precio_neto_ars) : '',
     destacado: initial?.destacado ?? false,
-    live_date: liveDate ? liveDate.toISOString().slice(0, 10) : '',
-    live_time: liveDate ? liveDate.toISOString().slice(11, 16) : '19:00',
-    live_duration_minutes: initial?.live_duration_minutes != null ? String(initial.live_duration_minutes) : '90',
-    live_url: initial?.live_url ?? '',
     pdf_url: initial?.pdf_url ?? null,
     total_paginas: initial?.total_paginas != null ? String(initial.total_paginas) : '',
     incluye: initial?.incluye ?? '',
@@ -120,7 +120,6 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
     }
     if (s === 2) {
       if (form.tipo_acceso === 'pago' && neto <= 0) return 'El precio neto debe ser mayor a 0.'
-      if (form.tipo === 'en_vivo' && !form.live_date) return 'Indicá la fecha del vivo.'
     }
     return null
   }
@@ -156,8 +155,8 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
     for (let s = 1; s <= 2; s++) { const err = validateStep(s); if (err) { toast.error(err); setStep(s); return } }
     setSaving(true)
     try {
-      const liveISO = form.tipo === 'en_vivo' && form.live_date
-        ? new Date(`${form.live_date}T${form.live_time || '19:00'}:00`).toISOString() : null
+      // Las fechas del vivo ya no se cargan a nivel curso: se derivan de las lecciones
+      // en vivo (fecha_vivo) al guardar el programa (ver saveCurriculum).
       const payload: CourseWrite & { id?: string } = {
         id: initial?.id,
         titulo: form.titulo.trim(),
@@ -168,6 +167,10 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         nivel: form.nivel,
         descripcion: form.descripcion || null,
         descripcion_larga: form.descripcion_larga || null,
+        para_quien: form.para_quien.trim() || null,
+        no_es_para: form.no_es_para.trim() || null,
+        objetivos: form.objetivos.trim() || null,
+        certificacion: form.certificacion.trim() || null,
         thumbnail_url: form.thumbnail_url,
         trailer_url: form.trailer_url || null,
         tipo_acceso: form.tipo_acceso,
@@ -177,9 +180,6 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         destacado: form.destacado,
         incluye: form.incluye.trim() || null,
         no_incluye: form.no_incluye.trim() || null,
-        live_date: form.tipo === 'en_vivo' ? liveISO : null,
-        live_url: form.tipo === 'en_vivo' ? (form.live_url || null) : null,
-        live_duration_minutes: form.tipo === 'en_vivo' ? (Number(form.live_duration_minutes) || null) : null,
         pdf_url: form.tipo === 'ebook' ? (form.pdf_url || null) : null,
         total_paginas: form.tipo === 'ebook' ? (Number(form.total_paginas) || null) : null,
       }
@@ -286,7 +286,13 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
               </div>
               <div className="field">
                 <label className="f-label">Descripción completa</label>
-                <textarea className="textarea" placeholder="Para qué sirve, a quién está dirigido, qué va a poder hacer al terminar" value={form.descripcion_larga} onChange={e => set('descripcion_larga', e.target.value)} />
+                <ExpandableTextArea
+                  value={form.descripcion_larga}
+                  onChange={v => set('descripcion_larga', v)}
+                  placeholder={'Para qué sirve, a quién está dirigido, qué va a poder hacer al terminar.\n\nTambién podés contar acá la modalidad (100% asincrónica, instancia en vivo, etc.), la duración total y por qué este curso es diferente.'}
+                  minHeight={110}
+                  label="Descripción completa"
+                />
               </div>
               <div className="field-row cols-2">
                 <div className="field">
@@ -349,14 +355,9 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 <span className="switch"><input type="checkbox" checked={form.destacado} onChange={e => set('destacado', e.target.checked)} /><span className="track" /><span className="thumb" /></span>
               </div>
               {form.tipo === 'en_vivo' && (
-                <div style={{ marginTop: 6, padding: 16, border: '1px dashed var(--line-strong)', borderRadius: 12 }}>
-                  <div className="wiz-step-title" style={{ fontSize: 13 }}>Detalles del vivo</div>
-                  <div className="field-row cols-3" style={{ marginTop: 12 }}>
-                    <div className="field"><label className="f-label">Fecha</label><input className="input" type="date" value={form.live_date} onChange={e => set('live_date', e.target.value)} /></div>
-                    <div className="field"><label className="f-label">Hora</label><input className="input" type="time" value={form.live_time} onChange={e => set('live_time', e.target.value)} /></div>
-                    <div className="field"><label className="f-label">Duración (min)</label><input className="input" type="number" value={form.live_duration_minutes} onChange={e => set('live_duration_minutes', e.target.value)} /></div>
-                  </div>
-                  <div className="field"><label className="f-label">Link del vivo</label><input className="input" type="text" placeholder="Zoom / Meet / YouTube Live" value={form.live_url} onChange={e => set('live_url', e.target.value)} /></div>
+                <div className="f-hint" style={{ marginTop: 10, padding: '10px 12px', background: 'var(--gold-soft)', borderRadius: 10 }}>
+                  Las fechas y horarios de las clases en vivo se cargan en el paso <b>Programa</b>, una por lección.
+                  El sistema arma solo la próxima fecha para el catálogo y el listado del detalle.
                 </div>
               )}
             </div>
@@ -381,18 +382,37 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
             </div>
           )}
 
-          {/* STEP 4 — INCLUYE */}
+          {/* STEP 4 — DETALLES */}
           {step === 4 && (
             <div className="wiz-step-panel active">
-              <div className="wiz-step-title">Qué incluye y qué no</div>
+              <div className="wiz-step-title">Detalles del curso</div>
               <div className="wiz-step-sub">Un ítem por línea. Si dejás un campo vacío, esa sección no aparece en el curso publicado.</div>
               <div className="field">
+                <label className="f-label">🎯 Qué vas a lograr <span className="opt">— resultados de aprendizaje</span></label>
+                <RichTextArea value={form.objetivos} onChange={v => set('objetivos', v)} placeholder={'Armar un itinerario que se venda solo\nCotizar sin perder margen\n**Cerrar** más consultas por WhatsApp'} label="Qué vas a lograr" />
+              </div>
+              <div className="field-row cols-2">
+                <div className="field">
+                  <label className="f-label">✓ Para quién es</label>
+                  <RichTextArea value={form.para_quien} onChange={v => set('para_quien', v)} placeholder={'Asesores que recién arrancan\nAgencias que quieren sistematizar ventas'} label="Para quién es" />
+                </div>
+                <div className="field">
+                  <label className="f-label">✕ No es para</label>
+                  <RichTextArea value={form.no_es_para} onChange={v => set('no_es_para', v)} placeholder={'Quien busca un curso 100% teórico\nQuien no trabaja en turismo'} label="No es para" />
+                </div>
+              </div>
+              <div className="field">
+                <label className="f-label">🎓 Certificación <span className="opt">— cómo se obtiene</span></label>
+                <RichTextArea value={form.certificacion} onChange={v => set('certificacion', v)} placeholder={'Quiz final de aprobación\nSimulación en vivo con scorecard\nTrabajo integrador final'} label="Certificación" />
+              </div>
+              <div style={{ borderTop: '1px solid var(--line)', margin: '18px 0 14px' }} />
+              <div className="field">
                 <label className="f-label">✓ Incluye</label>
-                <RichTextArea value={form.incluye} onChange={v => set('incluye', v)} placeholder={'Acceso de por vida\nCertificado al completar\n**Bonus:** plantillas editables'} />
+                <RichTextArea value={form.incluye} onChange={v => set('incluye', v)} placeholder={'Acceso de por vida\nCertificado al completar\n**Bonus:** plantillas editables'} label="Incluye" />
               </div>
               <div className="field">
                 <label className="f-label">✕ No incluye</label>
-                <RichTextArea value={form.no_incluye} onChange={v => set('no_incluye', v)} placeholder={'Mentoría 1 a 1\nSoporte telefónico'} />
+                <RichTextArea value={form.no_incluye} onChange={v => set('no_incluye', v)} placeholder={'Mentoría 1 a 1\nSoporte telefónico'} label="No incluye" />
               </div>
             </div>
           )}

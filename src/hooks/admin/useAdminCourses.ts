@@ -12,6 +12,7 @@ export type CourseWrite = Partial<Omit<Course, 'category' | 'instructor' | 'modu
 export interface LessonInput {
   id?: string
   titulo: string
+  descripcion: string | null
   video_url: string | null
   duracion_segundos: number | null
   es_preview: boolean
@@ -164,6 +165,8 @@ async function saveCurriculum(courseId: string, modules: ModuleInput[]): Promise
 
   let totalLecciones = 0
   let totalSegundos = 0
+  // Fechas de las clases en vivo, para derivar la fecha "en vivo" a nivel curso.
+  const liveDates: { fecha: string; live_url: string | null }[] = []
 
   for (let mi = 0; mi < modules.length; mi++) {
     const mod = modules[mi]
@@ -196,16 +199,19 @@ async function saveCurriculum(courseId: string, modules: ModuleInput[]): Promise
       const lesson = mod.lessons[li]
       totalLecciones += 1
       totalSegundos += lesson.duracion_segundos ?? 0
+      if (lesson.fecha_vivo) liveDates.push({ fecha: lesson.fecha_vivo, live_url: lesson.live_url || null })
       const payload = {
         module_id: moduleId,
         course_id: courseId,
         titulo: lesson.titulo,
+        descripcion: lesson.descripcion,
         video_url: lesson.video_url,
         duracion_segundos: lesson.duracion_segundos,
         orden: li,
         es_preview: lesson.es_preview,
         recursos: lesson.recursos,
-        live_url: lesson.live_url,
+        // Marcador "en vivo" vacío ('') → null al persistir; la clase se reconoce por fecha_vivo.
+        live_url: lesson.live_url || null,
         fecha_vivo: lesson.fecha_vivo,
         thumbnail_url: lesson.thumbnail_url,
       }
@@ -218,9 +224,25 @@ async function saveCurriculum(courseId: string, modules: ModuleInput[]): Promise
     }
   }
 
+  // Derivar la fecha "en vivo" a nivel curso desde las lecciones: la próxima futura,
+  // o (si todas pasaron) la última. Alimenta la card del catálogo y el estado en vivo
+  // sin pedirle al admin que cargue la fecha dos veces. Ventana fija de 3h (180 min).
+  const now = Date.now()
+  const sorted = liveDates
+    .map(d => ({ ...d, t: new Date(d.fecha).getTime() }))
+    .filter(d => !Number.isNaN(d.t))
+    .sort((a, b) => a.t - b.t)
+  const chosen = sorted.find(d => d.t >= now) ?? sorted[sorted.length - 1] ?? null
+
   // Keep denormalized counters on the course in sync.
   await supabaseWrite.from('academy_courses')
-    .update({ total_lecciones: totalLecciones, duracion_total_minutos: Math.round(totalSegundos / 60) })
+    .update({
+      total_lecciones: totalLecciones,
+      duracion_total_minutos: Math.round(totalSegundos / 60),
+      live_date: chosen ? chosen.fecha : null,
+      live_url: chosen ? chosen.live_url : null,
+      live_duration_minutes: chosen ? 180 : null,
+    })
     .eq('id', courseId)
 }
 

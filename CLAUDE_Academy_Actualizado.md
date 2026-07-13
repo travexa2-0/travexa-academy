@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 12 Julio 2026 — Sesión 25 (SQL de instructores + RPC de métricas aplicado con override autorizado de la regla #12; tira de métricas con piso de volumen. Vivenciales v2/v3 —reserva self-service— + copy fixes e /instructores en producción. Mail Resend en pausa/backlog. Pendiente: prueba visual del flujo self-service EN PROD por Yesica/Nico)**
+**Actualizado: 12 Julio 2026 — Sesión 26 (Módulo de Cursos: descripción larga en el detalle, fix de recorte del hero, tipografía, modal de textos largos en el wizard, fechas del vivo movidas a nivel lección con derivación a nivel curso, y gap analysis con 5 campos nuevos. Migración `20260712020000_course_gap_fields` PROPUESTA sin aplicar. Fix del bucket `academy-media` para PDF pendiente de acción manual de Nico. Todo sin mergear/deployar aún — pendiente prueba visual EN PROD)**
 
 > Este archivo es la **fuente de verdad única** para Claude Code en el proyecto Academy.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -140,6 +140,7 @@ Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de 
 | Sesión 22 | **Migraciones v2 + v3 APLICADAS en producción** (por Claude IA vía MCP, con aprobación de Nico) — schema real verificado contra el código (`tsc`/`eslint`/`vite build` limpios; RPC self-service, trigger de número y columnas nuevas presentes). **Mail Resend en pausa:** `send-reserva-email` queda escrita, sin deployar, disparo fire-and-forget (no bloquea la reserva) → movido a P1. Único pendiente para reemplazar §7: la **prueba visual del flujo self-service** por Yesica/Nico. Ver §7c |
 | Sesión 23 | **Correcciones de copy/contenido + página nueva + 2 bugs visuales, shippeado a `main` (producción).** (1) **Formación (`/cursos`)**: nuevo hero ("Formación práctica que se traduce en más ventas.") + bloque de 3 tarjetas de oferta de valor + tira de 3 métricas reales (usuarios activos/cursos completados/certificados) vía RPC público **propuesto** `academy_public_formacion_stats` (sin aplicar → la tira se oculta; nunca hardcodea). (2) **Vivencial (`/vivencial`)**: nuevo hero ("El turismo no solo se estudia. Se vive.") + 4 tarjetas de oferta de valor. (3) **Página pública nueva `/instructores`** (nav + hero + equipo docente traído de `academy_instructors` real, no hardcodeado, + placeholder de testimonio). (4) **Bug carrusel Home** "Los cursos más elegidos": centrado real + loop seamless solo cuando el set desborda (medición JS) + cards más grandes/jerárquicas. (5) **Bug footer/CTA final**: fondo del footer alineado al degradé del CTA (var(--bg2)) + sin borde, en la Home. Prototipos `academy_catalogo.html` y nuevo `academy_instructores.html` actualizados. Pendientes: cargar los 3 instructores nuevos (INSERT propuesto) + aplicar RPC de métricas + prueba visual. Ver Backlog P1 |
 | Sesión 24 | **Merge de v2/v3 (reserva self-service de vivenciales) + copy fixes/instructores de Sesión 23 → `main`, deployado a producción.** Se reconciliaron ambos frentes (el botón de vivencial queda como **"Reservar mi lugar"** del flujo self-service, reemplazando el "Quiero mi lugar" WhatsApp de §7; se preservó el guard de `nivel` null de Sesión 23). Migraciones v2+v3 ya aplicadas. `.gitignore` ignora `SKILL-*.md`. Principio #13 actualizado: la prueba visual se hace EN PRODUCCIÓN, no bloquea el merge. Pendiente único para cerrar el reemplazo de §7: prueba visual del flujo self-service en prod. Ver §7c |
+| Sesión 26 | **Módulo de Cursos (público + backoffice): 6 mejoras + 1 bug bloqueante.** (1) **Descripción larga** (`descripcion_larga`, columna ya existente) ahora se renderiza en `/cursos/:slug`: la corta como bajada destacada, la larga como cuerpo. (2) **Fix de recorte del hero** en `CourseDetail` (imagen en capa `absolute` recortada, contenido en flujo normal que crece) — afectaba preview de borrador y prod (mismo componente, el preview del backoffice abre `?preview=1`). (3) **Tipografía** del detalle subida a escala legible (cuerpo ~15-16px). (4) **Fechas del vivo movidas del step Precio a nivel lección**: toggle Grabada/En vivo por lección (cualquier tipo de curso, sin flag nuevo — se deriva de `fecha_vivo`), y `course.live_date` se **deriva al guardar** (próxima fecha futura de las lecciones) → card y detalle sin cambios de query. `courseLiveState` relajado (grabado puede tener clase en vivo). Detalle muestra listado "Fechas en vivo". (5) **Modal expandible** (`ExpandableTextArea` + expand en `RichTextArea`) para textos largos del wizard (desc. completa, descripción de módulo/lección, incluye/no incluye y los campos nuevos). (6) **Gap analysis**: 5 columnas nuevas (`academy_courses.para_quien/no_es_para/objetivos/certificacion` + `academy_lessons.descripcion`) — migración `20260712020000_course_gap_fields.sql` **PROPUESTA sin aplicar**; modalidad/duración/por qué diferente/docente van a `descripcion_larga` (texto libre). (7) **Bug bloqueante PDF (415)**: el bucket `academy-media` no tenía `application/pdf` en `allowed_mime_types` y su límite era 5 MB. `tsc`/`eslint`/`vite build` limpios. **Override explícito de la regla #12 (ver abajo):** la migración `20260712020000_course_gap_fields` y el cambio de bucket los aplicó **Claude Code vía MCP** por pedido explícito e itemizado de Nico, no por inferencia. **Sin mergear a main** — se pushea una rama aparte para preview y prueba visual EN PROD antes de mergear (principio #13). |
 | Sesión 25 | **SQL de Sesión 23 aplicado (con override consciente y autorizado de la regla #12) + refinamiento de métricas.** (1) `academy_instructors`: cargados los 3 instructores nuevos (Javier Pérez, Hernán Causté, Florencia Endl, `activo`) + `especialidad` de Yesica actualizada a "Fundadora · Psicología y PNL" (su bio/foto reales intactas) → `/instructores` ya muestra los 4. (2) RPC `academy_public_formacion_stats()` (`SECURITY DEFINER`, cuenta global, `grant` a anon/authenticated) **aplicado** — hoy devuelve `{usuarios:3, completados:0, certificados:0}`. (3) La tira de métricas de `/cursos` ahora se oculta bajo un **piso de 50 usuarios activos** (no solo en cero): con 3 usuarios reales queda oculta, surge sola con volumen. Deployado a prod. La aplicación de estos 3 cambios de DB la hizo Claude Code por pedido explícito e itemizado de Nico (override registrado de la separación de tareas de #12), no por inferencia — no es el patrón de Sesión 16. |
 
 ### ✅ Infraestructura lista
@@ -160,6 +161,12 @@ Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de 
 Backlog único (reemplaza las listas separadas de versiones anteriores de este doc — "acción manual pendiente" / "próximos pasos" / "backlog" quedaban dispersas en 3 lugares distintos). Orden por bloqueo/impacto real, de arriba hacia abajo.
 
 ### 🔴 P0 — Bloqueante para operar con usuarios reales / cobrar de verdad
+
+- [ ] **Prueba visual del módulo de Cursos rediseñado (Sesión 26) + merge a main:** la migración
+  `20260712020000_course_gap_fields` y el fix del bucket `academy-media` (PDF + 50 MB) ya están **aplicados**
+  (override explícito de Nico). Falta: probar en el **preview deploy** (rama aparte, sin mergear) el detalle
+  (descripción larga, tipografía, hero sin recorte, fechas en vivo), el wizard (modal de textos, toggle
+  vivo por lección, campos nuevos) y la **subida de PDF**; recién ahí mergear a `main` (principio #13).
 
 - [ ] **Prueba visual real EN PRODUCCIÓN del flujo de reserva self-service de vivenciales (v3)** —
   Sesión 24: mergeado a `main` y **deployado a producción** (`academy.travexa.com.ar`); las 2
@@ -620,7 +627,10 @@ academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referra
 academy_categories    → nombre, slug, icon, color, orden, activo
 academy_instructors   → nombre, bio, avatar_url, user_id (opcional), especialidad,
                         redes (JSONB), revenue_share_pct, activo, email, telefono
-academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
+academy_courses       → titulo, slug, descripcion, descripcion_larga (cuerpo del detalle),
+                        -- Sesión 26 (gap analysis, migración PROPUESTA 20260712020000, sin aplicar):
+                        para_quien, no_es_para, objetivos ("qué vas a lograr"), certificacion (todas TEXT libre),
+                        thumbnail_url, trailer_url,
                         category_id, instructor_id, nivel, tipo_acceso,
                         tipo ('grabado'|'en_vivo'|'vivencial'|'ebook'),
                         pdf_url, total_paginas (solo ebook),
@@ -645,7 +655,8 @@ academy_courses       → titulo, slug, descripcion, thumbnail_url, trailer_url,
 academy_modules       → course_id, titulo, orden
 academy_lessons       → module_id, course_id, titulo, video_url, duracion_segundos,
                         orden, es_preview (bool), recursos (JSONB),
-                        fecha_vivo, live_url, thumbnail_url (Sesión 17)
+                        fecha_vivo, live_url, thumbnail_url (Sesión 17),
+                        descripcion (detalle de la clase — Sesión 26, migración PROPUESTA 20260712020000, sin aplicar)
 ```
 
 **Comunidad / lectura:**

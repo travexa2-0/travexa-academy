@@ -6,10 +6,11 @@
 
 /* ── Design Tokens — Travexa Academy ── */
 @theme inline {
-  /* Fonts */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body:    'Inter', sans-serif;
-  --font-mono:    'IBM Plex Mono', monospace;
+  /* Fonts — Montserrat en toda la plataforma (texto y números), configurado a
+     nivel global vía estas variables (los tres roles apuntan a Montserrat). */
+  --font-display: 'Montserrat', sans-serif;
+  --font-body:    'Montserrat', sans-serif;
+  --font-mono:    'Montserrat', sans-serif;
 
   /* shadcn semantic mapping → teal as primary (marca real Travexa) */
   --color-background:        var(--bg);
@@ -129,6 +130,11 @@
   }
   code, kbd, samp, pre {
     font-family: var(--font-mono);
+  }
+  /* Form controls no heredan la fuente por default (usan la del sistema): los
+     forzamos a heredar Montserrat, así inputs/botones/selects quedan cubiertos. */
+  input, button, textarea, select {
+    font-family: inherit;
   }
 }
 

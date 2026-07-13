@@ -140,7 +140,7 @@ function kv(label: string, value: string): string {
 
 function buildHtml(d: LiquidacionData): HTMLElement {
   const el = document.createElement('div')
-  el.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;background:#fff;color:#0a1e29;font-family:Inter,Arial,sans-serif;padding:34px 38px'
+  el.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;background:#fff;color:#0a1e29;font-family:Montserrat,Arial,sans-serif;padding:34px 38px'
 
   const pagosRows = d.pagos.length
     ? d.pagos.map(p => `<tr>

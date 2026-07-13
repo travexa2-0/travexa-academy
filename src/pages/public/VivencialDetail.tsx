@@ -234,6 +234,9 @@ export default function VivencialDetail() {
 
   const tabRefs    = useRef<(HTMLButtonElement | null)[]>([])
   const toastTimer = useRef<ReturnType<typeof setTimeout>>()
+  // Claves de los tabs realmente visibles (se recalcula en cada render según el
+  // dato). El indicador deslizante mapea contra esto, no contra el TABS completo.
+  const visibleTabKeys = useRef<TabKey[]>([])
 
   // Redirect non-vivencial courses to their detail page
   useEffect(() => {
@@ -250,7 +253,7 @@ export default function VivencialDetail() {
   }, [])
 
   const updateIndicator = useCallback((tabKey: TabKey) => {
-    const idx = TABS.findIndex(t => t.key === tabKey)
+    const idx = visibleTabKeys.current.indexOf(tabKey)
     const btn = tabRefs.current[idx]
     if (btn) setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth })
   }, [])
@@ -319,6 +322,20 @@ export default function VivencialDetail() {
   const totalArs = course.precio_ars ?? 0
   const saldoArs = Math.max(0, totalArs - señaArs)
   const cuotaSaldoArs = mesesCuota >= 1 && saldoArs > 0 ? Math.round(saldoArs / mesesCuota) : null
+
+  // Tabs visibles: nunca se renderiza un tab que quedaría vacío. Instructor solo
+  // si el vivencial tiene un instructor cargado; Reseñas solo si hay reseñas;
+  // Itinerario/Qué incluye solo con contenido real. Descripción siempre está.
+  // Es una regla condicional sobre el dato — un vivencial nuevo con instructor
+  // muestra el tab automáticamente, sin tocar código.
+  const visibleTabs = TABS.filter(t =>
+    t.key === 'desc' ||
+    (t.key === 'itin' && course.vivencial_itinerario.length > 0) ||
+    (t.key === 'inc' && (hasRichText(course.incluye) || hasRichText(course.no_incluye))) ||
+    (t.key === 'inst' && !!course.instructor) ||
+    (t.key === 'revs' && reviews.length > 0)
+  )
+  visibleTabKeys.current = visibleTabs.map(t => t.key)
 
   function handleCopyLink() {
     navigator.clipboard.writeText(window.location.href).catch(() => {})
@@ -505,7 +522,7 @@ export default function VivencialDetail() {
                     pointerEvents: 'none',
                   }}
                 />
-                {TABS.map((tab, i) => (
+                {visibleTabs.map((tab, i) => (
                   <button
                     key={tab.key}
                     ref={el => { tabRefs.current[i] = el }}

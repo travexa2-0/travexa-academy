@@ -1306,7 +1306,11 @@ function VivModal({ enrollment, onClose }: { enrollment: Enrollment | null; onCl
 
             {t === 3 && (
               <div className="flex items-center gap-3.5">
-                <div className="w-13 h-13 rounded-full flex items-center justify-center font-display font-bold text-[1.1rem] shrink-0" style={{ width: 52, height: 52, background: 'linear-gradient(135deg,var(--primary),var(--neon))', color: '#0A1E29' }}>{(c.instructor?.nombre ?? 'YR').split(' ').map(w => w[0]).slice(0, 2).join('')}</div>
+                {c.instructor?.avatar_url ? (
+                  <img src={c.instructor.avatar_url} alt={c.instructor.nombre} className="rounded-full object-cover shrink-0" style={{ width: 52, height: 52 }} />
+                ) : (
+                  <div className="rounded-full flex items-center justify-center font-display font-bold text-[1.1rem] shrink-0" style={{ width: 52, height: 52, background: 'linear-gradient(135deg,var(--primary),var(--neon))', color: '#0A1E29' }}>{(c.instructor?.nombre ?? 'YR').split(' ').map(w => w[0]).slice(0, 2).join('')}</div>
+                )}
                 <div>
                   <div className="font-display font-bold" style={{ color: '#0A1E29' }}>{c.instructor?.nombre ?? 'Instructor Travexa'}</div>
                   {c.instructor?.bio && <div className="text-[.78rem] mt-0.5" style={{ color: 'var(--primary)' }}>{c.instructor.bio}</div>}

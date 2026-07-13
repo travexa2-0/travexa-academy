@@ -46,7 +46,9 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
   const señaSugerida = course.vivencial_precio_seña_ars ?? 0
 
   const btnPrimary = { background: 'var(--primary)', color: 'var(--text-1)' } as const
-  const showSaldoLine = variant !== 'boarding'
+  // Solo la card pública (cta-card) muestra el saldo acá: en 'perfil' y 'boarding'
+  // ya lo muestra el PagoProgressBar del host, así que repetirlo lo duplicaba.
+  const showSaldoLine = variant === 'cta-card'
 
   const openComprobante = () => setModalMode(pagado > 0 ? 'saldo' : 'sena')
 

@@ -112,7 +112,7 @@
   .hero-cta-sub{ font-size:12.5px; color:var(--text-3); font-family:var(--font-mono); }
   .hero-trust{ margin-top:44px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
   .avatar-stack{ display:flex; }
-  .avatar-stack img{ width:36px; height:36px; border-radius:50%; object-fit:cover; border:2.5px solid var(--bg2); margin-left:-11px; }
+  .avatar-stack img{ width:46px; height:46px; border-radius:50%; object-fit:cover; object-position:center 30%; border:2.5px solid var(--bg2); margin-left:-12px; }
   .avatar-stack img:first-child{ margin-left:0; }
   /* avatar genérico (icono en placeholder) — mismo tratamiento que .sync-avatar */
   .avatar-stack .av{ width:36px; height:36px; border-radius:50%; border:2.5px solid var(--bg2); margin-left:-11px; background:var(--bg4); display:flex; align-items:center; justify-content:center; }

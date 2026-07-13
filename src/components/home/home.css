@@ -172,19 +172,21 @@
   .link-arrow:hover svg{ transform:translateX(2px); }
 
   /* ============ PILARES ============ */
-  .pilares{ padding:100px 0 96px; }
-  .pilar-grid{ margin-top:38px; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-  .pilar-card{ position:relative; overflow:hidden; border-radius:20px; border:1px solid var(--line); background:var(--bg2); padding:26px 22px 24px; min-height:290px; display:flex; flex-direction:column; transition:transform .28s var(--ease-out), border-color .28s var(--ease-out); cursor:pointer; }
+  /* Sección compacta con energía: se acota el padding vertical (no diluida) y
+     las cards ganan tamaño y peso visual (íconos, títulos y bajadas más grandes). */
+  .pilares{ padding:84px 0 84px; }
+  .pilar-grid{ margin-top:40px; display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .pilar-card{ position:relative; overflow:hidden; border-radius:22px; border:1px solid var(--line); background:var(--bg2); padding:32px 28px 30px; min-height:344px; display:flex; flex-direction:column; transition:transform .28s var(--ease-out), border-color .28s var(--ease-out); cursor:pointer; }
   .pilar-card:hover{ transform:translateY(-6px); border-color:rgba(78,205,184,0.35); }
   .pilar-photo{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity .4s var(--ease-out), transform 6s var(--ease-out); transform:scale(1.08); }
   .pilar-card:hover .pilar-photo{ opacity:0.34; transform:scale(1); }
   .pilar-card::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,44,59,0.2) 0%, var(--bg2) 88%); pointer-events:none; }
-  .pilar-icon{ position:relative; z-index:1; width:44px; height:44px; border-radius:12px; background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
-  .pilar-icon svg{ width:21px; height:21px; color:var(--primary-l); }
+  .pilar-icon{ position:relative; z-index:1; width:56px; height:56px; border-radius:15px; background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
+  .pilar-icon svg{ width:27px; height:27px; color:var(--primary-l); }
   .pilar-card:nth-child(2) .pilar-icon svg{ color:var(--gold); }
-  .pilar-card h3{ position:relative; z-index:1; font-family:var(--font-display); font-size:1.15rem; font-weight:600; margin-top:16px; color:var(--text-1); }
-  .pilar-card p{ position:relative; z-index:1; font-size:0.9rem; color:var(--text-2); margin-top:8px; line-height:1.55; flex:1; }
-  .pilar-tag{ position:relative; z-index:1; align-self:flex-start; margin-top:14px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.05em; color:var(--gold); background:rgba(201,154,58,0.12); border:1px solid rgba(201,154,58,0.3); padding:4px 10px; border-radius:999px; }
+  .pilar-card h3{ position:relative; z-index:1; font-family:var(--font-display); font-size:1.42rem; font-weight:600; margin-top:22px; letter-spacing:-0.01em; color:var(--text-1); }
+  .pilar-card p{ position:relative; z-index:1; font-size:1.02rem; color:var(--text-2); margin-top:12px; line-height:1.6; flex:1; }
+  .pilar-tag{ position:relative; z-index:1; align-self:flex-start; margin-top:18px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; color:var(--gold); background:rgba(201,154,58,0.12); border:1px solid rgba(201,154,58,0.3); padding:5px 12px; border-radius:999px; }
 
   /* ============ CATALOGO — marquee loop + hover reveal ============ */
   .catalogo{ padding:96px 0 92px; background:var(--content-bg); }

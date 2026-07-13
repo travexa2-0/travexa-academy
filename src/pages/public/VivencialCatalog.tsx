@@ -403,7 +403,7 @@ export default function VivencialCatalog() {
           {regionOptions.length > 0 && (
             <div className="flex items-center gap-[14px] mb-[10px]">
               <span className="font-display font-bold whitespace-nowrap shrink-0 min-w-[84px]" style={{ fontSize: '12.5px', color: 'var(--text-1)' }}>
-                Región
+                Categoría
               </span>
               <div className="flex items-center gap-[7px] overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                 {/* Todos */}
@@ -519,22 +519,11 @@ export default function VivencialCatalog() {
           aria-hidden
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 54, background: 'linear-gradient(to bottom, #0D2230, #fff)', pointerEvents: 'none' }}
         />
-        <div className="w-full max-w-[1200px] mx-auto px-[22px]" style={{ position: 'relative', paddingTop: 28 }}>
-          {/* Count label */}
-          <p
-            className="font-mono uppercase"
-            style={{ fontSize: '9.5px', letterSpacing: '.06em', color: '#6A8590', paddingBottom: 16 }}
-          >
-            {isLoading ? 'Cargando…' : `${filtered.length} experiencia${filtered.length !== 1 ? 's' : ''} disponible${filtered.length !== 1 ? 's' : ''}`}
-          </p>
-
-          {/* Grid */}
-          <div
-            className="grid gap-5"
-            style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
-          >
+        <div className="w-full max-w-[1200px] mx-auto px-[22px]" style={{ position: 'relative', paddingTop: 36 }}>
+          {/* Lista de vivenciales: una sola columna, cards grandes apiladas */}
+          <div className="flex flex-col gap-8 max-w-[860px] mx-auto">
             {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+              Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
             ) : filtered.length === 0 ? (
               <div
                 className="flex flex-col items-center gap-[10px] text-center"

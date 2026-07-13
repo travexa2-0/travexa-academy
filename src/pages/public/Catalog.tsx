@@ -4,6 +4,7 @@ import { Search, ChevronDown, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import CourseCard from '@/components/courses/CourseCard'
 import FormacionValueSection from '@/components/courses/FormacionValueSection'
+import FormacionStatsRow from '@/components/courses/FormacionStatsRow'
 import SkeletonCard from '@/components/shared/SkeletonCard'
 import { useCourses, useCategories, useWishlist, useToggleWishlist } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
@@ -260,11 +261,6 @@ export default function Catalog() {
     return sortCourses(list, sort)
   }, [catalogCourses, selectedTipo, selectedNivel, selectedCat, search, sort])
 
-  const liveCount      = catalogCourses.filter(c => c.tipo === 'en_vivo').length
-  const freeCount      = catalogCourses.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito').length
-  const ritmoCount     = catalogCourses.filter(c => c.tipo === 'grabado').length
-  const totalCount     = catalogCourses.length
-
   const categoryNames = ['all', ...categories.map(c => c.nombre)]
 
   return (
@@ -354,25 +350,6 @@ export default function Catalog() {
               </motion.button>
             </motion.div>
 
-            <motion.div
-              className="flex items-center gap-6 flex-wrap"
-              style={{ marginTop: 30 }}
-              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1], delay: 0.66 }}
-            >
-              {[
-                { n: totalCount, l: 'Cursos' },
-                { n: liveCount, l: 'En vivo' },
-                { n: ritmoCount || freeCount, l: ritmoCount ? 'A tu ritmo' : 'Gratis' },
-              ].map((s, i) => (
-                <div key={s.l} className="flex items-center gap-6">
-                  {i > 0 && <div style={{ width: 1, height: 36, background: 'rgba(245,243,236,.11)' }} />}
-                  <div className="flex flex-col gap-[2px]">
-                    <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>{isLoading ? '—' : s.n}</span>
-                    <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>{s.l}</span>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
           </div>
 
           {/* right column — imagen flotante */}
@@ -395,9 +372,12 @@ export default function Catalog() {
             </div>
           </motion.div>
         </div>
+
+        {/* ── Fila de métricas destacadas (datos reales, se oculta sin volumen) ── */}
+        <FormacionStatsRow />
       </section>
 
-      {/* ── Oferta de valor + métricas reales de Formación ── */}
+      {/* ── Oferta de valor de Formación ── */}
       <FormacionValueSection />
 
       {/* ── Main content ── */}

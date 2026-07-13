@@ -278,7 +278,7 @@ export default function Profile() {
   // modals
   const [certFor, setCertFor]   = useState<Enrollment | null>(null)
   const [vivFor, setVivFor]     = useState<Enrollment | null>(null)
-  const [showMov, setShowMov]   = useState(false)
+  const [showGanar, setShowGanar]   = useState(false)
   const [showCanjear, setShowCanjear] = useState(false)
   const [showRanking, setShowRanking] = useState(false)
   const [showUpload, setShowUpload]   = useState(false)
@@ -503,8 +503,8 @@ export default function Profile() {
               <LogrosTab
                 uid={uid} puntos={puntos} creditos={creditos} nInfo={nInfo}
                 allBadges={allBadges} earnedIds={earnedIds} userBadges={userBadges}
-                ranking={ranking} certificates={certificates}
-                onMov={() => setShowMov(true)} onCanjear={() => setShowCanjear(true)}
+                ranking={ranking} certificates={certificates} tx={pointsTx}
+                onGanar={() => setShowGanar(true)}
                 onRanking={() => setShowRanking(true)} onUpload={() => setShowUpload(true)}
                 onCert={(titulo, fecha) => setCertFor({ id: 'ext', completado: true, course: { titulo }, fecha_completado: fecha } as unknown as Enrollment)}
               />
@@ -523,7 +523,7 @@ export default function Profile() {
       {/* ── MODALS ── */}
       <CertModal enrollment={certFor} userName={`${nombre} ${apellido}`.trim()} onClose={() => setCertFor(null)} />
       <VivModal enrollment={vivFor} onClose={() => setVivFor(null)} />
-      <MovModal open={showMov} tx={pointsTx} onClose={() => setShowMov(false)} />
+      <GanarModal open={showGanar} onClose={() => setShowGanar(false)} onCanjear={() => { setShowGanar(false); setShowCanjear(true) }} />
       <CanjearModal open={showCanjear} onClose={() => setShowCanjear(false)} onGo={() => { setShowCanjear(false); navigate('/beneficios') }} />
       <RankingModal open={showRanking} onClose={() => setShowRanking(false)} />
       <UploadModal open={showUpload} uid={uid} onClose={() => setShowUpload(false)} />
@@ -898,11 +898,12 @@ function Line({ icon, children }: { icon: React.ReactNode; children: React.React
 }
 
 // ── LOGROS TAB ────────────────────────────────────────────────────────
-function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBadges, ranking, certificates, onMov, onCanjear, onRanking, onUpload, onCert }: {
+function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBadges, ranking, certificates, tx, onGanar, onRanking, onUpload, onCert }: {
   uid?: string; puntos: number; creditos: number; nInfo: ReturnType<typeof nivelInfo>
   allBadges: Badge[]; earnedIds: Set<string>; userBadges: Array<{ badge?: Badge; earned_at: string; badge_id: string }>
   ranking: RankingRow[]; certificates: Array<{ id: string; numero: string; emitido_at: string; course?: { titulo?: string } }>
-  onMov: () => void; onCanjear: () => void; onRanking: () => void; onUpload: () => void
+  tx: PointsTx[]
+  onGanar: () => void; onRanking: () => void; onUpload: () => void
   onCert: (numero: string, date: string) => void
 }) {
   const earnedAtMap = useMemo(() => {
@@ -935,12 +936,9 @@ function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBad
     return ranking.slice(Math.max(0, idx - 3), idx + 4)
   }, [ranking, uid])
 
-  const earnCredits = [
-    { label: 'Escribir una reseña', v: '+10' },
-    { label: 'Referir un asesor', v: '+20' },
-    { label: 'Completar un curso', v: '+40' },
-    { label: 'Completar vivencial', v: '+300' },
-  ]
+  // Movimientos reales de Créditos del usuario (academy_points_transactions,
+  // pool = 'creditos'). Es el contenido fijo de la card (antes vivía en un modal).
+  const creds = tx.filter(t => t.pool === 'creditos')
 
   return (
     <div>
@@ -993,17 +991,16 @@ function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBad
               <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: 'linear-gradient(135deg,rgba(201,154,58,.3),rgba(201,154,58,.1))', border: '1px solid rgba(201,154,58,.3)' }}>🪙</div>
               <div className="font-display font-bold text-[1.05rem]" style={{ color: GOLD }}>{fmt(creditos)} Créditos</div>
             </div>
-            <button onClick={onMov} className="font-mono text-[9px] tracking-wide uppercase rounded-md px-2.5 py-1" style={{ color: NEON, background: 'var(--neon-dim)', border: '1px solid rgba(0,229,200,.25)' }}>Movimientos</button>
+            <button onClick={onGanar} className="font-mono text-[9px] tracking-wide uppercase rounded-md px-2.5 py-1" style={{ color: NEON, background: 'var(--neon-dim)', border: '1px solid rgba(0,229,200,.25)' }}>Cómo ganar más</button>
           </div>
-          <div className="font-mono text-[9px] tracking-wide uppercase mb-2" style={{ color: 'var(--text-3)' }}>Cómo ganar más · de menor a mayor</div>
-          <div className="flex flex-col">
-            {earnCredits.map(c => (
-              <div key={c.label} className="flex items-center justify-between text-[.8rem] py-1.5 border-b last:border-b-0" style={{ color: 'var(--text-2)', borderColor: 'rgba(245,243,236,.06)' }}>
-                <span>{c.label}</span><span style={{ color: GOLD }}>{c.v} 🪙</span>
-              </div>
-            ))}
-          </div>
-          <button onClick={onCanjear} className="w-full mt-3 py-2.5 rounded-[9px] text-[12.5px] font-bold border" style={{ background: 'var(--neon-dim)', color: NEON, borderColor: 'rgba(0,229,200,.25)' }}>Ver cómo canjear →</button>
+          <div className="font-mono text-[9px] tracking-wide uppercase mb-2" style={{ color: 'var(--text-3)' }}>Tus movimientos</div>
+          {creds.length === 0 ? (
+            <p className="text-[.8rem] py-2" style={{ color: 'var(--text-3)' }}>Todavía no tenés movimientos de Créditos. Sumá tus primeros 🪙 con las acciones de «Cómo ganar más».</p>
+          ) : (
+            <div className="flex flex-col max-h-[228px] overflow-y-auto pr-1">
+              {creds.map(t => <MovRow key={t.id} t={t} />)}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1327,28 +1324,48 @@ function MetaDark({ icon, children }: { icon: React.ReactNode; children: React.R
   return <div className="flex items-center gap-1.5 text-[.78rem]" style={{ color: '#4A6070' }}><span style={{ color: '#8FA3AB' }}>{icon}</span>{children}</div>
 }
 
-function MovModal({ open, tx, onClose }: { open: boolean; tx: Array<{ id: string; puntos: number; motivo: string; pool: string; created_at: string; tipo: string }>; onClose: () => void }) {
-  const creds = tx.filter(t => t.pool === 'creditos')
+type PointsTx = { id: string; puntos: number; motivo: string; pool: string; created_at: string; tipo: string }
+
+// Fila de un movimiento de Créditos. Mismo diseño que antes tenía el modal —
+// ahora se usa en la card fija de Créditos (tab Logros).
+function MovRow({ t }: { t: PointsTx }) {
+  const plus = t.puntos >= 0
+  return (
+    <div className="flex items-center gap-2.5 py-2.5 border-b last:border-b-0" style={{ borderColor: 'var(--line)' }}>
+      <div className="w-[30px] h-[30px] rounded-[7px] flex items-center justify-center text-[.85rem] shrink-0" style={{ background: plus ? 'rgba(0,229,200,.1)' : 'rgba(239,68,68,.1)' }}>{plus ? '＋' : '－'}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[.82rem] font-semibold capitalize" style={{ color: 'var(--text-1)' }}>{t.motivo.replace(/_/g, ' ')}</div>
+        <div className="font-mono text-[8.5px] mt-0.5" style={{ color: 'var(--text-3)' }}>{shortDate(t.created_at)}</div>
+      </div>
+      <span className="font-display text-[.86rem] font-bold whitespace-nowrap" style={{ color: plus ? NEON : '#EF4444' }}>{plus ? '+' : ''}{fmt(t.puntos)} 🪙</span>
+    </div>
+  )
+}
+
+// Modal "Cómo ganar más": la lista de acciones y sus Créditos + el acceso a
+// "Ver cómo canjear". Antes este contenido vivía fijo en la card; ahora la card
+// muestra los movimientos reales y esto pasó al modal (Sesión 27).
+function GanarModal({ open, onClose, onCanjear }: { open: boolean; onClose: () => void; onCanjear: () => void }) {
+  const earnCredits = [
+    { label: 'Escribir una reseña', v: '+10' },
+    { label: 'Referir un asesor', v: '+20' },
+    { label: 'Completar un curso', v: '+40' },
+    { label: 'Completar vivencial', v: '+300' },
+  ]
   return (
     <Modal open={open} onClose={onClose} maxW={440}>
       <ModalX onClose={onClose} />
       <div className="p-6">
-        <div className="font-display font-bold text-[1.2rem] mb-4" style={{ color: 'var(--text-1)' }}>Movimientos 🪙</div>
-        {creds.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-3)' }}>Todavía no tenés movimientos de Créditos.</p>
-        ) : creds.map(t => {
-          const plus = t.puntos >= 0
-          return (
-            <div key={t.id} className="flex items-center gap-2.5 py-2.5 border-b last:border-b-0" style={{ borderColor: 'var(--line)' }}>
-              <div className="w-[30px] h-[30px] rounded-[7px] flex items-center justify-center text-[.85rem] shrink-0" style={{ background: plus ? 'rgba(0,229,200,.1)' : 'rgba(239,68,68,.1)' }}>{plus ? '＋' : '－'}</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[.82rem] font-semibold capitalize" style={{ color: 'var(--text-1)' }}>{t.motivo.replace(/_/g, ' ')}</div>
-                <div className="font-mono text-[8.5px] mt-0.5" style={{ color: 'var(--text-3)' }}>{shortDate(t.created_at)}</div>
-              </div>
-              <span className="font-display text-[.86rem] font-bold whitespace-nowrap" style={{ color: plus ? NEON : '#EF4444' }}>{plus ? '+' : ''}{fmt(t.puntos)} 🪙</span>
+        <div className="font-display font-bold text-[1.2rem] mb-1" style={{ color: 'var(--text-1)' }}>Cómo ganar más 🪙</div>
+        <div className="font-mono text-[9px] tracking-wide uppercase mb-3" style={{ color: 'var(--text-3)' }}>De menor a mayor</div>
+        <div className="flex flex-col">
+          {earnCredits.map(c => (
+            <div key={c.label} className="flex items-center justify-between text-[.86rem] py-2.5 border-b last:border-b-0" style={{ color: 'var(--text-2)', borderColor: 'var(--line)' }}>
+              <span>{c.label}</span><span className="font-display font-bold" style={{ color: GOLD }}>{c.v} 🪙</span>
             </div>
-          )
-        })}
+          ))}
+        </div>
+        <button onClick={onCanjear} className="w-full mt-4 py-2.5 rounded-[9px] text-[12.5px] font-bold border" style={{ background: 'var(--neon-dim)', color: NEON, borderColor: 'rgba(0,229,200,.25)' }}>Ver cómo canjear →</button>
       </div>
     </Modal>
   )

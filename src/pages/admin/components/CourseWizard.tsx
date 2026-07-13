@@ -98,12 +98,29 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadingPdf, setUploadingPdf] = useState(false)
+  const [confirmCancel, setConfirmCancel] = useState(false)
   const pdfRef = useRef<HTMLInputElement>(null)
 
-  // Reset when reopened for a different course.
+  // Snapshot serializado del estado original, para detectar cambios sin guardar (dirty).
+  const originalRef = useRef('')
+  // El formulario solo se re-inicializa en la transición cerrado→abierto, nunca en cada
+  // render: así ningún dato cargado se pierde al navegar entre pasos ni cuando el padre
+  // re-renderiza con una nueva referencia de `initial`.
+  const wasOpen = useRef(false)
   useEffect(() => {
-    if (open) { setForm(initialState(initial)); setStep(1) }
+    if (open && !wasOpen.current) {
+      const init = initialState(initial)
+      setForm(init)
+      originalRef.current = JSON.stringify(init)
+      setStep(1)
+      setConfirmCancel(false)
+    }
+    wasOpen.current = open
   }, [open, initial])
+
+  const dirty = useMemo(() => JSON.stringify(form) !== originalRef.current, [form])
+  const requestClose = () => { if (dirty) setConfirmCancel(true); else onClose() }
+  const discardAndClose = () => { setConfirmCancel(false); onClose() }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm(f => ({ ...f, [key]: value }))
 
@@ -151,7 +168,9 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
     finally { setUploadingPdf(false) }
   }
 
-  const finish = async () => {
+  // keepOpen=true → guardado incremental: persiste y rebasea el baseline de cambios
+  // sin cerrar el wizard (botón "Guardar cambios"). Sin opción → guarda y cierra.
+  const finish = async ({ keepOpen = false }: { keepOpen?: boolean } = {}) => {
     for (let s = 1; s <= 2; s++) { const err = validateStep(s); if (err) { toast.error(err); setStep(s); return } }
     setSaving(true)
     try {
@@ -187,7 +206,8 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
       await saveCurriculum.mutateAsync({ courseId: course.id, modules: form.modules })
       toast.success(initial ? 'Curso actualizado' : 'Curso guardado como borrador')
       onSaved?.(course)
-      onClose()
+      if (keepOpen) originalRef.current = JSON.stringify(form) // rebasea el baseline: ya no hay cambios pendientes
+      else onClose()
     } catch (e) {
       toast.error((e as Error).message)
     } finally { setSaving(false) }
@@ -196,14 +216,14 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
   const totalLecciones = form.modules.reduce((n, m) => n + m.lessons.length, 0)
 
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={requestClose}>
       <div className="modal modal-wide">
         <div className="modal-head">
           <div>
             <h2>{initial ? 'Editar curso' : 'Nuevo curso'}</h2>
             <div className="sub">Se guarda como borrador. Nadie lo ve hasta que vos lo publiques.</div>
           </div>
-          <button className="modal-close" onClick={onClose}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg></button>
+          <button className="modal-close" onClick={requestClose}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg></button>
         </div>
 
         <div className="route-stepper">
@@ -448,14 +468,33 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         </div>
 
         <div className="modal-foot">
+          {/* Navegación en el extremo izquierdo; Cancelar (destructivo) pegado a la acción principal. */}
           <button className="btn btn-ghost" onClick={prev} style={{ visibility: step === 1 ? 'hidden' : 'visible' }}>← Atrás</button>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            {initial && step < STEPS.length && (
+              <button className="btn btn-secondary" onClick={() => finish({ keepOpen: true })} disabled={saving || !dirty} title={dirty ? 'Guardar los cambios ya hechos' : 'No hay cambios sin guardar'}>
+                {saving ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            )}
+            <button className="btn btn-destructive" onClick={requestClose}>Cancelar</button>
             {step < STEPS.length
               ? <button className="btn btn-primary" onClick={next}>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M9 6l6 6-6 6" /></svg></button>
-              : <button className="btn btn-primary" onClick={finish} disabled={saving}>{saving ? 'Guardando…' : (initial ? 'Guardar cambios' : 'Guardar borrador')}</button>}
+              : <button className="btn btn-primary" onClick={() => finish()} disabled={saving || (!!initial && !dirty)}>{saving ? 'Guardando…' : (initial ? 'Guardar cambios' : 'Guardar borrador')}</button>}
           </div>
         </div>
+
+        {confirmCancel && (
+          <div className="wiz-confirm-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setConfirmCancel(false) }}>
+            <div className="wiz-confirm-card" role="dialog" aria-modal="true">
+              <h3>¿Seguro que querés cancelar?</h3>
+              <p>Se perderán los cambios no guardados de este curso.</p>
+              <div className="wiz-confirm-actions">
+                <button className="btn btn-secondary" onClick={() => setConfirmCancel(false)}>Volver al editor</button>
+                <button className="btn btn-destructive" onClick={discardAndClose}>Sí, descartar cambios</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Overlay>
   )

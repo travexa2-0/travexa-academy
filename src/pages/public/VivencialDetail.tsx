@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ChevronDown, Check, X, MapPin, CalendarDays, Clock, Users, Bus, Plane, Ship, Sailboat, Utensils, Hotel as HotelIcon, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
@@ -191,10 +191,13 @@ export default function VivencialDetail() {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate       = useNavigate()
   const { user }       = useAuth()
+  const [searchParams] = useSearchParams()
+  // Modo preview (admin, gated por RLS): permite ver borradores sin filtrar publicado.
+  const preview = searchParams.get('preview') === '1'
 
   const queryClient    = useQueryClient()
   const { data: whatsappBusiness } = useWhatsappBusiness()
-  const { data: course, isLoading, isError } = useCourseDetail(slug)
+  const { data: course, isLoading, isError } = useCourseDetail(slug, preview)
   const { data: reviews = [] }               = useReviews(course?.id)
 
   const enrollmentKey = ['vivencial-enrollment', user?.id, course?.id] as const
@@ -328,6 +331,12 @@ export default function VivencialDetail() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <Header />
+
+      {preview && (
+        <div style={{ position: 'sticky', top: 0, zIndex: 60, background: '#C99A3A', color: '#0A1E29', textAlign: 'center', padding: '8px 16px', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
+          Modo preview — así se va a ver el vivencial publicado. {!course.publicado && 'Todavía está en borrador.'}
+        </div>
+      )}
 
       {/* ── HERO ─────────────────────────────────────────────── */}
       <div style={{ position: 'relative', height: 480, overflow: 'hidden' }}>

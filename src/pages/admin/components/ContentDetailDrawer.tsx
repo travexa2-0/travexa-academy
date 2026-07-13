@@ -7,6 +7,7 @@ import { formatArs, formatUsd, formatDate } from '../format'
 import { secondsToDuration } from './wizardData'
 import { useAdminCourse, useTogglePublish, useArchiveCourse, useHardDeleteCourse } from '@/hooks/admin/useAdminCourses'
 import { useCourseEnrollments } from '@/hooks/admin/useAdminEnrollments'
+import { usePricingConfig } from '@/hooks/usePricing'
 import type { Course, ItinerarioDia } from '@/types'
 
 interface Props {
@@ -24,6 +25,7 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
   const [showManual, setShowManual] = useState(false)
   const { data: full } = useAdminCourse(open && course ? course.id : undefined)
   const { data: enrollments } = useCourseEnrollments(open && course ? course.id : undefined)
+  const { data: pricing } = usePricingConfig()
   const togglePublish = useTogglePublish()
   const archive = useArchiveCourse()
   const hardDelete = useHardDeleteCourse()
@@ -80,8 +82,26 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
               <div className="stat-mini-grid">
                 <div className="stat-mini"><div className="v">{c.tipo_acceso === 'gratuito' ? 'Gratis' : formatArs(c.precio_ars)}</div><div className="l">{c.tipo_acceso === 'gratuito' ? 'Acceso libre' : formatUsd(c.precio_usd)}</div></div>
                 <div className="stat-mini"><div className="v">{isViv ? (c.vivencial_cupo_disponible ?? '—') : (c.total_lecciones || 0)}</div><div className="l">{isViv ? 'lugares libres' : 'lecciones'}</div></div>
-                <div className="stat-mini"><div className="v">{c.total_alumnos || (enrollments?.length ?? 0)}</div><div className="l">inscriptos</div></div>
+                {/* Inscriptos: cuenta enrollments reales (misma fuente que la tab),
+                    no el contador denormalizado total_alumnos que puede desincronizarse. */}
+                <div className="stat-mini"><div className="v">{enrollments?.length ?? 0}</div><div className="l">inscriptos</div></div>
               </div>
+
+              {/* Desglose de precio del curso por medio de pago (no vivenciales, no gratis) */}
+              {!isViv && c.tipo_acceso !== 'gratuito' && (
+                <div className="card" style={{ marginBottom: 16 }}>
+                  <div className="card-head"><h3 style={{ fontSize: 13 }}>Precio por medio de pago</h3></div>
+                  <div className="card-pad" style={{ padding: '14px 20px', fontSize: 12.6, color: 'var(--ink-soft)', display: 'grid', gap: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}><span>Transferencia (1 pago)</span><b style={{ color: 'var(--ink)' }}>{formatArs(c.precio_transferencia_ars)}</b></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                      <span>Tarjeta · hasta {pricing?.cuotasMax ?? 6} cuotas</span>
+                      <b style={{ color: 'var(--ink)' }}>{formatArs(c.precio_ars)}{(pricing?.cuotasMax ?? 6) > 0 && c.precio_ars ? ` · ${formatArs(Math.round(c.precio_ars / (pricing?.cuotasMax ?? 6)))}/mes` : ''}</b>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, color: 'var(--ink-faint)' }}><span>Neto (te cobrás)</span><span>{formatArs(c.precio_neto_ars)}</span></div>
+                    {c.precio_usd ? <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, color: 'var(--ink-faint)' }}><span>En dólares</span><span>{formatUsd(c.precio_usd)}</span></div> : null}
+                  </div>
+                </div>
+              )}
               {c.descripcion && <p style={{ fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.65, marginBottom: 20 }}>{c.descripcion}</p>}
 
               {isViv && (
@@ -106,7 +126,7 @@ export default function ContentDetailDrawer({ course, open, onClose, onEdit }: P
                   </button>
                   {c.publicado
                     ? <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doPublish(false)}>Despublicar</button>
-                    : <button className="btn btn-primary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doPublish(true)} disabled={c.archivado}>Publicar</button>}
+                    : <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doPublish(true)} disabled={c.archivado}>Publicar</button>}
                   {c.archivado
                     ? <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doArchive(false)}>Restaurar de archivo</button>
                     : <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doArchive(true)}>Archivar</button>}

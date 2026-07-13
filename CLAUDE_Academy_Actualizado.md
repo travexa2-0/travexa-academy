@@ -1,6 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 12 Julio 2026 — Sesión 26 (Módulo de Cursos: descripción larga en el detalle, fix de recorte del hero, tipografía, modal de textos largos en el wizard, fechas del vivo movidas a nivel lección con derivación a nivel curso, y gap analysis con 5 campos nuevos. Migración `20260712020000_course_gap_fields` PROPUESTA sin aplicar. Fix del bucket `academy-media` para PDF pendiente de acción manual de Nico. Todo sin mergear/deployar aún — pendiente prueba visual EN PROD)**
+**Actualizado: 12 Julio 2026 — Sesión 26 (Módulo de Cursos: descripción larga en el detalle, fix de recorte del hero, tipografía, modal de textos largos en el wizard, fechas del vivo movidas a nivel lección con derivación a nivel curso, y gap analysis con 5 campos nuevos. + Seña ARS del wizard vivencial ahora es un input independiente. Migración `20260712020000_course_gap_fields` **APLICADA** y fix del bucket `academy-media` para PDF aplicado. **Todo mergeado a `main` y deployado a producción** — deploy `dpl_B9nJbBTPLLPZyyCQHXHRaa1QBpY8` sirviendo en `academy.travexa.com.ar`; pendiente solo la prueba visual EN PROD, que no bloquea (principio #13))**
 
 > Este archivo es la **fuente de verdad única** para Claude Code en el proyecto Academy.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -56,7 +56,7 @@ Sos el CTO de desarrollo de **Travexa Academy**. Trabajás junto a Nicolás Beli
 
 ## QUÉ ES TRAVEXA ACADEMY
 
-Plataforma de formación del trade turístico argentino. URL oficial de producción: **`https://academy.travexa.com.ar`** (dominio propio, dado de alta en Vercel y sirviendo desde Sesión 18). `https://travexa-academy.vercel.app` sigue siendo el deploy de Vercel subyacente (el dominio custom apunta ahí) y sigue resolviendo, pero la URL de cara al usuario es la del dominio propio. ⚠️ Verificación de login desde el dominio nuevo pendiente de confirmar, ver Backlog.
+Plataforma de formación del trade turístico argentino. URL oficial de producción: **`https://academy.travexa.com.ar`** (dominio propio, dado de alta en Vercel y sirviendo desde Sesión 18). `https://travexa-academy.vercel.app` sigue siendo el deploy de Vercel subyacente (el dominio custom apunta ahí) y sigue resolviendo, pero la URL de cara al usuario es la del dominio propio. ⚠️ Bug de login (redirige a vercel.app tras el OAuth) **diagnosticado**: causa raíz es la config de Supabase Auth (Site URL / Redirect URLs), no el código ni Google Cloud; pendiente de que Nico aplique el cambio en el dashboard, ver Backlog P0.
 
 **Los 4 pilares:**
 1. **Formación** — Cursos grabados por Yesica e instructores/influencers del sector.
@@ -133,14 +133,14 @@ Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de 
 | Sesión 15 | **Vivenciales: cierre de venta por WhatsApp + carga manual de pagos en backoffice, en producción.** Ver §7 |
 | Sesión 16 | **Portal de instructores (`/instructor/*`)**, liquidaciones mensuales, auto-link por email. ⚠️ Incluye una desviación de proceso registrada (origen de la regla "DB se propone"). Ver §8 |
 | Sesión 17 | **Video de lecciones grabado/en vivo unificado en el player** + admin carga video/`live_url`/`fecha_vivo`/portada por lección. Rama de trabajo, sin mergear. **Hotfix a producción** del crash de `/cursos` (`NIVEL_STYLES[nivel]` sin fallback). Ver §10 |
-| Sesión 18 | **Cutover de dominio propio: `academy.travexa.com.ar` en producción.** ⚠️ Pendiente confirmar allowlist de Auth. Ver §11 |
+| Sesión 18 | **Cutover de dominio propio: `academy.travexa.com.ar` en producción.** ⚠️ Bug de login → vercel.app diagnosticado en Sesión 26 (causa: Site URL/Redirect URLs de Supabase Auth; código y Google Cloud OK); pendiente que Nico lo aplique en el dashboard. Ver §11 |
 | Sesión 19 | **Vivenciales v2: wizard rediseñado (país/localidades, puntos de salida y hoteles múltiples, desglose de precio) + filtros públicos (traslado) + detalle enriquecido + prototipo actualizado.** Migración PROPUESTA sin aplicar. Ver §12 |
 | Sesión 20 | **Vivenciales v3 (PROPUESTA, a confirmar): reserva automática desde la plataforma** — gate de login en todo comprar/reservar, flujo de reserva con elección de punto de salida → pantalla de confirmación con datos bancarios, número de reserva, "Informar transferencia" enriquecido, vista por viajero en backoffice. Reemplaza el cierre por WhatsApp de §7 (NO borrado, pendiente confirmación Yesica/Nico). Migración PROPUESTA sin aplicar. Mail (punto 4) y liquidación PDF (punto 6) pendientes de aprobar approach. Ver §7c |
 | Sesión 21 | **Confirmaciones de Nico aplicadas sobre v2/v3** (ambas migraciones aún sin aplicar): (1) `punto_embarque` renombrado a **`detalle_encuentro`** en todo el código, migración y doc; (2) **DNI del cliente** movido a `academy_profiles` vía onboarding (paso 1 obligatorio) + leído en backoffice y PDF de liquidación; (3) cerradas las 2 decisiones de diseño de v2 (embebido + reuso `incluye`/`no_incluye`); (4) confirmada **1 sola cuenta** bancaria; (5) pulido de builders (ids estables + input de archivo por fila). Mail Resend + PDF client-side quedaron implementados en Sesión 20. Ver §7b/§7c |
 | Sesión 22 | **Migraciones v2 + v3 APLICADAS en producción** (por Claude IA vía MCP, con aprobación de Nico) — schema real verificado contra el código (`tsc`/`eslint`/`vite build` limpios; RPC self-service, trigger de número y columnas nuevas presentes). **Mail Resend en pausa:** `send-reserva-email` queda escrita, sin deployar, disparo fire-and-forget (no bloquea la reserva) → movido a P1. Único pendiente para reemplazar §7: la **prueba visual del flujo self-service** por Yesica/Nico. Ver §7c |
 | Sesión 23 | **Correcciones de copy/contenido + página nueva + 2 bugs visuales, shippeado a `main` (producción).** (1) **Formación (`/cursos`)**: nuevo hero ("Formación práctica que se traduce en más ventas.") + bloque de 3 tarjetas de oferta de valor + tira de 3 métricas reales (usuarios activos/cursos completados/certificados) vía RPC público **propuesto** `academy_public_formacion_stats` (sin aplicar → la tira se oculta; nunca hardcodea). (2) **Vivencial (`/vivencial`)**: nuevo hero ("El turismo no solo se estudia. Se vive.") + 4 tarjetas de oferta de valor. (3) **Página pública nueva `/instructores`** (nav + hero + equipo docente traído de `academy_instructors` real, no hardcodeado, + placeholder de testimonio). (4) **Bug carrusel Home** "Los cursos más elegidos": centrado real + loop seamless solo cuando el set desborda (medición JS) + cards más grandes/jerárquicas. (5) **Bug footer/CTA final**: fondo del footer alineado al degradé del CTA (var(--bg2)) + sin borde, en la Home. Prototipos `academy_catalogo.html` y nuevo `academy_instructores.html` actualizados. Pendientes: cargar los 3 instructores nuevos (INSERT propuesto) + aplicar RPC de métricas + prueba visual. Ver Backlog P1 |
 | Sesión 24 | **Merge de v2/v3 (reserva self-service de vivenciales) + copy fixes/instructores de Sesión 23 → `main`, deployado a producción.** Se reconciliaron ambos frentes (el botón de vivencial queda como **"Reservar mi lugar"** del flujo self-service, reemplazando el "Quiero mi lugar" WhatsApp de §7; se preservó el guard de `nivel` null de Sesión 23). Migraciones v2+v3 ya aplicadas. `.gitignore` ignora `SKILL-*.md`. Principio #13 actualizado: la prueba visual se hace EN PRODUCCIÓN, no bloquea el merge. Pendiente único para cerrar el reemplazo de §7: prueba visual del flujo self-service en prod. Ver §7c |
-| Sesión 26 | **Módulo de Cursos (público + backoffice): 6 mejoras + 1 bug bloqueante.** (1) **Descripción larga** (`descripcion_larga`, columna ya existente) ahora se renderiza en `/cursos/:slug`: la corta como bajada destacada, la larga como cuerpo. (2) **Fix de recorte del hero** en `CourseDetail` (imagen en capa `absolute` recortada, contenido en flujo normal que crece) — afectaba preview de borrador y prod (mismo componente, el preview del backoffice abre `?preview=1`). (3) **Tipografía** del detalle subida a escala legible (cuerpo ~15-16px). (4) **Fechas del vivo movidas del step Precio a nivel lección**: toggle Grabada/En vivo por lección (cualquier tipo de curso, sin flag nuevo — se deriva de `fecha_vivo`), y `course.live_date` se **deriva al guardar** (próxima fecha futura de las lecciones) → card y detalle sin cambios de query. `courseLiveState` relajado (grabado puede tener clase en vivo). Detalle muestra listado "Fechas en vivo". (5) **Modal expandible** (`ExpandableTextArea` + expand en `RichTextArea`) para textos largos del wizard (desc. completa, descripción de módulo/lección, incluye/no incluye y los campos nuevos). (6) **Gap analysis**: 5 columnas nuevas (`academy_courses.para_quien/no_es_para/objetivos/certificacion` + `academy_lessons.descripcion`) — migración `20260712020000_course_gap_fields.sql` **PROPUESTA sin aplicar**; modalidad/duración/por qué diferente/docente van a `descripcion_larga` (texto libre). (7) **Bug bloqueante PDF (415)**: el bucket `academy-media` no tenía `application/pdf` en `allowed_mime_types` y su límite era 5 MB. `tsc`/`eslint`/`vite build` limpios. **Override explícito de la regla #12 (ver abajo):** la migración `20260712020000_course_gap_fields` y el cambio de bucket los aplicó **Claude Code vía MCP** por pedido explícito e itemizado de Nico, no por inferencia. **Sin mergear a main** — se pushea una rama aparte para preview y prueba visual EN PROD antes de mergear (principio #13). |
+| Sesión 26 | **Módulo de Cursos (público + backoffice): 6 mejoras + 1 bug bloqueante.** (1) **Descripción larga** (`descripcion_larga`, columna ya existente) ahora se renderiza en `/cursos/:slug`: la corta como bajada destacada, la larga como cuerpo. (2) **Fix de recorte del hero** en `CourseDetail` (imagen en capa `absolute` recortada, contenido en flujo normal que crece) — afectaba preview de borrador y prod (mismo componente, el preview del backoffice abre `?preview=1`). (3) **Tipografía** del detalle subida a escala legible (cuerpo ~15-16px). (4) **Fechas del vivo movidas del step Precio a nivel lección**: toggle Grabada/En vivo por lección (cualquier tipo de curso, sin flag nuevo — se deriva de `fecha_vivo`), y `course.live_date` se **deriva al guardar** (próxima fecha futura de las lecciones) → card y detalle sin cambios de query. `courseLiveState` relajado (grabado puede tener clase en vivo). Detalle muestra listado "Fechas en vivo". (5) **Modal expandible** (`ExpandableTextArea` + expand en `RichTextArea`) para textos largos del wizard (desc. completa, descripción de módulo/lección, incluye/no incluye y los campos nuevos). (6) **Gap analysis**: 5 columnas nuevas (`academy_courses.para_quien/no_es_para/objetivos/certificacion` + `academy_lessons.descripcion`) — migración `20260712020000_course_gap_fields.sql` **APLICADA** (aparece en `list_migrations`); modalidad/duración/por qué diferente/docente van a `descripcion_larga` (texto libre). (7) **Bug bloqueante PDF (415)**: el bucket `academy-media` no tenía `application/pdf` en `allowed_mime_types` y su límite era 5 MB. (8) **Seña ARS del wizard vivencial ahora es input independiente** (`VivencialWizard.tsx`): deja de derivarse de `sena_usd × tipo_de_cambio` y pasa a escribir directo en `vivencial_precio_seña_ars` lo que carga Yesica a mano (referencia, sin cobro automático); inputs de base/impuestos/seña con separador de miles es-AR (`formatNum`). **No requirió migración**: la columna `vivencial_precio_seña_ars` ya existía. `tsc`/`eslint`/`vite build` limpios. **Override explícito de la regla #12:** la migración `20260712020000_course_gap_fields` y el cambio de bucket los aplicó **Claude Code vía MCP** por pedido explícito e itemizado de Nico, no por inferencia. **Mergeado a `main` y deployado a producción** (deploy `dpl_B9nJbBTPLLPZyyCQHXHRaa1QBpY8`, sirviendo en `academy.travexa.com.ar`); pendiente solo la prueba visual EN PROD, que no bloquea el merge/deploy (principio #13). |
 | Sesión 25 | **SQL de Sesión 23 aplicado (con override consciente y autorizado de la regla #12) + refinamiento de métricas.** (1) `academy_instructors`: cargados los 3 instructores nuevos (Javier Pérez, Hernán Causté, Florencia Endl, `activo`) + `especialidad` de Yesica actualizada a "Fundadora · Psicología y PNL" (su bio/foto reales intactas) → `/instructores` ya muestra los 4. (2) RPC `academy_public_formacion_stats()` (`SECURITY DEFINER`, cuenta global, `grant` a anon/authenticated) **aplicado** — hoy devuelve `{usuarios:3, completados:0, certificados:0}`. (3) La tira de métricas de `/cursos` ahora se oculta bajo un **piso de 50 usuarios activos** (no solo en cero): con 3 usuarios reales queda oculta, surge sola con volumen. Deployado a prod. La aplicación de estos 3 cambios de DB la hizo Claude Code por pedido explícito e itemizado de Nico (override registrado de la separación de tareas de #12), no por inferencia — no es el patrón de Sesión 16. |
 
 ### ✅ Infraestructura lista
@@ -162,11 +162,11 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 ### 🔴 P0 — Bloqueante para operar con usuarios reales / cobrar de verdad
 
-- [ ] **Prueba visual del módulo de Cursos rediseñado (Sesión 26) + merge a main:** la migración
-  `20260712020000_course_gap_fields` y el fix del bucket `academy-media` (PDF + 50 MB) ya están **aplicados**
-  (override explícito de Nico). Falta: probar en el **preview deploy** (rama aparte, sin mergear) el detalle
+- [ ] **Prueba visual EN PRODUCCIÓN del módulo de Cursos rediseñado (Sesión 26)** — ya mergeado a `main`
+  y deployado (`dpl_B9nJbBTPLLPZyyCQHXHRaa1QBpY8`, `academy.travexa.com.ar`); migración `course_gap_fields`
+  y fix del bucket `academy-media` (PDF + 50 MB) aplicados. Falta solo recorrer en vivo el detalle
   (descripción larga, tipografía, hero sin recorte, fechas en vivo), el wizard (modal de textos, toggle
-  vivo por lección, campos nuevos) y la **subida de PDF**; recién ahí mergear a `main` (principio #13).
+  vivo por lección, campos nuevos, **seña ARS independiente**) y la **subida de PDF**. No bloquea nada (principio #13).
 
 - [ ] **Prueba visual real EN PRODUCCIÓN del flujo de reserva self-service de vivenciales (v3)** —
   Sesión 24: mergeado a `main` y **deployado a producción** (`academy.travexa.com.ar`); las 2
@@ -176,7 +176,7 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
   reservar (elegir punto de salida) → ver número de reserva + datos bancarios en la pantalla de
   confirmación → "Informar transferencia" → aprobar el comprobante en el backoffice. El mail de
   Resend NO es parte de este gate (queda pausado, ver P1).
-- [ ] **Confirmar Auth para el dominio nuevo** (Sesión 18): Supabase Auth → Site URL = `https://academy.travexa.com.ar`; Redirect URLs incluye `https://academy.travexa.com.ar/**` (mínimo `/auth/callback` y `/actualizar-contrasena`); Google Cloud → OAuth Client → Authorized JavaScript origins incluye `https://academy.travexa.com.ar`. El código ya arma el `redirectTo` con `window.location.origin`, así que del lado del código está listo — falta el allowlist de los dashboards. **Verificar login end-to-end (email + Google) desde el dominio nuevo antes de dar el cutover por cerrado.**
+- [ ] **Bug de login → vercel.app: DIAGNOSTICADO, pendiente de que Nico aplique el cambio en el dashboard de Supabase** (Sesión 18, retomado Sesión 26). **Causa raíz confirmada:** Supabase Auth con **Site URL** apuntando a `travexa-academy.vercel.app` y sin `https://academy.travexa.com.ar/auth/callback` en **Redirect URLs** → GoTrue no encuentra el `redirectTo` del dominio custom en el allowlist y cae al Site URL (vercel.app) tras el OAuth. **Descartados como causa (ambos verificados OK):** el código (`AuthContext` arma `redirectTo` con `window.location.origin` → `/auth/callback`, ruta existente en `App.tsx`) y Google Cloud OAuth (Authorized JS origins ya tienen ambos dominios; redirect URI al callback de Supabase OK). **Acción pendiente de Nico en el dashboard de `fvrwtqhkskbaixqbxami` → Authentication → URL Configuration:** Site URL = `https://academy.travexa.com.ar`; agregar a Redirect URLs `https://academy.travexa.com.ar/auth/callback` (se puede dejar el de vercel.app para testing). Luego probar en incógnito login Google + email/pass + navegación desde el dominio nuevo.
 - [ ] `MP_ACCESS_TOKEN` cargado en Supabase Secrets — bloquea el cobro real de **cursos** (vivenciales no lo necesitan).
 - [ ] Reactivar "Confirm email" en Supabase Auth (protección contra account-takeover en el auto-linking Google↔password).
 - [ ] SMTP propio (Resend/SendGrid) — el mail default de Supabase no aguanta volumen real.
@@ -547,7 +547,7 @@ Academy pasó de vivir solo en la URL de Vercel a tener su dominio propio en pro
 
 **Verificado:** `https://academy.travexa.com.ar` → HTTP 200, sirve la app real. No hay ninguna URL `travexa-academy.vercel.app` hardcodeada en el código (solo estaba en este doc, ya corregido).
 
-**⚠️ PENDIENTE de confirmar (no verificable por código):** Supabase Auth → Site URL + Redirect URLs; Google Cloud OAuth → Authorized JavaScript origins. Sin esto, **el login puede estar roto desde el dominio nuevo aunque el sitio cargue bien.** Ver Backlog P0.
+**⚠️ BUG DE LOGIN DIAGNOSTICADO (Sesión 26) — pendiente de que Nico lo aplique en el dashboard:** el login desde `academy.travexa.com.ar` redirige a `travexa-academy.vercel.app` tras el OAuth. **Causa raíz:** Supabase Auth con **Site URL** = vercel.app y sin `https://academy.travexa.com.ar/auth/callback` en **Redirect URLs** → GoTrue cae al Site URL cuando el `redirectTo` del dominio custom no está en el allowlist. **Descartados (verificados OK):** el código (`AuthContext` usa `window.location.origin` + `/auth/callback`, ruta existente) y Google Cloud OAuth (JS origins con ambos dominios; redirect URI OK). **Fix:** en `fvrwtqhkskbaixqbxami` → Authentication → URL Configuration, poner Site URL = `https://academy.travexa.com.ar` y agregar `https://academy.travexa.com.ar/auth/callback` a Redirect URLs. Ver Backlog P0.
 
 **Nota Travexa Core:** el proyecto `travexa-core` (Home del Marketplace) linkea a Academy vía `ACADEMY_URL` en `src/lib/config.ts`, hoy apuntando a `https://travexa-academy.vercel.app` — actualizar a `https://academy.travexa.com.ar` cuando se confirme el cutover completo.
 
@@ -613,7 +613,7 @@ IBM Plex Mono 400 → badges, datos, timestamps
 profiles          → id, email, nombre, apellido, avatar_url, telefono (compartido con Core)
 academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referral_code,
                     puntos, creditos, nivel, tipo_cuenta,
-                    fecha_nacimiento, dni (Sesión 21, migración v3 sin aplicar), genero, tipo_vendedor, anos_experiencia,
+                    fecha_nacimiento, dni (Sesión 21, migración v3 APLICADA en Sesión 22), genero, tipo_vendedor, anos_experiencia,
                     destinos_principales (array), onboarding_completo (bool, default false),
                     streak_actual, streak_maximo, total_cursos_completados, total_vivenciales
 ```
@@ -628,7 +628,7 @@ academy_categories    → nombre, slug, icon, color, orden, activo
 academy_instructors   → nombre, bio, avatar_url, user_id (opcional), especialidad,
                         redes (JSONB), revenue_share_pct, activo, email, telefono
 academy_courses       → titulo, slug, descripcion, descripcion_larga (cuerpo del detalle),
-                        -- Sesión 26 (gap analysis, migración PROPUESTA 20260712020000, sin aplicar):
+                        -- Sesión 26 (gap analysis, migración 20260712020000 APLICADA):
                         para_quien, no_es_para, objetivos ("qué vas a lograr"), certificacion (todas TEXT libre),
                         thumbnail_url, trailer_url,
                         category_id, instructor_id, nivel, tipo_acceso,
@@ -642,10 +642,12 @@ academy_courses       → titulo, slug, descripcion, descripcion_larga (cuerpo d
                         vivencial_pais, vivencial_region, vivencial_cupo_maximo, vivencial_cupo_disponible,
                         vivencial_itinerario (JSONB),
                         incluye (TEXT, texto enriquecido), no_incluye (TEXT, texto enriquecido),
-                        vivencial_precio_seña_ars, vivencial_precio_seña_usd (referencia interna),
+                        vivencial_precio_seña_ars, vivencial_precio_seña_usd (referencia interna;
+                          -- Sesión 26: ambos son inputs INDEPENDIENTES en el wizard — la seña ARS ya NO se
+                          -- deriva de USD×TC, Yesica carga a mano la que le sirva; sin migración, columnas ya existían),
                         vivencial_precio_cuotas_ars, vivencial_precio_cuotas_usd (sin uso en UI),
                         vivencial_whatsapp_url (link al grupo de WhatsApp del viaje),
-                        -- Sesión 19 (PROPUESTAS, ver §7b — migración sin aplicar):
+                        -- Sesión 19 (v2, ver §7b — migración APLICADA en Sesión 22):
                         vivencial_localidades (TEXT[]), vivencial_puntos_salida (JSONB {ciudad,detalle_encuentro}),
                         vivencial_hoteles (JSONB {nombre,noches,link,foto_url}),
                         vivencial_precio_base_usd/ars, vivencial_impuestos_usd/ars, vivencial_gastos_admin_pct,
@@ -656,7 +658,7 @@ academy_modules       → course_id, titulo, orden
 academy_lessons       → module_id, course_id, titulo, video_url, duracion_segundos,
                         orden, es_preview (bool), recursos (JSONB),
                         fecha_vivo, live_url, thumbnail_url (Sesión 17),
-                        descripcion (detalle de la clase — Sesión 26, migración PROPUESTA 20260712020000, sin aplicar)
+                        descripcion (detalle de la clase — Sesión 26, migración 20260712020000 APLICADA)
 ```
 
 **Comunidad / lectura:**
@@ -791,7 +793,7 @@ Repo:       github.com/travexa2-0/travexa-academy (público)
 Vercel:     travexa-academy (prj_EVk9I5qgCzTEJ5FAqNODm1t5N8AC)
 Producción: https://academy.travexa.com.ar (dominio propio oficial, Sesión 18 — sirviendo)
             https://travexa-academy.vercel.app sigue siendo el deploy Vercel subyacente
-            (⚠️ auth desde el dominio nuevo pendiente de confirmar, ver Backlog)
+            (⚠️ bug de login → vercel.app diagnosticado: config Supabase Auth, pendiente que Nico lo aplique — ver Backlog P0)
 Supabase:   fvrwtqhkskbaixqbxami (São Paulo) — compartida con Core (prefijo academy_*)
 Local:      /Users/nicolasbelinco/Projects/travexa/travexa-academy
 Proto:      Prototipos HTML en la raíz del proyecto (ver sección dedicada)

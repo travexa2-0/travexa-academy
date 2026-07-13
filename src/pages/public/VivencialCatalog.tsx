@@ -355,6 +355,16 @@ export default function VivencialCatalog() {
               <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>87</span>
               <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>Asesores formados</span>
             </div>
+            <div style={{ width: 1, height: 36, background: 'rgba(245,243,236,.11)' }} />
+            <div className="flex flex-col gap-[2px]">
+              <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>70</span>
+              <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>Operadores</span>
+            </div>
+            <div style={{ width: 1, height: 36, background: 'rgba(245,243,236,.11)' }} />
+            <div className="flex flex-col gap-[2px]">
+              <span className="font-display font-bold" style={{ fontSize: '1.5rem', color: 'var(--text-1)' }}>100</span>
+              <span className="font-mono uppercase" style={{ fontSize: 9, letterSpacing: '.1em', color: 'var(--text-3)' }}>Agencias</span>
+            </div>
           </motion.div>
         </div>
       </section>

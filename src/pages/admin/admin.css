@@ -92,17 +92,17 @@
   }
   .app.collapsed{--sidebar-w:76px;}
   .sidebar-collapse-btn{
-    position:fixed; top:22px; left:calc(var(--sidebar-w) - 12px);
-    width:24px; height:24px; border-radius:50%;
-    background:var(--surface); border:1px solid var(--line-strong);
+    position:fixed; top:20px; left:calc(var(--sidebar-w) - 14px);
+    width:28px; height:28px; border-radius:50%;
+    background:var(--surface); border:1.5px solid var(--line-strong);
     display:flex; align-items:center; justify-content:center;
-    color:var(--ink-soft);
-    box-shadow:var(--shadow-sm);
+    color:var(--teal-deep); cursor:pointer;
+    box-shadow:0 3px 10px -1px rgba(10,30,41,0.45);
     z-index:41;
-    transition:left .28s var(--ease-out), transform .28s var(--ease-out);
+    transition:left .28s var(--ease-out), transform .28s var(--ease-out), background .16s var(--ease-out), color .16s var(--ease-out), border-color .16s var(--ease-out);
   }
-  .sidebar-collapse-btn:hover{color:var(--ink); border-color:var(--teal-mid);}
-  .sidebar-collapse-btn svg{width:13px; height:13px;}
+  .sidebar-collapse-btn:hover{color:var(--white); background:var(--teal-deep); border-color:var(--teal-deep);}
+  .sidebar-collapse-btn svg{width:15px; height:15px;}
   .app.collapsed .sidebar-collapse-btn svg{transform:rotate(180deg);}
   .app.collapsed .sidebar-brand-text,
   .app.collapsed .nav-section-label,
@@ -768,9 +768,11 @@
   .tbl{width:100%; border-collapse:collapse;}
   .tbl th{
     text-align:left; font-size:10.8px; letter-spacing:0.05em; text-transform:uppercase;
-    color:var(--ink-faint); font-weight:600; padding:0 14px 10px; border-bottom:1px solid var(--line);
+    color:var(--ink-faint); font-weight:600; padding:16px 14px 10px; border-bottom:1px solid var(--line);
   }
   .tbl td{padding:13px 14px; border-bottom:1px solid var(--line); font-size:13px; color:var(--ink); vertical-align:middle;}
+  /* Columnas numéricas: header y celda alineados a la derecha (misma columna). */
+  .tbl th.align-right, .tbl td.align-right{text-align:right;}
   .tbl tr:last-child td{border-bottom:none;}
   .tbl tbody tr{transition:background .14s var(--ease-out);}
   .tbl tbody tr:hover{background:var(--surface-2);}

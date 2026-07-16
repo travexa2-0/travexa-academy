@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { LogOut, GraduationCap } from 'lucide-react'
 import '../admin/admin.css'
 import { useAuth } from '@/contexts/AuthContext'
 import { useInstructorSelf } from '@/hooks/useInstructorSelf'
@@ -61,7 +61,7 @@ export default function InstructorLayout() {
         <aside className="sidebar">
           <div className="sidebar-brand">
             <div className="sidebar-brand-mark">
-              <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M2 16l20-7-7 20-3-8-8-3z" stroke="#0A1E29" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+              <GraduationCap width={19} height={19} color="#0A1E29" strokeWidth={1.9} />
             </div>
             <div className="sidebar-brand-text">
               <div className="l1">Travexa Academy</div>

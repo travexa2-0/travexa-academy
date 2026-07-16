@@ -86,7 +86,7 @@ export default function InstructorPerfil() {
   const initials = instructor.nombre.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
 
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div style={{ maxWidth: 940 }}>
       <div className="page-head">
         <div>
           <div className="page-eyebrow">Cuenta</div>
@@ -125,52 +125,55 @@ export default function InstructorPerfil() {
         </div>
       </div>
 
-      <div className="card card-pad" style={{ marginBottom: 16 }}>
-        <div className="field">
-          <label className="f-label" htmlFor="especialidad">Especialidad</label>
-          <input
-            id="especialidad"
-            className="input"
-            type="text"
-            placeholder="Ej. Operatoria turística, ventas corporativas…"
-            value={form.especialidad}
-            onChange={e => setForm(f => ({ ...f, especialidad: e.target.value }))}
-          />
+      <div className="field-row cols-2" style={{ marginBottom: 16, alignItems: 'start' }}>
+        <div className="card card-pad">
+          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: 'var(--ink)', marginBottom: 12 }}>Sobre vos</h3>
+          <div className="field">
+            <label className="f-label" htmlFor="especialidad">Especialidad</label>
+            <input
+              id="especialidad"
+              className="input"
+              type="text"
+              placeholder="Ej. Operatoria turística, ventas corporativas…"
+              value={form.especialidad}
+              onChange={e => setForm(f => ({ ...f, especialidad: e.target.value }))}
+            />
+          </div>
+
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label className="f-label" htmlFor="bio">Bio</label>
+            <textarea
+              id="bio"
+              className="textarea"
+              rows={6}
+              placeholder="Contales a los alumnos quién sos y por qué te van a querer escuchar."
+              value={form.bio}
+              onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+            />
+          </div>
         </div>
 
-        <div className="field">
-          <label className="f-label" htmlFor="bio">Bio</label>
-          <textarea
-            id="bio"
-            className="textarea"
-            rows={5}
-            placeholder="Contales a los alumnos quién sos y por qué te van a querer escuchar."
-            value={form.bio}
-            onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-          />
-        </div>
-      </div>
-
-      <div className="card card-pad" style={{ marginBottom: 16 }}>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: 'var(--ink)', marginBottom: 12 }}>Redes</h3>
-        <div className="field-row">
-          <div className="field">
-            <label className="f-label" htmlFor="instagram">Instagram</label>
-            <input id="instagram" className="input" type="text" placeholder="@usuario" value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} />
+        <div className="card card-pad">
+          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: 'var(--ink)', marginBottom: 12 }}>Redes</h3>
+          <div className="field-row cols-2">
+            <div className="field">
+              <label className="f-label" htmlFor="instagram">Instagram</label>
+              <input id="instagram" className="input" type="text" placeholder="@usuario" value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} />
+            </div>
+            <div className="field">
+              <label className="f-label" htmlFor="tiktok">TikTok</label>
+              <input id="tiktok" className="input" type="text" placeholder="@usuario" value={form.tiktok} onChange={e => setForm(f => ({ ...f, tiktok: e.target.value }))} />
+            </div>
           </div>
-          <div className="field">
-            <label className="f-label" htmlFor="tiktok">TikTok</label>
-            <input id="tiktok" className="input" type="text" placeholder="@usuario" value={form.tiktok} onChange={e => setForm(f => ({ ...f, tiktok: e.target.value }))} />
-          </div>
-        </div>
-        <div className="field-row">
-          <div className="field">
-            <label className="f-label" htmlFor="web">Web</label>
-            <input id="web" className="input" type="url" placeholder="https://…" value={form.web} onChange={e => setForm(f => ({ ...f, web: e.target.value }))} />
-          </div>
-          <div className="field">
-            <label className="f-label" htmlFor="whatsapp">WhatsApp</label>
-            <input id="whatsapp" className="input" type="text" placeholder="+54 9 11 …" value={form.whatsapp} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))} />
+          <div className="field-row cols-2" style={{ marginBottom: 0 }}>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="f-label" htmlFor="web">Web</label>
+              <input id="web" className="input" type="url" placeholder="https://…" value={form.web} onChange={e => setForm(f => ({ ...f, web: e.target.value }))} />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="f-label" htmlFor="whatsapp">WhatsApp</label>
+              <input id="whatsapp" className="input" type="text" placeholder="+54 9 11 …" value={form.whatsapp} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))} />
+            </div>
           </div>
         </div>
       </div>

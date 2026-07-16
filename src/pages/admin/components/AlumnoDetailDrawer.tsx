@@ -18,10 +18,14 @@ const initials = (nombre: string | null, apellido: string | null, email: string)
 
 const fullName = (a: StudentRow) => [a.nombre, a.apellido].filter(Boolean).join(' ').trim() || a.email
 
+// Un pago que aparece en la lista siempre está en un estado FINAL (ya no existe
+// "pendiente" persistido para pagos de curso). El fallback queda por si hay algún
+// dato viejo, pero no debería aparecer.
 function paymentEstadoBadge(estado: string) {
   if (estado === 'aprobado') return <span className="badge badge-published">Aprobado</span>
   if (estado === 'rechazado') return <span className="badge badge-archived">Rechazado</span>
-  if (estado === 'pendiente') return <span className="badge badge-draft">Pendiente</span>
+  if (estado === 'cancelado') return <span className="badge badge-archived">Cancelado</span>
+  if (estado === 'reembolsado') return <span className="badge badge-draft">Reembolsado</span>
   return <span className="badge badge-draft">{estado}</span>
 }
 

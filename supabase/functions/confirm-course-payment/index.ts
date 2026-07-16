@@ -64,6 +64,51 @@ async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: 
   }
 }
 
+// external_reference de curso: `ACAD-COURSE-{userId}-{courseId}` (dos UUIDs de 36
+// chars). Se parsea por longitud fija, ya no dependemos de una fila local previa.
+function parseCourseRef(ref: string): { userId: string | null; courseId: string | null } {
+  const rest = ref.slice('ACAD-COURSE-'.length)
+  if (rest.length < 73) return { userId: null, courseId: null }
+  const userId = rest.slice(0, 36)
+  const courseId = rest.slice(37)
+  const uuidRe = /^[0-9a-f-]{36}$/i
+  if (!uuidRe.test(userId) || !uuidRe.test(courseId)) return { userId: null, courseId: null }
+  return { userId, courseId }
+}
+
+// INSERT (upsert) del pago aprobado. mp_external_reference es UNIQUE y
+// determinístico por (user, course): el upsert es idempotente ante reintentos y,
+// si el webhook ya escribió el estado, no duplica. `aprobado` pisa cualquier
+// estado previo (ej. un intento anterior rechazado).
+// deno-lint-ignore no-explicit-any
+async function recordApprovedCoursePayment(admin: Admin, args: {
+  ref: string; userId: string; courseId: string; paymentId: string; mpData: any
+}) {
+  const monto = Number(args.mpData.transaction_amount) || 0
+  const { data: attempt } = await admin
+    .from('academy_payment_attempts')
+    .select('metodo_pago')
+    .eq('user_id', args.userId)
+    .eq('course_id', args.courseId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  await admin
+    .from('academy_payments')
+    .upsert({
+      user_id: args.userId,
+      tipo: 'curso',
+      course_id: args.courseId,
+      monto_ars: monto,
+      metodo_pago: attempt?.metodo_pago ?? null,
+      mp_payment_id: args.paymentId,
+      mp_status: 'approved',
+      mp_external_reference: args.ref,
+      estado: 'aprobado',
+    }, { onConflict: 'mp_external_reference' })
+}
+
 Deno.serve(async (req) => {
   const corsResult = handleCors(req)
   if (corsResult) return corsResult
@@ -97,34 +142,24 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Referencia de pago inválida', status: mpData.status }, 400)
     }
 
-    // Buscar pago local por external_reference
-    const { data: localPayment } = await supabaseAdmin
-      .from('academy_payments')
-      .select('id, user_id, course_id, estado')
-      .eq('mp_external_reference', ref)
-      .maybeSingle()
-
-    if (!localPayment) return jsonResponse({ error: 'Pago no encontrado en sistema' }, 404)
-
-    // Si MP todavía no aprobó, no inscribimos.
+    // El redirect solo materializa pagos APROBADOS. Los estados intermedios de MP
+    // ya no se persisten, y los estados finales negativos (rechazado/cancelado/…)
+    // los registra el webhook. Tampoco hay ya una fila "pendiente" que actualizar.
     if (mpData.status !== 'approved') {
       return jsonResponse({ success: false, status: mpData.status })
     }
 
-    // Marcar el pago como aprobado (idempotente: si ya estaba, no cambia nada).
-    // La columna `estado` tiene un CHECK en español: se escribe 'aprobado', NO
-    // 'approved' (el valor en inglés violaba el constraint y el update fallaba).
-    if (localPayment.estado !== 'aprobado') {
-      await supabaseAdmin
-        .from('academy_payments')
-        .update({ mp_payment_id: String(payment_id), mp_status: 'approved', estado: 'aprobado' })
-        .eq('id', localPayment.id)
+    const { userId, courseId } = parseCourseRef(ref)
+    if (!userId || !courseId) {
+      return jsonResponse({ error: 'Referencia de pago malformada' }, 400)
     }
 
-    // Garantizar la inscripción SIEMPRE que el pago esté aprobado — sin importar
-    // si el estado del pago ya venía en 'aprobado' desde el otro camino. Esto es
+    // INSERT final del pago aprobado + inscripción (ambos idempotentes). Esto es
     // lo que asegura que nunca quede un pago aprobado sin curso en "Mis Cursos".
-    await ensureEnrollment(supabaseAdmin, localPayment.user_id, localPayment.course_id)
+    await recordApprovedCoursePayment(supabaseAdmin, {
+      ref, userId, courseId, paymentId: String(payment_id), mpData,
+    })
+    await ensureEnrollment(supabaseAdmin, userId, courseId)
 
     return jsonResponse({ success: true, status: 'approved' })
   } catch (e: unknown) {

@@ -129,18 +129,16 @@ Deno.serve(async (req: Request) => {
       throw new Error(`MP error: ${JSON.stringify(mpData)}`);
     }
 
-    // Save pending payment record
-    await supabase.from('academy_payments').insert({
+    // Solo se loguea el INTENTO de pago. academy_payments ya no guarda "pendiente":
+    // un pago de curso o está aprobado / rechazado / cancelado / reembolsado (lo
+    // inserta confirm-course-payment o mp-webhook-academy cuando MP devuelve un
+    // estado FINAL) o no existe. Un checkout abandonado no deja registro de pago,
+    // solo este intento, útil para métricas.
+    await supabase.from('academy_payment_attempts').insert({
       user_id,
-      tipo: 'curso',
       course_id,
-      monto_ars: monto,
-      monto_usd: course.precio_usd,
       metodo_pago,
       mp_preference_id: mpData.id,
-      mp_external_reference: externalReference,
-      mp_status: 'pending',
-      estado: 'pendiente',
     });
 
     return new Response(

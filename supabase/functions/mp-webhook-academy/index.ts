@@ -26,6 +26,31 @@ function toEstado(mpStatus: string): string {
   return ESTADO_MAP[mpStatus] ?? 'pendiente'
 }
 
+// Pagos de curso: academy_payments SOLO guarda estados FINALES. Los intermedios de
+// MP (pending/in_process/authorized) devuelven null y no se persisten — el intento
+// ya quedó logueado en academy_payment_attempts desde create-course-payment.
+const FINAL_ESTADO: Record<string, string> = {
+  approved: 'aprobado',
+  rejected: 'rechazado',
+  cancelled: 'cancelado',
+  refunded: 'reembolsado',
+  charged_back: 'reembolsado',
+}
+function finalEstado(mpStatus: string): string | null {
+  return FINAL_ESTADO[mpStatus] ?? null
+}
+
+// external_reference de curso: `ACAD-COURSE-{userId}-{courseId}` (dos UUIDs de 36 chars).
+function parseCourseRef(ref: string): { userId: string | null; courseId: string | null } {
+  const rest = ref.slice('ACAD-COURSE-'.length)
+  if (rest.length < 73) return { userId: null, courseId: null }
+  const userId = rest.slice(0, 36)
+  const courseId = rest.slice(37)
+  const uuidRe = /^[0-9a-f-]{36}$/i
+  if (!uuidRe.test(userId) || !uuidRe.test(courseId)) return { userId: null, courseId: null }
+  return { userId, courseId }
+}
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -35,6 +60,47 @@ function json(data: unknown, status = 200) {
 
 // deno-lint-ignore no-explicit-any
 type Admin = any
+
+// INSERT (upsert) del pago de curso con su estado FINAL. mp_external_reference es
+// UNIQUE y determinístico por (user, course), así que hay a lo sumo una fila por
+// compra: el upsert es idempotente ante reintentos de webhook. Un `aprobado` nunca
+// se degrada (ej. si llega tarde el webhook de un intento rechazado anterior).
+// deno-lint-ignore no-explicit-any
+async function recordFinalCoursePayment(admin: Admin, args: {
+  ref: string; userId: string; courseId: string; paymentId: string; estado: string; mpData: any
+}) {
+  if (args.estado !== 'aprobado') {
+    const { data: existing } = await admin
+      .from('academy_payments')
+      .select('estado')
+      .eq('mp_external_reference', args.ref)
+      .maybeSingle()
+    if (existing?.estado === 'aprobado') return
+  }
+  const monto = Number(args.mpData.transaction_amount) || 0
+  const { data: attempt } = await admin
+    .from('academy_payment_attempts')
+    .select('metodo_pago')
+    .eq('user_id', args.userId)
+    .eq('course_id', args.courseId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  await admin
+    .from('academy_payments')
+    .upsert({
+      user_id: args.userId,
+      tipo: 'curso',
+      course_id: args.courseId,
+      monto_ars: monto,
+      metodo_pago: attempt?.metodo_pago ?? null,
+      mp_payment_id: args.paymentId,
+      mp_status: args.mpData.status,
+      mp_external_reference: args.ref,
+      estado: args.estado,
+    }, { onConflict: 'mp_external_reference' })
+}
 
 // Inscripción idempotente. La tabla tiene UNIQUE (user_id, course_id), así que
 // el upsert con ignoreDuplicates se traduce a INSERT ... ON CONFLICT DO NOTHING:
@@ -142,32 +208,25 @@ Deno.serve(async (req) => {
 
       if (!ref.startsWith('ACAD-COURSE-')) return json({ ok: true, ignored: true, reason: 'not_academy_course' })
 
-      const { data: localPayment } = await supabaseAdmin
-        .from('academy_payments')
-        .select('id, user_id, course_id, estado')
-        .eq('mp_external_reference', ref)
-        .maybeSingle()
+      // Solo se persisten estados FINALES. Los intermedios de MP no dejan fila.
+      const estado = finalEstado(mpData.status)
+      if (!estado) return json({ ok: true, status: mpData.status, not_final: true })
 
-      if (!localPayment) return json({ ok: true, no_local_payment: true })
+      const { userId, courseId } = parseCourseRef(ref)
+      if (!userId || !courseId) return json({ ok: true, bad_ref: true })
 
-      // Marcar el estado del pago (idempotente: si ya estaba igual, no cambia nada).
-      if (localPayment.estado !== toEstado(mpData.status)) {
-        const { error: courseUpdateError } = await supabaseAdmin
-          .from('academy_payments')
-          .update({ mp_payment_id: String(resourceId), mp_status: mpData.status, estado: toEstado(mpData.status) })
-          .eq('id', localPayment.id)
-        if (courseUpdateError) console.error('academy_payments update (curso) error:', courseUpdateError)
+      // INSERT final del pago (aprobado o negativo). Idempotente ante reintentos.
+      await recordFinalCoursePayment(supabaseAdmin, {
+        ref, userId, courseId, paymentId: String(resourceId), estado, mpData,
+      })
+
+      // Inscripción solo si aprobó. Idempotente: reintentos de webhook no duplican
+      // ni inflan el contador de alumnos.
+      if (estado === 'aprobado') {
+        await ensureEnrollment(supabaseAdmin, userId, courseId)
       }
 
-      // Garantizar la inscripción SIEMPRE que el pago esté aprobado — sin importar
-      // si el estado ya venía en 'aprobado' desde el otro camino (redirect). Es
-      // idempotente, así que reintentos de webhook de MP no crean duplicados ni
-      // inflan el contador.
-      if (mpData.status === 'approved') {
-        await ensureEnrollment(supabaseAdmin, localPayment.user_id, localPayment.course_id)
-      }
-
-      return json({ ok: true, status: mpData.status })
+      return json({ ok: true, status: mpData.status, estado })
     }
 
     // ── SUSCRIPCIÓN (preapproval) ──

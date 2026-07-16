@@ -162,15 +162,25 @@ export function useDeleteInstructor() {
   })
 }
 
-// ── Buscar un profile por email (para vincular user_id) ───────────
-export async function findProfileByEmail(email: string): Promise<{ id: string; nombre: string | null; apellido: string | null } | null> {
+// ── Buscar la cuenta de usuario detrás de un email ─────────────────
+// Se usa tanto para vincular manualmente (user_id) como para avisarle al admin,
+// mientras carga un instructor, que ese email YA tiene cuenta en la plataforma
+// y precargar lo que el usuario ya cargó (nombre, teléfono).
+export interface AccountByEmail {
+  id: string
+  nombre: string | null
+  apellido: string | null
+  telefono: string | null
+}
+
+export async function findProfileByEmail(email: string): Promise<AccountByEmail | null> {
   const mail = email.trim().toLowerCase()
   if (!mail) return null
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, nombre, apellido')
+    .select('id, nombre, apellido, telefono')
     .eq('email', mail)
-    .maybeSingle<{ id: string; nombre: string | null; apellido: string | null }>()
+    .maybeSingle<AccountByEmail>()
   if (error) throw new Error(error.message)
   return data
 }

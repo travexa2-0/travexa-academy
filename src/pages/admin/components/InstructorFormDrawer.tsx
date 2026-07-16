@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import Overlay from './Overlay'
 import { uploadMedia, slugify } from '@/hooks/admin/useAdminCourses'
-import { useUpsertInstructor, findProfileByEmail, type InstructorInput } from '@/hooks/admin/useAdminInstructorsFull'
+import { useUpsertInstructor, findProfileByEmail, type InstructorInput, type AccountByEmail } from '@/hooks/admin/useAdminInstructorsFull'
 import type { Instructor } from '@/types'
 
 interface Props {
@@ -55,8 +55,36 @@ export default function InstructorFormDrawer({ open, onClose, initial }: Props) 
   const [uploading, setUploading] = useState(false)
   const [linking, setLinking] = useState(false)
   const [saving, setSaving] = useState(false)
+  // Cuenta de plataforma detectada detrás del email del instructor (bug #3).
+  const [account, setAccount] = useState<AccountByEmail | null>(null)
 
-  useEffect(() => { if (open) setForm(initialState(initial)) }, [open, initial])
+  useEffect(() => { if (open) { setForm(initialState(initial)); setAccount(null) } }, [open, initial])
+
+  // Al tipear el email del instructor, chequeamos (con debounce) si ese email ya
+  // tiene cuenta de usuario en Academy. Si la tiene: aviso visual no bloqueante +
+  // precarga de lo que el usuario ya cargó (nombre, teléfono) sin pisar lo que el
+  // admin haya tipeado, y vinculamos user_id (lo mismo que hará el trigger al guardar).
+  useEffect(() => {
+    const mail = form.email.trim()
+    if (!open || !mail.includes('@')) { setAccount(null); return }
+    let active = true
+    const t = setTimeout(async () => {
+      try {
+        const acc = await findProfileByEmail(mail)
+        if (!active) return
+        setAccount(acc)
+        if (acc) {
+          setForm(f => ({
+            ...f,
+            nombre:   f.nombre.trim()   ? f.nombre   : [acc.nombre, acc.apellido].filter(Boolean).join(' '),
+            telefono: f.telefono.trim() ? f.telefono : (acc.telefono ?? ''),
+            user_id:  f.user_id ?? acc.id,
+          }))
+        }
+      } catch { if (active) setAccount(null) }
+    }, 450)
+    return () => { active = false; clearTimeout(t) }
+  }, [form.email, open])
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm(f => ({ ...f, [key]: value }))
 
@@ -145,6 +173,16 @@ export default function InstructorFormDrawer({ open, onClose, initial }: Props) 
             <div className="field"><label className="f-label">Email</label><input className="input" type="email" placeholder="contacto@email.com" value={form.email} onChange={e => set('email', e.target.value)} /></div>
             <div className="field"><label className="f-label">Teléfono</label><input className="input" type="text" placeholder="+54 9 11…" value={form.telefono} onChange={e => set('telefono', e.target.value)} /></div>
           </div>
+          {account && (
+            <div className="field" style={{ margin: '-4px 0 0', display: 'flex', gap: 8, alignItems: 'flex-start', padding: '9px 12px', background: 'rgba(201,154,58,.10)', border: '1px solid var(--line-strong)', borderRadius: 10, fontSize: 12.4, lineHeight: 1.45, color: 'var(--text-2)' }}>
+              <span aria-hidden style={{ marginTop: 1 }}>ℹ️</span>
+              <span>
+                Este email ya tiene una cuenta en Academy
+                {[account.nombre, account.apellido].filter(Boolean).length ? ` (${[account.nombre, account.apellido].filter(Boolean).join(' ')})` : ''}.
+                Precargamos nombre y teléfono desde su cuenta y quedó vinculado — podés editar lo que quieras.
+              </span>
+            </div>
+          )}
           <div className="field-row cols-2">
             <div className="field"><label className="f-label">WhatsApp</label><input className="input" type="text" placeholder="+54 9 11… o wa.me/…" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} /></div>
             <div className="field"><label className="f-label">Instagram</label><input className="input" type="text" placeholder="@usuario o URL" value={form.instagram} onChange={e => set('instagram', e.target.value)} /></div>

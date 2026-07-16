@@ -11,12 +11,14 @@ import { useModerationPendingCount } from '@/hooks/admin/useModeration'
 import { useVivencialPendingCount } from '@/hooks/admin/useAdminVivencialPayments'
 import { useAdminBenefits } from '@/hooks/admin/useAdminBenefits'
 import { useInstructorsFull } from '@/hooks/admin/useAdminInstructorsFull'
+import { useAdminStudents } from '@/hooks/admin/useAdminStudents'
 
 const CRUMBS: Record<string, string> = {
   '/admin/resumen': 'Resumen',
   '/admin/cursos': 'Cursos',
   '/admin/vivenciales': 'Vivenciales',
   '/admin/instructores': 'Instructores',
+  '/admin/alumnos': 'Alumnos',
   '/admin/beneficios': 'Beneficios',
   '/admin/comentarios': 'Moderación',
   '/admin/metricas': 'Métricas',
@@ -30,6 +32,7 @@ function NavIcon({ name }: { name: string }) {
     case 'vivenciales': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 11l18-7-7 18-2.5-7L3 11z" strokeLinejoin="round" /></svg>
     case 'comentarios': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinejoin="round" /></svg>
     case 'instructores': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>
+    case 'alumnos': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="8" cy="8" r="3.2" /><path d="M3 19c0-2.8 2.2-4.6 5-4.6s5 1.8 5 4.6" strokeLinecap="round" /><path d="M16.5 8.5H21M16.5 12.5H21M16.5 16.5H21" strokeLinecap="round" /></svg>
     case 'beneficios': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" strokeLinejoin="round" /></svg>
     case 'metricas': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 20V10M12 20V4M20 20v-7" /></svg>
     case 'pagos-instructores': return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="6" width="20" height="13" rx="2" /><path d="M2 10h20M6 15h4" /></svg>
@@ -50,6 +53,7 @@ export default function AdminLayout() {
   const { data: pendingVivencial } = useVivencialPendingCount()
   const { data: benefits } = useAdminBenefits()
   const { data: instructores } = useInstructorsFull()
+  const { data: alumnos } = useAdminStudents()
 
   // ⌘K / Ctrl+K opens the command palette.
   useEffect(() => {
@@ -110,6 +114,7 @@ export default function AdminLayout() {
               {navItem('cursos', 'Cursos', cursos?.length ?? 0)}
               {navItem('vivenciales', 'Vivenciales', vivenciales?.length ?? 0, pendingVivencial)}
               {navItem('instructores', 'Instructores', instructores?.length ?? 0)}
+              {navItem('alumnos', 'Alumnos', alumnos?.length ?? 0)}
               {navItem('beneficios', 'Beneficios', benefits?.length ?? 0)}
               <div className="nav-section-label">Comunidad</div>
               {navItem('comentarios', 'Moderación', pendingModeration || undefined)}

@@ -41,6 +41,7 @@ const AdminMetricas     = lazy(() => import('@/pages/admin/Metricas'))
 const AdminComentarios  = lazy(() => import('@/pages/admin/Comentarios'))
 const AdminBeneficios   = lazy(() => import('@/pages/admin/Beneficios'))
 const AdminInstructores = lazy(() => import('@/pages/admin/Instructores'))
+const AdminAlumnos      = lazy(() => import('@/pages/admin/Alumnos'))
 const AdminPagosInstructores = lazy(() => import('@/pages/admin/PagosInstructores'))
 const InstructorLayout       = lazy(() => import('@/pages/instructor/InstructorLayout'))
 const InstructorResumen      = lazy(() => import('@/pages/instructor/Resumen'))
@@ -176,6 +177,7 @@ export default function App() {
                     <Route path="cursos" element={<AdminCursos />} />
                     <Route path="vivenciales" element={<AdminVivenciales />} />
                     <Route path="instructores" element={<AdminInstructores />} />
+                    <Route path="alumnos" element={<AdminAlumnos />} />
                     <Route path="beneficios" element={<AdminBeneficios />} />
                     <Route path="comentarios" element={<AdminComentarios />} />
                     <Route path="metricas" element={<AdminMetricas />} />

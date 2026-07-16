@@ -98,7 +98,13 @@
     display:flex; align-items:center; justify-content:center;
     color:var(--teal-deep); cursor:pointer;
     box-shadow:0 3px 10px -1px rgba(10,30,41,0.45);
-    z-index:41;
+    /* z-index alone isn't enough: el `.topbar` sticky tiene backdrop-filter, que en GPU
+       real (y en Safari) lo promueve a su propia capa de composición y termina pintando
+       ENCIMA de este botón aunque el z-index del botón sea mayor. Forzamos al botón a su
+       propia capa con translateZ(0): así el compositor vuelve a respetar el z-index y el
+       botón queda por arriba del sidebar (40) y del topbar (30) en todo momento. */
+    z-index:50;
+    transform:translateZ(0);
     transition:left .28s var(--ease-out), transform .28s var(--ease-out), background .16s var(--ease-out), color .16s var(--ease-out), border-color .16s var(--ease-out);
   }
   .sidebar-collapse-btn:hover{color:var(--white); background:var(--teal-deep); border-color:var(--teal-deep);}

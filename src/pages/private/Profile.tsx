@@ -27,6 +27,7 @@ import type { Enrollment, Badge, RankingRow, ItinerarioDia } from '@/types'
 import { cupoEstado } from '@/lib/cupo'
 import { EASE_OUT } from '@/lib/motion'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
+import { TIPO_VENDEDOR_OPCIONES, EXPERIENCIA_OPCIONES, GENERO_OPCIONES } from '@/lib/taxonomy'
 
 const NEON = '#00E5C8'
 const GOLD = '#C99A3A'
@@ -436,7 +437,10 @@ export default function Profile() {
       </section>
 
       {/* ── TABS ── */}
-      <div className="sticky top-14 z-[100] border-b" style={{ background: 'var(--bg)', borderColor: 'var(--line)' }}>
+      {/* z-30: la barra de tabs se pega DEBAJO del header fijo (z-50) sin taparlo.
+          Antes estaba en z-100 y se montaba por encima del header y del panel de
+          notificaciones al scrollear. Ver escala de capas en NotificationsDrawer. */}
+      <div className="sticky top-14 z-30 border-b" style={{ background: 'var(--bg)', borderColor: 'var(--line)' }}>
         <div className="max-w-[960px] mx-auto px-5 flex overflow-x-auto scrollbar-none">
           {TABS.map((t, i) => {
             const on = tab === i
@@ -1059,9 +1063,9 @@ function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBad
 }
 
 // ── TUS DATOS TAB ─────────────────────────────────────────────────────
-const GENEROS = ['', 'Femenino', 'Masculino', 'No binario', 'Otro']
-const VENDEDORES = ['Freelance independiente', 'Agencia pequeña (1-5 personas)', 'Agencia mediana / grande', 'Otro']
-const EXPERIENCIAS = ['Menos de 1 año', '1 a 3 años', '3 a 5 años', '5 a 10 años', 'Más de 10 años']
+// Género/tipo de vendedor/experiencia salen de la taxonomía única compartida
+// con el onboarding (src/lib/taxonomy.ts): mismo campo, mismas opciones, mismo
+// storage. Antes cada pantalla tenía su propia lista y los valores no matcheaban.
 
 function DatosTab({ uid, nombre, apellido, email, telefono, ap, referralCode, referralUrl }: {
   uid?: string; nombre: string; apellido: string; email: string; telefono: string
@@ -1124,7 +1128,8 @@ function DatosTab({ uid, nombre, apellido, email, telefono, ap, referralCode, re
           <Field label="Fecha de nacimiento"><input className="td-input" type="date" value={form.fecha_nacimiento ?? ''} onChange={set('fecha_nacimiento')} /></Field>
           <Field label="Género">
             <select className="td-input" value={form.genero ?? ''} onChange={set('genero')}>
-              {GENEROS.map(g => <option key={g} value={g}>{g || 'Preferir no decir'}</option>)}
+              <option value="">Elegí una opción</option>
+              {GENERO_OPCIONES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
           </Field>
         </div>
@@ -1140,13 +1145,13 @@ function DatosTab({ uid, nombre, apellido, email, telefono, ap, referralCode, re
           <Field label="Tipo de vendedor">
             <select className="td-input" value={form.tipo_vendedor} onChange={set('tipo_vendedor')}>
               <option value="">Seleccionar…</option>
-              {VENDEDORES.map(v => <option key={v} value={v}>{v}</option>)}
+              {TIPO_VENDEDOR_OPCIONES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
             </select>
           </Field>
           <Field label="Años de experiencia en turismo">
             <select className="td-input" value={form.anos_experiencia} onChange={set('anos_experiencia')}>
               <option value="">Seleccionar…</option>
-              {EXPERIENCIAS.map(v => <option key={v} value={v}>{v}</option>)}
+              {EXPERIENCIA_OPCIONES.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
             </select>
           </Field>
         </div>

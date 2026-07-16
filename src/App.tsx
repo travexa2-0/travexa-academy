@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'react-hot-toast'
+import toast, { Toaster } from 'react-hot-toast'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import ErrorBoundary from '@/components/layout/ErrorBoundary'
@@ -59,17 +59,48 @@ function PageLoader() {
   )
 }
 
-// Aterrizaje de OAuth (Google). Espera a que la sesión se resuelva desde la URL antes de
-// navegar a una ruta real; el OnboardingGate decide luego si va a /onboarding o /cursos.
+// Aterrizaje de OAuth (Google) y del link de confirmación de email. En ambos casos
+// la sesión llega en el hash de la URL (flujo implícito) y supabase-js la resuelve
+// solo; acá esperamos a que aparezca antes de navegar a una ruta real. El
+// OnboardingGate decide luego si va a /onboarding o /cursos.
 function AuthCallback() {
   const { user, loading } = useAuth()
   const { isAdmin, isLoading: adminLoading } = useIsAdmin()
   const [timedOut, setTimedOut] = useState(false)
+  // Leemos una sola vez lo que trae el hash: `type` (signup/recovery/…) para el mensaje
+  // de éxito, y `error`/`error_code` cuando el link de confirmación venció o es inválido.
+  const [hashInfo] = useState(() => {
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    return {
+      type: h.get('type'),
+      error: h.get('error'),
+      errorCode: h.get('error_code'),
+    }
+  })
 
   useEffect(() => {
     const t = setTimeout(() => setTimedOut(true), 6000)
     return () => clearTimeout(t)
   }, [])
+
+  // Confirmación de email OK: avisamos una sola vez cuando la sesión ya se resolvió.
+  useEffect(() => {
+    if (!loading && user && (hashInfo.type === 'signup' || hashInfo.type === 'email')) {
+      toast.success('¡Email confirmado! Ya podés empezar.')
+    }
+  }, [loading, user, hashInfo.type])
+
+  // Link vencido / inválido: Supabase redirige con #error=...&error_code=otp_expired.
+  // Mandamos a /login con un mensaje accionable (ahí puede reenviar el mail).
+  if (hashInfo.error) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ confirmError: hashInfo.errorCode === 'otp_expired' ? 'expired' : 'invalid' }}
+      />
+    )
+  }
 
   // Un admin aterriza directo en el backoffice, salteando el onboarding de alumno.
   if (!loading && user && !adminLoading) {

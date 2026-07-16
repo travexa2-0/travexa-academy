@@ -1,22 +1,16 @@
 import { useState, type FormEvent, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, Briefcase, User as UserIcon, GraduationCap, CheckCircle2, BookOpen, Plane } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, CheckCircle2, BookOpen, Plane, MailCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
-import type { TipoCuenta } from '@/types'
 import { EASE_OUT, shakeX } from '@/lib/motion'
-
-const TIPO_OPCIONES: { value: TipoCuenta; label: string; desc: string; icon: typeof UserIcon }[] = [
-  { value: 'asesor',   label: 'Asesor freelance', desc: 'Vendés y asesorás en forma independiente.', icon: UserIcon },
-  { value: 'agencia',  label: 'Agencia',           desc: 'Representás o gestionás una agencia.',     icon: Briefcase },
-  { value: 'externo',  label: 'Estudiante',         desc: 'Estoy aprendiendo el mundo del turismo.',  icon: GraduationCap },
-]
+import { ALREADY_REGISTERED } from '@/lib/utils'
 
 export default function Registro() {
-  const { signUp, signInWithGoogle } = useAuth()
+  const { signUp, signInWithGoogle, resendConfirmation } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const shouldReduce = useReducedMotion()
@@ -26,13 +20,15 @@ export default function Registro() {
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [tipoCuenta, setTipoCuenta]     = useState<TipoCuenta>('asesor')
   const [referralCode, setReferralCode] = useState('')
   const [loading, setLoading]           = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [status, setStatus]             = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [error, setError]               = useState<string | null>(null)
   const [shake, setShake]               = useState(false)
+  // Pantalla "revisá tu mail": se muestra cuando signUp no crea sesión (Confirm email activo).
+  const [confirmSent, setConfirmSent]   = useState(false)
+  const [resendState, setResendState]   = useState<'idle' | 'sending' | 'sent'>('idle')
 
   useEffect(() => {
     const ref = searchParams.get('ref')
@@ -51,15 +47,14 @@ export default function Registro() {
     setStatus('loading')
     setError(null)
 
-    const { error } = await signUp({
+    const { error, needsConfirmation } = await signUp({
       email, password, nombre, apellido,
-      tipo_cuenta: tipoCuenta,
       referral_code: referralCode || undefined,
     })
 
     if (error) {
       setError(
-        error.includes('already') || error.includes('registered')
+        error === ALREADY_REGISTERED || error.includes('already') || error.includes('registered')
           ? 'Ese email ya está registrado. ¿Querés ingresar?'
           : error
       )
@@ -70,8 +65,25 @@ export default function Registro() {
       return
     }
 
+    // "Confirm email" activo: no hay sesión todavía. Mostramos la pantalla de
+    // "revisá tu mail" en vez de mandar a /onboarding (que rebotaría a /login).
+    if (needsConfirmation) {
+      setStatus('idle')
+      setLoading(false)
+      setConfirmSent(true)
+      return
+    }
+
+    // Sin confirmación (toggle apagado): registro loguea directo, va al onboarding.
     setStatus('success')
     setTimeout(() => navigate('/onboarding', { replace: true }), 700)
+  }
+
+  const handleResend = async () => {
+    if (resendState === 'sending') return
+    setResendState('sending')
+    const { error } = await resendConfirmation(email)
+    setResendState(error ? 'idle' : 'sent')
   }
 
   const handleGoogle = async () => {
@@ -152,6 +164,50 @@ export default function Registro() {
             </Link>
           </div>
 
+          {confirmSent ? (
+            <motion.div
+              initial={shouldReduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: EASE_OUT }}
+              className="text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'var(--primary-s)' }}>
+                <MailCheck className="h-7 w-7" style={{ color: 'var(--primary-l)' }} />
+              </div>
+              <h1 className="font-display font-bold text-2xl mb-2" style={{ color: 'var(--text-1)' }}>
+                Revisá tu mail
+              </h1>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--text-3)' }}>
+                Te enviamos un link de confirmación a{' '}
+                <span className="font-semibold" style={{ color: 'var(--text-1)' }}>{email}</span>.
+                Abrilo para activar tu cuenta y empezar tu formación.
+              </p>
+
+              <div className="rounded-xl px-4 py-3 text-xs text-left leading-relaxed mb-6" style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--text-3)' }}>
+                ¿No lo ves? Fijate en spam o promociones. El link vence a las pocas horas —
+                si venció, pedí uno nuevo acá abajo.
+              </div>
+
+              <Button
+                onClick={() => { void handleResend() }}
+                disabled={resendState === 'sending' || resendState === 'sent'}
+                className="w-full h-11 font-semibold disabled:opacity-60"
+                style={{ background: 'var(--primary)', color: 'var(--text-1)' }}
+              >
+                {resendState === 'sending' && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resendState === 'sent' && <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Mail reenviado</span>}
+                {resendState === 'idle' && 'Reenviar mail de confirmación'}
+              </Button>
+
+              <p className="text-center text-sm mt-6" style={{ color: 'var(--text-3)' }}>
+                ¿Ya lo confirmaste?{' '}
+                <Link to="/login" className="font-medium hover:underline" style={{ color: 'var(--gold)' }}>
+                  Ingresá
+                </Link>
+              </p>
+            </motion.div>
+          ) : (
+          <>
           <h1 className="font-display font-bold text-2xl mb-1" style={{ color: 'var(--text-1)' }}>
             Creá tu cuenta gratis
           </h1>
@@ -191,35 +247,6 @@ export default function Registro() {
             animate={shake && !shouldReduce ? shakeX : {}}
             className="space-y-4"
           >
-            {/* Tipo de cuenta */}
-            <div className="space-y-2">
-              <Label className="text-sm" style={{ color: 'var(--text-2)' }}>¿Cómo te describís?</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {TIPO_OPCIONES.map(op => {
-                  const Icon = op.icon
-                  const active = tipoCuenta === op.value
-                  return (
-                    <motion.button
-                      key={op.value}
-                      type="button"
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setTipoCuenta(op.value)}
-                      className="rounded-xl border-2 p-3 text-left transition-all"
-                      style={{
-                        borderColor: active ? 'var(--primary)' : 'var(--line)',
-                        background: active ? 'var(--primary-s)' : 'var(--bg)',
-                      }}
-                    >
-                      <Icon className="h-4 w-4 mb-1.5" style={{ color: active ? 'var(--primary-l)' : 'var(--text-3)' }} />
-                      <p className="text-xs font-semibold" style={{ color: active ? 'var(--text-1)' : 'var(--text-2)' }}>
-                        {op.label}
-                      </p>
-                    </motion.button>
-                  )
-                })}
-              </div>
-            </div>
-
             {/* Nombre + Apellido */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -368,6 +395,8 @@ export default function Registro() {
               Ingresá
             </Link>
           </p>
+          </>
+          )}
         </motion.div>
       </div>
     </div>

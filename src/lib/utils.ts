@@ -16,6 +16,12 @@ export function countWords(text: string): number {
 // (el redirectTo de OAuth es fijo a /auth/callback, así que el ?redirect= se perdería).
 export const POST_LOGIN_REDIRECT_KEY = 'postLoginRedirect'
 
+// Sentinel que devuelve signUp cuando el email ya existe. Con "Confirm email" activo,
+// Supabase NO da error para un email ya registrado (anti-enumeración): responde 200 con
+// un user obfuscado e identities:[]. Lo normalizamos a este código para que Registro
+// muestre el mismo mensaje que el caso clásico ("ya registrado").
+export const ALREADY_REGISTERED = 'already-registered'
+
 // ── Gate de login ──────────────────────────────────────────────────────────
 // Cualquier acción que exige sesión (comprar/reservar/anotarme) manda al usuario
 // deslogueado a /login?redirect=<url actual>, para devolverlo al mismo lugar

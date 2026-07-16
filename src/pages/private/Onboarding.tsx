@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 import { WhatsappShareButton } from 'react-share'
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAcademyProfile } from '@/hooks/useProfile'
 import { useProfilesRow } from '@/hooks/useProfilePage'
 import { supabase } from '@/lib/supabase'
+import { TIPO_VENDEDOR_OPCIONES, EXPERIENCIA_OPCIONES, GENERO_OPCIONES } from '@/lib/taxonomy'
 
 // El tipo generado no cubre todas las columnas nuevas; seguimos el patrón del proyecto.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,10 +22,6 @@ const panelVariants = {
   visible: { opacity: 1, x: 0 },
   exit:    { opacity: 0, x: -28 },
 }
-
-const GENEROS = ['Femenino', 'Masculino', 'No binario', 'Otro', 'Prefiero no decir']
-const TIPOS_VENDEDOR = ['Freelance', 'Agencia pequeña', 'Agencia mediana o grande', 'Otro']
-const EXPERIENCIA = ['Menos de 1', '1 a 3', '3 a 5', '5 a 10', 'Más de 10']
 
 const STEP_ARIA = [
   'Paso 1 de 3: Bienvenida y datos básicos',
@@ -213,6 +210,19 @@ export default function Onboarding() {
     setTimeout(() => setCopied(false), 1800)
   }
 
+  // ── Guard anti-loop (bug mobile) ─────────────────────────────────
+  // Si el onboarding ya está completo en la DB, esta pantalla no tiene nada
+  // que hacer: fuera a la home. Esto hace IMPOSIBLE, sin depender de ningún
+  // timing, que alguien que ya terminó vea de nuevo el formulario desde el
+  // paso 1 — pasaba en mobile al volver a /onboarding por gesto "atrás" o
+  // por el back/forward cache del navegador (OnboardingGate exime /onboarding
+  // de su redirect, así que la única defensa correcta es esta, acá adentro).
+  // Lee la misma query que escribe finish() de forma optimista, con lo cual
+  // el rebote se corta apenas termina, aún antes de que la DB confirme.
+  if (academyProfile?.onboarding_completo === true) {
+    return <Navigate to="/" replace />
+  }
+
   const shareUrl = refCode ? `${window.location.origin}/registro?ref=${refCode}` : window.location.origin
   const shareText = refCode
     ? `Sumate a Travexa Academy con mi código ${refCode} y arrancás con Créditos de bienvenida 🪙`
@@ -296,7 +306,7 @@ export default function Onboarding() {
                     <label htmlFor="f-gen">Género</label>
                     <select id="f-gen" value={genero} onChange={e => setGenero(e.target.value)}>
                       <option value="">Elegí una opción</option>
-                      {GENEROS.map(g => <option key={g} value={g}>{g}</option>)}
+                      {GENERO_OPCIONES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -336,14 +346,14 @@ export default function Onboarding() {
                   <label htmlFor="f-tipo">Tipo de vendedor</label>
                   <select id="f-tipo" value={tipoVendedor} onChange={e => setTipoVendedor(e.target.value)} required>
                     <option value="">Elegí una opción</option>
-                    {TIPOS_VENDEDOR.map(t => <option key={t} value={t}>{t}</option>)}
+                    {TIPO_VENDEDOR_OPCIONES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
                 <div className="ob-field">
                   <label htmlFor="f-exp">Años de experiencia</label>
                   <select id="f-exp" value={anosExperiencia} onChange={e => setAnosExperiencia(e.target.value)} required>
                     <option value="">Elegí una opción</option>
-                    {EXPERIENCIA.map(x => <option key={x} value={x}>{x}</option>)}
+                    {EXPERIENCIA_OPCIONES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
                   </select>
                 </div>
                 <div className="ob-field">

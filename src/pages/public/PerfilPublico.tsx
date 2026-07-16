@@ -235,9 +235,9 @@ export default function PerfilPublico() {
                     📍 {profile.ciudad}
                   </span>
                 )}
-                {profile.tipo_cuenta && (
-                  <span className="font-mono text-xs px-2.5 py-1 rounded-full capitalize" style={{ background: 'var(--primary-s)', color: 'var(--primary-l)' }}>
-                    {profile.tipo_cuenta}
+                {profile.tipo_vendedor && (
+                  <span className="font-mono text-xs px-2.5 py-1 rounded-full" style={{ background: 'var(--primary-s)', color: 'var(--primary-l)' }}>
+                    {profile.tipo_vendedor}
                   </span>
                 )}
               </div>

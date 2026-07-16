@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Eye, EyeOff, CheckCircle2, Loader2, BookOpen, Globe, MapPin, Compass } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle2, Loader2, BookOpen, Globe, MapPin, Compass, MailWarning } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,7 +17,7 @@ const HERO_QUOTES = [
 
 
 export default function Login() {
-  const { signIn, signInWithGoogle } = useAuth()
+  const { signIn, signInWithGoogle, resendConfirmation } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [params] = useSearchParams()
@@ -29,6 +29,8 @@ export default function Login() {
   const from = redirectParam ?? stateFrom ?? '/auth/callback'
   // Llega true tras completar /actualizar-contrasena; mostramos un aviso de éxito.
   const passwordReset = (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
+  // Llega desde /auth/callback cuando el link de confirmación venció o es inválido.
+  const confirmError = (location.state as { confirmError?: 'expired' | 'invalid' } | null)?.confirmError
   const shouldReduce = useReducedMotion()
 
   const [email, setEmail] = useState('')
@@ -39,6 +41,9 @@ export default function Login() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [shake, setShake] = useState(false)
+  // Se activa cuando el login falla por email sin confirmar: habilita "reenviar mail".
+  const [needsConfirm, setNeedsConfirm] = useState(false)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
   const quoteIdx = Math.floor(Date.now() / 10000) % HERO_QUOTES.length
   const heroQuote = HERO_QUOTES[quoteIdx]
 
@@ -48,10 +53,16 @@ export default function Login() {
     setStatus('loading')
     setError(null)
 
-    const { error } = await signIn(email, password)
+    const { error, code } = await signIn(email, password)
 
     if (error) {
-      setError('Email o contraseña incorrectos.')
+      if (code === 'email_not_confirmed') {
+        setError('Todavía no confirmaste tu email. Revisá tu correo y hacé clic en el link, o reenvialo acá abajo.')
+        setNeedsConfirm(true)
+      } else {
+        setError('Email o contraseña incorrectos.')
+        setNeedsConfirm(false)
+      }
       setStatus('error')
       setLoading(false)
       setShake(true)
@@ -61,6 +72,13 @@ export default function Login() {
 
     setStatus('success')
     setTimeout(() => navigate(from, { replace: true }), 600)
+  }
+
+  const handleResend = async () => {
+    if (resendState === 'sending') return
+    setResendState('sending')
+    const { error } = await resendConfirmation(email)
+    setResendState(error ? 'idle' : 'sent')
   }
 
   const handleGoogle = async () => {
@@ -140,6 +158,17 @@ export default function Login() {
             <div className="flex items-start gap-2 text-sm text-primary-l bg-primary/10 border border-primary/20 rounded-lg px-3 py-2.5 mb-6">
               <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
               <span>Tu contraseña se actualizó. Ingresá con la nueva contraseña.</span>
+            </div>
+          )}
+
+          {confirmError && (
+            <div className="flex items-start gap-2 text-sm text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2.5 mb-6">
+              <MailWarning className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                {confirmError === 'expired'
+                  ? 'El link de confirmación venció. Ingresá con tu email y contraseña y te reenviamos uno nuevo.'
+                  : 'El link de confirmación no es válido. Ingresá con tu email y contraseña para reenviarlo.'}
+              </span>
             </div>
           )}
 
@@ -231,6 +260,19 @@ export default function Login() {
                 </motion.p>
               )}
             </AnimatePresence>
+
+            {needsConfirm && (
+              <button
+                type="button"
+                onClick={() => { void handleResend() }}
+                disabled={resendState === 'sending' || resendState === 'sent'}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-lg border border-line hover:bg-card-h transition-colors text-sm font-medium text-text-2 disabled:opacity-60"
+              >
+                {resendState === 'sending' && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resendState === 'sent' && <><CheckCircle2 className="h-4 w-4" /> Mail de confirmación reenviado</>}
+                {resendState === 'idle' && 'Reenviar mail de confirmación'}
+              </button>
+            )}
 
             <motion.div whileTap={{ scale: 0.97 }}>
               <Button

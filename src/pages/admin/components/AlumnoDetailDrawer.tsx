@@ -1,6 +1,8 @@
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 import Overlay from './Overlay'
 import { formatArs, formatDate } from '../format'
-import { useStudentDetail, type StudentRow, type StudentEnrollment } from '@/hooks/admin/useAdminStudents'
+import { useStudentDetail, useToggleStudentActive, type StudentRow, type StudentEnrollment } from '@/hooks/admin/useAdminStudents'
 
 interface Props {
   alumno: StudentRow | null
@@ -42,9 +44,23 @@ function EmptyMini({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 export default function AlumnoDetailDrawer({ alumno, open, onClose }: Props) {
   const { data: detail, isLoading } = useStudentDetail(open && alumno ? alumno.id : undefined)
+  const toggleActive = useToggleStudentActive()
+  const [confirmBaja, setConfirmBaja] = useState(false)
 
   if (!alumno) return null
   const a = alumno
+
+  const doToggle = async () => {
+    try {
+      await toggleActive.mutateAsync({ id: a.id, activo: !a.activo })
+      toast.success(a.activo ? 'Alumno dado de baja' : 'Alumno reactivado')
+      onClose()
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setConfirmBaja(false)
+    }
+  }
   const g = detail?.gamification ?? null
   const enrollments = detail?.enrollments ?? []
   const cursos = enrollments.filter(e => e.tipo !== 'vivencial')
@@ -56,21 +72,26 @@ export default function AlumnoDetailDrawer({ alumno, open, onClose }: Props) {
   return (
     <Overlay open={open} onClose={onClose} alignRight>
       <div className="slideover">
-        <div className="slideover-hero" style={{ backgroundImage: a.avatar_url ? `url('${a.avatar_url}')` : 'linear-gradient(135deg,#0A1E29,#16323F)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        {/* Header de persona: fondo liso + avatar circular grande. La clase
+            .slideover-hero queda para portadas reales (cursos/vivenciales). */}
+        <div className="slideover-hero" style={{ background: 'linear-gradient(135deg,#0A1E29,#16323F)', display: 'flex', flexDirection: 'column' }}>
           <div className="slideover-hero-top">
             <button className="modal-close" style={{ background: 'rgba(10,30,41,0.4)', color: '#fff' }} onClick={onClose}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
-            {g?.tipo_cuenta && <span className="badge" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'capitalize' }}>{g.tipo_cuenta}</span>}
+            <div style={{ display: 'flex', gap: 6 }}>
+              {!a.activo && <span className="badge badge-archived">Dado de baja</span>}
+              {g?.tipo_cuenta && <span className="badge" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'capitalize' }}>{g.tipo_cuenta}</span>}
+            </div>
           </div>
-          <div className="slideover-hero-bottom">
-            {!a.avatar_url && (
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.16)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
-                {initials(a.nombre, a.apellido, a.email)}
-              </div>
-            )}
-            <div className="cat">Alumno</div>
-            <h2>{fullName(a)}</h2>
+          <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 20px 18px' }}>
+            <div style={{ width: 116, height: 116, borderRadius: '50%', overflow: 'hidden', border: '3px solid rgba(245,243,236,0.9)', boxShadow: '0 6px 18px -4px rgba(10,30,41,0.55)', background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {a.avatar_url
+                ? <img src={a.avatar_url} alt={fullName(a)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ color: '#fff', fontWeight: 700, fontSize: 34, fontFamily: 'var(--font-display)' }}>{initials(a.nombre, a.apellido, a.email)}</span>}
+            </div>
+            <div className="cat" style={{ marginTop: 12 }}>Alumno</div>
+            <h2 style={{ marginTop: 2 }}>{fullName(a)}</h2>
           </div>
         </div>
 
@@ -178,6 +199,28 @@ export default function AlumnoDetailDrawer({ alumno, open, onClose }: Props) {
                           {paymentEstadoBadge(p.estado)}
                         </div>
                       ))}
+              </div>
+            </div>
+
+            {/* Administrar — baja/reactivar (soft-delete, no bloquea login) */}
+            <div className="card">
+              <div className="card-head"><h3 style={{ fontSize: 13 }}>Administrar</h3></div>
+              <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '14px 18px' }}>
+                {a.activo ? (
+                  !confirmBaja ? (
+                    <button className="btn btn-danger btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => setConfirmBaja(true)}>Dar de baja</button>
+                  ) : (
+                    <div style={{ background: 'var(--clay-soft)', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 12.4, color: 'var(--clay-deep)', marginBottom: 8 }}>Lo marca como dado de baja (flag interno del equipo). No borra datos ni bloquea su acceso a la plataforma. Podés reactivarlo cuando quieras.</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-danger btn-sm" onClick={doToggle} disabled={toggleActive.isPending}>Sí, dar de baja</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setConfirmBaja(false)}>Cancelar</button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={doToggle} disabled={toggleActive.isPending}>Reactivar</button>
+                )}
               </div>
             </div>
           </div>

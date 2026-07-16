@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { Profile } from '@/types'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase, supabaseWrite } from '@/lib/supabase'
 
 // Alumnos = usuarios de la plataforma que NO son admin. Un instructor que además
 // es alumno puede aparecer; los admin quedan fuera de la lista y del conteo.
@@ -22,11 +21,21 @@ export interface StudentRow {
   ciudad: string | null
   pais: string | null
   ultimo_ingreso: string | null
+  activo: boolean           // profiles.activo — soft-delete de bookkeeping interno
   cursosCount: number       // enrollments activos con curso grabado/en_vivo/ebook
   vivencialesCount: number  // enrollments activos con curso vivencial
 }
 
-type ProfileLite = Pick<Profile, 'id' | 'email' | 'nombre' | 'apellido' | 'avatar_url' | 'telefono' | 'created_at'>
+type ProfileLite = {
+  id: string
+  email: string
+  nombre: string | null
+  apellido: string | null
+  avatar_url: string | null
+  telefono: string | null
+  created_at: string
+  activo: boolean
+}
 type AcademyLite = { user_id: string; ciudad: string | null; pais: string | null; ultimo_ingreso: string | null }
 type EnrollmentLite = { user_id: string; course_id: string; activo: boolean }
 type CourseTipoLite = { id: string; tipo: string }
@@ -34,7 +43,7 @@ type CourseTipoLite = { id: string; tipo: string }
 async function fetchStudents(): Promise<StudentRow[]> {
   const { data: profilesData, error } = await supabase
     .from('profiles')
-    .select('id, email, nombre, apellido, avatar_url, telefono, created_at')
+    .select('id, email, nombre, apellido, avatar_url, telefono, created_at, activo')
     .eq('es_admin', false)
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
@@ -75,6 +84,7 @@ async function fetchStudents(): Promise<StudentRow[]> {
       ciudad: a?.ciudad ?? null,
       pais: a?.pais ?? null,
       ultimo_ingreso: a?.ultimo_ingreso ?? null,
+      activo: p.activo,
       cursosCount: cursos.get(p.id) ?? 0,
       vivencialesCount: vivenciales.get(p.id) ?? 0,
     }
@@ -206,5 +216,22 @@ export function useStudentDetail(userId: string | undefined) {
     queryFn:  () => fetchStudentDetail(userId!),
     enabled:  !!userId,
     staleTime: 1000 * 30,
+  })
+}
+
+// ── Dar de baja / reactivar (soft-delete) ─────────────────────────
+// Flag interno de bookkeeping: profiles.activo = false. NUNCA un delete, y no
+// toca Supabase Auth (no bloquea el login: eso sería otra tarea con service_role).
+export function useToggleStudentActive() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, activo }: { id: string; activo: boolean }) => {
+      const { error } = await supabaseWrite.from('profiles').update({ activo }).eq('id', id)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: (_r, { id }) => {
+      qc.invalidateQueries({ queryKey: ['admin-students'] })
+      qc.invalidateQueries({ queryKey: ['admin-student-detail', id] })
+    },
   })
 }

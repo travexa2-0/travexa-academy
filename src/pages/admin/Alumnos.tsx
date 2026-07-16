@@ -14,18 +14,23 @@ export default function Alumnos() {
   const { data: alumnos } = useAdminStudents()
   const [detail, setDetail] = useState<StudentRow | null>(null)
   const [search, setSearch] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
 
   const list = alumnos ?? []
+  const bajaCount = useMemo(() => list.filter(a => !a.activo).length, [list])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return list
-    return list.filter(a =>
-      (a.nombre ?? '').toLowerCase().includes(q) ||
-      (a.apellido ?? '').toLowerCase().includes(q) ||
-      a.email.toLowerCase().includes(q),
-    )
-  }, [list, search])
+    return list.filter(a => {
+      if (!showInactive && !a.activo) return false
+      if (!q) return true
+      return (
+        (a.nombre ?? '').toLowerCase().includes(q) ||
+        (a.apellido ?? '').toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q)
+      )
+    })
+  }, [list, search, showInactive])
 
   return (
     <>
@@ -42,6 +47,15 @@ export default function Alumnos() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
           <input type="text" placeholder="Buscar por nombre, apellido o email…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
+        {bajaCount > 0 && (
+          <span
+            className={`chip${showInactive ? ' chip-active' : ''}`}
+            style={{ cursor: 'pointer', marginLeft: 'auto' }}
+            onClick={() => setShowInactive(v => !v)}
+          >
+            Mostrar dados de baja · {bajaCount}
+          </span>
+        )}
       </div>
 
       {filtered.length > 0 ? (
@@ -58,7 +72,10 @@ export default function Alumnos() {
                           {!a.avatar_url && initials(a)}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{fullName(a)}</div>
+                          <div className="row-flex" style={{ gap: 8 }}>
+                            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{fullName(a)}</span>
+                            {!a.activo && <span className="badge badge-archived">Dado de baja</span>}
+                          </div>
                           <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{a.email}</div>
                         </div>
                       </div>

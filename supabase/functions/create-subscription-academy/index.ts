@@ -1,94 +1,98 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const MP_API = 'https://api.mercadopago.com'
-const ACADEMY_URL = 'https://academy.travexa.com.ar'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-Deno.serve(async (req) => {
-  const corsResult = handleCors(req)
-  if (corsResult) return corsResult
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return jsonResponse({ error: 'No autorizado' }, 401)
+    const { user_id, plan } = await req.json(); // plan: 'mensual' | 'anual'
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    )
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    if (authError || !user) return jsonResponse({ error: 'Token inválido' }, 401)
-
-    const { plan } = await req.json() as { plan: 'mensual' | 'anual' }
-    if (!plan || !['mensual', 'anual'].includes(plan)) {
-      return jsonResponse({ error: 'Plan inválido. Opciones: mensual, anual' }, 400)
+    if (!user_id || !plan) {
+      throw new Error('user_id y plan son requeridos');
     }
 
-    const mpToken = (Deno.env.get('MP_ACCESS_TOKEN') ?? '').trim()
-    if (!mpToken) return jsonResponse({ error: 'MP_ACCESS_TOKEN no configurado' }, 500)
-
-    const planIdEnvKey = plan === 'mensual' ? 'MP_PLAN_MENSUAL_ID' : 'MP_PLAN_ANUAL_ID'
-    const mpPlanId = Deno.env.get(planIdEnvKey)
-    if (!mpPlanId) {
-      return jsonResponse({ error: `${planIdEnvKey} no configurado en Supabase Secrets` }, 500)
+    if (!['mensual', 'anual'].includes(plan)) {
+      throw new Error('Plan inválido. Usar: mensual o anual');
     }
 
-    const externalReference = `ACAD-SUB-${user.id}-${plan}`
-    const userEmail = user.email ?? ''
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
 
-    // POST /preapproval con external_reference (crítico — lección del bug de B2B)
-    const mpRes = await fetch(`${MP_API}/preapproval`, {
+    const mpToken = Deno.env.get('MP_ACCESS_TOKEN')!;
+    const planId = plan === 'mensual'
+      ? Deno.env.get('MP_PLAN_MENSUAL_ID')!
+      : Deno.env.get('MP_PLAN_ANUAL_ID')!;
+
+    if (!planId) {
+      throw new Error(`Plan MP no configurado: MP_PLAN_${plan.toUpperCase()}_ID`);
+    }
+
+    // Get user profile for MP payer email
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email, nombre, apellido')
+      .eq('id', user_id)
+      .single();
+
+    const externalReference = `ACAD-SUB-${user_id}-${plan}`;
+
+    // Create Preapproval in MP
+    const mpResponse = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${mpToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        preapproval_plan_id: mpPlanId,
-        payer_email: userEmail,
+        preapproval_plan_id: planId,
+        payer_email: profile?.email,
         external_reference: externalReference,
-        back_url: `${ACADEMY_URL}/pago-confirmado`,
-        reason: `Suscripción Travexa Academy — Plan ${plan}`,
+        back_url: 'https://academy.travexa.com.ar/pago-confirmado',
+        reason: `Travexa Academy — Plan ${plan === 'mensual' ? 'Mensual' : 'Anual'}`,
       }),
-    })
+    });
 
-    const mpData = await mpRes.json()
-    if (!mpRes.ok) {
-      console.error('MP preapproval error:', mpData)
-      return jsonResponse({ error: `Error Mercado Pago: ${mpData.message ?? 'Error desconocido'}` }, 502)
+    const mpData = await mpResponse.json();
+
+    if (!mpResponse.ok) {
+      throw new Error(`MP error: ${JSON.stringify(mpData)}`);
     }
 
-    const initPoint = mpData.init_point ?? mpData.sandbox_init_point
-    if (!initPoint) return jsonResponse({ error: 'MP no devolvió init_point' }, 502)
-
-    // Registrar suscripción pendiente
-    const { data: existingSub } = await supabaseAdmin
-      .from('academy_subscriptions')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    const subPayload = {
-      user_id: user.id,
+    // Save pending subscription
+    await supabase.from('academy_subscriptions').upsert({
+      user_id,
       plan_name: plan,
       status: 'pending',
       mp_preapproval_id: mpData.id,
-      mp_plan_id: mpPlanId,
-    }
+      mp_plan_id: planId,
+    }, { onConflict: 'user_id' });
 
-    if (existingSub) {
-      await supabaseAdmin.from('academy_subscriptions').update(subPayload).eq('id', existingSub.id)
-    } else {
-      await supabaseAdmin.from('academy_subscriptions').insert(subPayload)
-    }
+    // Update academy_profile to pending
+    await supabase
+      .from('academy_profiles')
+      .update({
+        plan_name: plan,
+        subscription_status: 'pending',
+      })
+      .eq('user_id', user_id);
 
-    return jsonResponse({ init_point: initPoint, preapproval_id: mpData.id })
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Error interno'
-    console.error('create-subscription-academy error:', e)
-    return jsonResponse({ error: msg }, 500)
+    return new Response(
+      JSON.stringify({ init_point: mpData.init_point, preapproval_id: mpData.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
-})
+});

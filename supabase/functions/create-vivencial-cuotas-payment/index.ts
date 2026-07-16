@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } }
     )
 
-    // Verificar JWT y obtener user (no confiar en user_id del body)
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !user) return jsonResponse({ error: 'Token inválido' }, 401)
@@ -28,7 +27,6 @@ Deno.serve(async (req) => {
     const { course_id } = await req.json() as { course_id: string }
     if (!course_id) return jsonResponse({ error: 'Falta course_id' }, 400)
 
-    // Reservar cupo (idempotente) usando el JWT del usuario, para respetar auth.uid()
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -40,7 +38,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: reserveError?.message ?? 'No se pudo reservar el cupo' }, 400)
     }
 
-    // Curso: precio total y precio en cuotas
     const { data: course, error: courseError } = await supabaseAdmin
       .from('academy_courses')
       .select('id, titulo, precio_ars, vivencial_precio_cuotas_ars, tipo')
@@ -53,7 +50,6 @@ Deno.serve(async (req) => {
     const precioArs = Number(course.precio_ars)
     if (!(precioArs > 0)) return jsonResponse({ error: 'El vivencial no tiene precio cargado' }, 400)
 
-    // Enrollment: saldo pendiente (fallback a total cuando aún no hay pagos aprobados)
     const { data: enrollment } = await supabaseAdmin
       .from('academy_enrollments')
       .select('monto_total_ars, monto_pendiente_ars')
@@ -62,7 +58,6 @@ Deno.serve(async (req) => {
     const pendiente = Number(enrollment?.monto_pendiente_ars ?? enrollment?.monto_total_ars ?? precioArs)
     if (!(pendiente > 0)) return jsonResponse({ error: 'Este viaje ya está pagado' }, 400)
 
-    // Mínimo para habilitar cuotas
     const { data: minSetting } = await supabaseAdmin
       .from('academy_settings')
       .select('value')
@@ -73,7 +68,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: `El saldo debe ser al menos $${minCuotas.toLocaleString('es-AR')} para pagar en cuotas` }, 400)
     }
 
-    // Recargo proporcional SIEMPRE sobre el saldo pendiente
     const monto = Math.round((Number(course.vivencial_precio_cuotas_ars) / precioArs) * pendiente)
     if (!(monto > 0)) return jsonResponse({ error: 'Monto de cuotas inválido' }, 400)
 
@@ -82,7 +76,6 @@ Deno.serve(async (req) => {
 
     const externalReference = `ACAD-VIV-${enrollmentId}-${Date.now()}`
 
-    // Registro de pago pendiente
     const { data: payment } = await supabaseAdmin
       .from('academy_payments')
       .insert({
@@ -98,7 +91,6 @@ Deno.serve(async (req) => {
       .select('id')
       .single()
 
-    // Preference MP con tope de cuotas
     const mpRes = await fetch(`${MP_API}/checkout/preferences`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${mpToken}`, 'Content-Type': 'application/json' },

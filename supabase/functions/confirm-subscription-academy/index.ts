@@ -1,74 +1,77 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const MP_API = 'https://api.mercadopago.com'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-Deno.serve(async (req) => {
-  const corsResult = handleCors(req)
-  if (corsResult) return corsResult
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   try {
-    const { preapproval_id } = await req.json() as { preapproval_id: string }
-    if (!preapproval_id) return jsonResponse({ error: 'Falta preapproval_id' }, 400)
+    const { preapproval_id, user_id } = await req.json();
 
-    const mpToken = (Deno.env.get('MP_ACCESS_TOKEN') ?? '').trim()
-    if (!mpToken) return jsonResponse({ error: 'MP_ACCESS_TOKEN no configurado' }, 500)
-
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    )
-
-    // Consultar preapproval en MP
-    const mpRes = await fetch(`${MP_API}/preapproval/${preapproval_id}`, {
-      headers: { Authorization: `Bearer ${mpToken}` },
-    })
-    if (!mpRes.ok) return jsonResponse({ error: 'No se pudo consultar MP' }, 502)
-
-    const mpData = await mpRes.json()
-    const mpStatus: string = mpData.status ?? 'pending'
-
-    // Buscar suscripción local por preapproval_id
-    const { data: sub } = await supabaseAdmin
-      .from('academy_subscriptions')
-      .select('id, user_id, plan_name')
-      .eq('mp_preapproval_id', preapproval_id)
-      .maybeSingle()
-
-    if (!sub) return jsonResponse({ error: 'Suscripción no encontrada' }, 404)
-
-    if (mpStatus === 'authorized') {
-      const now = new Date()
-      const proximoCobro = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-
-      await supabaseAdmin
-        .from('academy_subscriptions')
-        .update({
-          status: 'active',
-          inicio: now.toISOString(),
-          proximo_cobro: proximoCobro.toISOString(),
-        })
-        .eq('id', sub.id)
-
-      await supabaseAdmin
-        .from('academy_profiles')
-        .update({
-          plan_name: sub.plan_name,
-          subscription_status: 'active',
-          subscription_start: now.toISOString(),
-          subscription_end: proximoCobro.toISOString(),
-          mp_subscription_id: preapproval_id,
-        })
-        .eq('user_id', sub.user_id)
-
-      return jsonResponse({ success: true, status: 'authorized' })
+    if (!preapproval_id || !user_id) {
+      throw new Error('preapproval_id y user_id son requeridos');
     }
 
-    return jsonResponse({ success: false, status: mpStatus })
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Error interno'
-    console.error('confirm-subscription-academy error:', e)
-    return jsonResponse({ error: msg }, 500)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const mpToken = Deno.env.get('MP_ACCESS_TOKEN')!;
+
+    // Verify preapproval with MP
+    const mpResponse = await fetch(`https://api.mercadopago.com/preapproval/${preapproval_id}`, {
+      headers: { Authorization: `Bearer ${mpToken}` },
+    });
+
+    const mpData = await mpResponse.json();
+
+    if (mpData.status !== 'authorized') {
+      return new Response(
+        JSON.stringify({ success: false, status: mpData.status }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    const now = new Date();
+    const nextBilling = new Date(now);
+    nextBilling.setMonth(nextBilling.getMonth() + 1);
+
+    // Activate subscription
+    await supabase
+      .from('academy_subscriptions')
+      .update({
+        status: 'active',
+        inicio: now.toISOString(),
+        proximo_cobro: nextBilling.toISOString(),
+      })
+      .eq('mp_preapproval_id', preapproval_id);
+
+    // Update academy profile
+    await supabase
+      .from('academy_profiles')
+      .update({
+        subscription_status: 'active',
+        subscription_start: now.toISOString(),
+        subscription_end: nextBilling.toISOString(),
+        mp_subscription_id: preapproval_id,
+      })
+      .eq('user_id', user_id);
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
-})
+});

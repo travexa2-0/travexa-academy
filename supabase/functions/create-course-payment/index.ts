@@ -1,75 +1,108 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const MP_API = 'https://api.mercadopago.com'
-const ACADEMY_URL = 'https://academy.travexa.com.ar'
-const WEBHOOK_URL = 'https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/mp-webhook-academy'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-Deno.serve(async (req) => {
-  const corsResult = handleCors(req)
-  if (corsResult) return corsResult
+// Producción actual (dominio propio academy.travexa.com.ar aún no tiene cutover — ver backlog).
+const SITE_URL = 'https://travexa-academy.vercel.app';
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return jsonResponse({ error: 'No autorizado' }, 401)
+    const { course_id, user_id, metodo_pago } = await req.json();
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    )
+    if (!course_id || !user_id) {
+      throw new Error('course_id y user_id son requeridos');
+    }
+    if (metodo_pago !== 'transferencia' && metodo_pago !== 'tarjeta') {
+      throw new Error("metodo_pago debe ser 'transferencia' o 'tarjeta'");
+    }
 
-    // Verificar JWT y obtener user
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    if (authError || !user) return jsonResponse({ error: 'Token inválido' }, 401)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
 
-    const { course_id } = await req.json() as { course_id: string }
-    if (!course_id) return jsonResponse({ error: 'Falta course_id' }, 400)
-
-    // Obtener curso
-    const { data: course, error: courseError } = await supabaseAdmin
-      .from('academy_courses')
-      .select('id, slug, titulo, precio_ars, tipo_acceso, publicado')
-      .eq('id', course_id)
-      .eq('publicado', true)
-      .single()
-
-    if (courseError || !course) return jsonResponse({ error: 'Curso no encontrado' }, 404)
-    if (course.tipo_acceso === 'free') return jsonResponse({ error: 'Este curso es gratuito' }, 400)
-
-    // Verificar que no esté ya inscripto
-    const { data: existing } = await supabaseAdmin
+    // Check if already enrolled
+    const { data: existing } = await supabase
       .from('academy_enrollments')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('user_id', user_id)
       .eq('course_id', course_id)
-      .maybeSingle()
+      .eq('activo', true)
+      .maybeSingle();
 
-    if (existing) return jsonResponse({ error: 'Ya estás inscripto en este curso' }, 409)
+    if (existing) {
+      throw new Error('El usuario ya está inscripto en este curso');
+    }
 
-    const mpToken = (Deno.env.get('MP_ACCESS_TOKEN') ?? '').trim()
-    if (!mpToken) return jsonResponse({ error: 'MP_ACCESS_TOKEN no configurado' }, 500)
+    // Precios ya calculados y guardados por el admin al crear/editar el curso
+    // (ver academy_courses.precio_neto_ars / precio_ars / precio_transferencia_ars).
+    const { data: course, error: courseError } = await supabase
+      .from('academy_courses')
+      .select('id, slug, titulo, precio_ars, precio_usd, precio_transferencia_ars')
+      .eq('id', course_id)
+      .eq('publicado', true)
+      .single();
 
-    const externalReference = `ACAD-COURSE-${user.id}-${course_id}`
+    if (courseError || !course) {
+      throw new Error('Curso no encontrado');
+    }
 
-    // Crear registro de pago pendiente en DB
-    const { data: payment } = await supabaseAdmin
-      .from('academy_payments')
-      .insert({
-        user_id: user.id,
-        tipo: 'curso',
-        course_id,
-        monto_ars: course.precio_ars,
-        mp_external_reference: externalReference,
-        mp_status: 'pending',
-        estado: 'pending',
-      })
-      .select('id')
-      .single()
+    // Nunca confiar en un precio que venga del frontend: se recalcula acá según
+    // el método elegido, a partir de lo que el admin guardó en el curso.
+    const monto = metodo_pago === 'transferencia' ? course.precio_transferencia_ars : course.precio_ars;
+    if (!monto || Number(monto) <= 0) {
+      throw new Error(`El curso no tiene precio configurado para el método ${metodo_pago}`);
+    }
 
-    // Crear Preference en MP
-    const mpRes = await fetch(`${MP_API}/checkout/preferences`, {
+    // Techo de cuotas configurado globalmente (solo aplica a tarjeta)
+    let cuotasMax = 6;
+    if (metodo_pago === 'tarjeta') {
+      const { data: setting } = await supabase
+        .from('academy_settings')
+        .select('value')
+        .eq('key', 'mp_cuotas_max')
+        .maybeSingle();
+      if (setting?.value) cuotasMax = Number(setting.value);
+    }
+
+    const mpToken = Deno.env.get('MP_ACCESS_TOKEN')!;
+    const externalReference = `ACAD-COURSE-${user_id}-${course_id}`;
+
+    const backUrls = {
+      success: `${SITE_URL}/cursos/${course.slug}/aprender?payment=success`,
+      failure: `${SITE_URL}/cursos/${course.slug}?payment=error`,
+      pending: `${SITE_URL}/cursos/${course.slug}?payment=pending`,
+    };
+
+    // Dos preferencias distintas según método: cada una con su propio precio y
+    // restringida a los medios de pago que corresponden a ese precio.
+    const paymentMethods = metodo_pago === 'transferencia'
+      ? {
+          excluded_payment_types: [
+            { id: 'credit_card' },
+            { id: 'debit_card' },
+            { id: 'prepaid_card' },
+          ],
+        }
+      : {
+          excluded_payment_types: [
+            { id: 'ticket' },
+            { id: 'bank_transfer' },
+          ],
+          installments: cuotasMax,
+          default_installments: cuotasMax,
+        };
+
+    // Create MP Preference
+    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${mpToken}`,
@@ -77,47 +110,47 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         items: [{
-          id: course_id,
           title: course.titulo,
           quantity: 1,
+          unit_price: Number(monto),
           currency_id: 'ARS',
-          unit_price: course.precio_ars ?? 0,
         }],
         external_reference: externalReference,
-        back_urls: {
-          // Éxito → player del curso, que confirma el pago y destraba el acceso sin recargar.
-          // Pending/error → detalle del curso, que muestra el banner correspondiente.
-          success: `${ACADEMY_URL}/cursos/${course.slug}/aprender?payment=success`,
-          failure: `${ACADEMY_URL}/cursos/${course.slug}?payment=error`,
-          pending: `${ACADEMY_URL}/cursos/${course.slug}?payment=pending`,
-        },
+        back_urls: backUrls,
         auto_return: 'approved',
-        notification_url: WEBHOOK_URL,
-        statement_descriptor: 'TRAVEXA ACADEMY',
+        notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mp-webhook-academy`,
+        payment_methods: paymentMethods,
       }),
-    })
+    });
 
-    const mpData = await mpRes.json()
-    if (!mpRes.ok) {
-      console.error('MP error:', mpData)
-      return jsonResponse({ error: `Error Mercado Pago: ${mpData.message ?? 'Error desconocido'}` }, 502)
+    const mpData = await mpResponse.json();
+
+    if (!mpResponse.ok) {
+      throw new Error(`MP error: ${JSON.stringify(mpData)}`);
     }
 
-    const initPoint = mpData.init_point ?? mpData.sandbox_init_point
-    if (!initPoint) return jsonResponse({ error: 'MP no devolvió init_point' }, 502)
+    // Save pending payment record
+    await supabase.from('academy_payments').insert({
+      user_id,
+      tipo: 'curso',
+      course_id,
+      monto_ars: monto,
+      monto_usd: course.precio_usd,
+      metodo_pago,
+      mp_preference_id: mpData.id,
+      mp_external_reference: externalReference,
+      mp_status: 'pending',
+      estado: 'pendiente',
+    });
 
-    // Guardar preference_id en el pago
-    if (payment?.id) {
-      await supabaseAdmin
-        .from('academy_payments')
-        .update({ mp_payment_id: mpData.id })
-        .eq('id', payment.id)
-    }
-
-    return jsonResponse({ init_point: initPoint, preference_id: mpData.id })
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Error interno'
-    console.error('create-course-payment error:', e)
-    return jsonResponse({ error: msg }, 500)
+    return new Response(
+      JSON.stringify({ init_point: mpData.init_point, preference_id: mpData.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
-})
+});

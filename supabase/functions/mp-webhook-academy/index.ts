@@ -33,6 +33,52 @@ function json(data: unknown, status = 200) {
   })
 }
 
+// deno-lint-ignore no-explicit-any
+type Admin = any
+
+// Inscripción idempotente. La tabla tiene UNIQUE (user_id, course_id), así que
+// el upsert con ignoreDuplicates se traduce a INSERT ... ON CONFLICT DO NOTHING:
+// si el otro camino (redirect o webhook) ya inscribió al usuario, esta llamada
+// no hace nada y no rompe. `.select()` devuelve la fila SOLO cuando este llamado
+// realmente creó el enrollment, así el contador de alumnos no se infla cuando
+// los dos caminos se disparan para la misma compra.
+async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: string) {
+  const { data: inserted, error: enrollError } = await supabaseAdmin
+    .from('academy_enrollments')
+    .upsert(
+      {
+        user_id: userId,
+        course_id: courseId,
+        tipo_acceso: 'pago',
+        progreso_pct: 0,
+        completado: false,
+        activo: true,
+      },
+      { onConflict: 'user_id,course_id', ignoreDuplicates: true }
+    )
+    .select('id')
+
+  if (enrollError) {
+    console.error('academy_enrollments upsert (curso) error:', enrollError)
+    return
+  }
+
+  // Solo se incrementa total_alumnos cuando ESTE llamado creó el enrollment.
+  if (inserted && inserted.length > 0) {
+    const { data: course } = await supabaseAdmin
+      .from('academy_courses')
+      .select('total_alumnos')
+      .eq('id', courseId)
+      .single()
+    if (course) {
+      await supabaseAdmin
+        .from('academy_courses')
+        .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
+        .eq('id', courseId)
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -60,7 +106,7 @@ Deno.serve(async (req) => {
     console.log('mp-webhook-academy:', { type, resourceId })
     if (!type || !resourceId) return json({ ok: true, ignored: true })
 
-    // ── PAGO ÚNICO (curso) ──────────────────────────────────────────
+    // ── PAGO ÚNICO (curso) ──
     if (type === 'payment') {
       const mpRes = await fetch(`${MP_API}/v1/payments/${resourceId}`, {
         headers: { Authorization: `Bearer ${mpToken}` },
@@ -70,7 +116,7 @@ Deno.serve(async (req) => {
       const mpData = await mpRes.json()
       const ref: string = mpData.external_reference ?? ''
 
-      // ── VIVENCIAL — saldo en cuotas ───────────────────────────────
+      // ── VIVENCIAL — saldo en cuotas ──
       if (ref.startsWith('ACAD-VIV-')) {
         // Mapeo de estado MP → español (el trigger recalcula el balance con 'aprobado')
         const estado = toEstado(mpData.status)
@@ -102,57 +148,29 @@ Deno.serve(async (req) => {
         .eq('mp_external_reference', ref)
         .maybeSingle()
 
-      if (!localPayment || localPayment.estado === 'aprobado') return json({ ok: true, already_done: true })
+      if (!localPayment) return json({ ok: true, no_local_payment: true })
 
-      const { error: courseUpdateError } = await supabaseAdmin
-        .from('academy_payments')
-        .update({ mp_payment_id: String(resourceId), mp_status: mpData.status, estado: toEstado(mpData.status) })
-        .eq('id', localPayment.id)
-      if (courseUpdateError) console.error('academy_payments update (curso) error:', courseUpdateError)
+      // Marcar el estado del pago (idempotente: si ya estaba igual, no cambia nada).
+      if (localPayment.estado !== toEstado(mpData.status)) {
+        const { error: courseUpdateError } = await supabaseAdmin
+          .from('academy_payments')
+          .update({ mp_payment_id: String(resourceId), mp_status: mpData.status, estado: toEstado(mpData.status) })
+          .eq('id', localPayment.id)
+        if (courseUpdateError) console.error('academy_payments update (curso) error:', courseUpdateError)
+      }
 
+      // Garantizar la inscripción SIEMPRE que el pago esté aprobado — sin importar
+      // si el estado ya venía en 'aprobado' desde el otro camino (redirect). Es
+      // idempotente, así que reintentos de webhook de MP no crean duplicados ni
+      // inflan el contador.
       if (mpData.status === 'approved') {
-        const { data: exists } = await supabaseAdmin
-          .from('academy_enrollments')
-          .select('id')
-          .eq('user_id', localPayment.user_id)
-          .eq('course_id', localPayment.course_id)
-          .maybeSingle()
-
-        if (!exists) {
-          // tipo_acceso usa el CHECK en español ('pago'), NO 'paid' — con el valor
-          // en inglés el insert fallaba y el alumno quedaba sin enrollment.
-          const { error: enrollError } = await supabaseAdmin.from('academy_enrollments').insert({
-            user_id: localPayment.user_id,
-            course_id: localPayment.course_id,
-            tipo_acceso: 'pago',
-            progreso_pct: 0,
-            completado: false,
-            activo: true,
-          })
-          if (enrollError) {
-            // No incrementamos el contador si el enrollment no se creó: así el
-            // header del backoffice no queda mostrando inscriptos fantasma.
-            console.error('academy_enrollments insert (curso) error:', enrollError)
-          } else {
-            const { data: course } = await supabaseAdmin
-              .from('academy_courses')
-              .select('total_alumnos')
-              .eq('id', localPayment.course_id)
-              .single()
-            if (course) {
-              await supabaseAdmin
-                .from('academy_courses')
-                .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
-                .eq('id', localPayment.course_id)
-            }
-          }
-        }
+        await ensureEnrollment(supabaseAdmin, localPayment.user_id, localPayment.course_id)
       }
 
       return json({ ok: true, status: mpData.status })
     }
 
-    // ── SUSCRIPCIÓN (preapproval) ───────────────────────────────────
+    // ── SUSCRIPCIÓN (preapproval) ──
     const isSubEvent =
       type.includes('preapproval') ||
       type.includes('subscription') ||

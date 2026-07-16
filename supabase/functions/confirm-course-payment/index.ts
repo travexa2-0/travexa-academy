@@ -18,6 +18,52 @@ function jsonResponse(data: unknown, status = 200): Response {
 
 const MP_API = 'https://api.mercadopago.com'
 
+// deno-lint-ignore no-explicit-any
+type Admin = any
+
+// Inscripción idempotente. La tabla tiene UNIQUE (user_id, course_id), así que
+// el upsert con ignoreDuplicates se traduce a INSERT ... ON CONFLICT DO NOTHING:
+// si el otro camino (webhook o redirect) ya inscribió al usuario, esta llamada
+// no hace nada y no rompe. `.select()` devuelve la fila SOLO cuando este llamado
+// realmente creó el enrollment, así el contador de alumnos no se infla cuando
+// los dos caminos se disparan para la misma compra.
+async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: string) {
+  const { data: inserted, error: enrollError } = await supabaseAdmin
+    .from('academy_enrollments')
+    .upsert(
+      {
+        user_id: userId,
+        course_id: courseId,
+        tipo_acceso: 'pago',
+        progreso_pct: 0,
+        completado: false,
+        activo: true,
+      },
+      { onConflict: 'user_id,course_id', ignoreDuplicates: true }
+    )
+    .select('id')
+
+  if (enrollError) {
+    console.error('academy_enrollments upsert (curso) error:', enrollError)
+    return
+  }
+
+  // Solo se incrementa total_alumnos cuando ESTE llamado creó el enrollment.
+  if (inserted && inserted.length > 0) {
+    const { data: course } = await supabaseAdmin
+      .from('academy_courses')
+      .select('total_alumnos')
+      .eq('id', courseId)
+      .single()
+    if (course) {
+      await supabaseAdmin
+        .from('academy_courses')
+        .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
+        .eq('id', courseId)
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   const corsResult = handleCors(req)
   if (corsResult) return corsResult
@@ -59,60 +105,26 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (!localPayment) return jsonResponse({ error: 'Pago no encontrado en sistema' }, 404)
-    // La columna `estado` tiene un CHECK en español: se compara y se escribe
-    // 'aprobado', NO 'approved' (el valor en inglés violaba el constraint y el
-    // update fallaba en silencio).
-    if (localPayment.estado === 'aprobado') {
-      return jsonResponse({ success: true, already_confirmed: true })
-    }
 
+    // Si MP todavía no aprobó, no inscribimos.
     if (mpData.status !== 'approved') {
       return jsonResponse({ success: false, status: mpData.status })
     }
 
-    // Actualizar pago
-    await supabaseAdmin
-      .from('academy_payments')
-      .update({ mp_payment_id: String(payment_id), mp_status: 'approved', estado: 'aprobado' })
-      .eq('id', localPayment.id)
-
-    // Verificar enrollment previo (idempotente)
-    const { data: existingEnrollment } = await supabaseAdmin
-      .from('academy_enrollments')
-      .select('id')
-      .eq('user_id', localPayment.user_id)
-      .eq('course_id', localPayment.course_id)
-      .maybeSingle()
-
-    if (!existingEnrollment) {
-      // tipo_acceso usa el CHECK en español ('pago'), NO 'paid'.
-      const { error: enrollError } = await supabaseAdmin.from('academy_enrollments').insert({
-        user_id: localPayment.user_id,
-        course_id: localPayment.course_id,
-        tipo_acceso: 'pago',
-        progreso_pct: 0,
-        completado: false,
-        activo: true,
-      })
-
-      // Solo incrementar total_alumnos si el enrollment se creó de verdad.
-      if (enrollError) {
-        console.error('academy_enrollments insert (curso) error:', enrollError)
-      } else {
-        const { data: course } = await supabaseAdmin
-          .from('academy_courses')
-          .select('total_alumnos')
-          .eq('id', localPayment.course_id)
-          .single()
-
-        if (course) {
-          await supabaseAdmin
-            .from('academy_courses')
-            .update({ total_alumnos: (course.total_alumnos ?? 0) + 1 })
-            .eq('id', localPayment.course_id)
-        }
-      }
+    // Marcar el pago como aprobado (idempotente: si ya estaba, no cambia nada).
+    // La columna `estado` tiene un CHECK en español: se escribe 'aprobado', NO
+    // 'approved' (el valor en inglés violaba el constraint y el update fallaba).
+    if (localPayment.estado !== 'aprobado') {
+      await supabaseAdmin
+        .from('academy_payments')
+        .update({ mp_payment_id: String(payment_id), mp_status: 'approved', estado: 'aprobado' })
+        .eq('id', localPayment.id)
     }
+
+    // Garantizar la inscripción SIEMPRE que el pago esté aprobado — sin importar
+    // si el estado del pago ya venía en 'aprobado' desde el otro camino. Esto es
+    // lo que asegura que nunca quede un pago aprobado sin curso en "Mis Cursos".
+    await ensureEnrollment(supabaseAdmin, localPayment.user_id, localPayment.course_id)
 
     return jsonResponse({ success: true, status: 'approved' })
   } catch (e: unknown) {

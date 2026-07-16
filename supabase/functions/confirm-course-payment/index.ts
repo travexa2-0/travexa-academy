@@ -109,6 +109,21 @@ async function recordApprovedCoursePayment(admin: Admin, args: {
     }, { onConflict: 'mp_external_reference' })
 }
 
+// Puntos por compra de curso — vía la edge function award-points (fuente única de
+// verdad, idempotente por (motivo, referencia_id=courseId)). Se llama server-side al
+// aprobar el pago, así se otorga aunque el usuario cierre la pestaña. No crítico.
+async function awardCursoComprado(userId: string, courseId: string) {
+  try {
+    const url = Deno.env.get('SUPABASE_URL') ?? ''
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    await fetch(`${url}/functions/v1/award-points`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ userId, accion: 'curso_comprado', referenciaId: courseId }),
+    })
+  } catch (_) { /* el pago y la inscripción ya están hechos; los puntos no son críticos */ }
+}
+
 Deno.serve(async (req) => {
   const corsResult = handleCors(req)
   if (corsResult) return corsResult
@@ -160,6 +175,7 @@ Deno.serve(async (req) => {
       ref, userId, courseId, paymentId: String(payment_id), mpData,
     })
     await ensureEnrollment(supabaseAdmin, userId, courseId)
+    await awardCursoComprado(userId, courseId)
 
     return jsonResponse({ success: true, status: 'approved' })
   } catch (e: unknown) {

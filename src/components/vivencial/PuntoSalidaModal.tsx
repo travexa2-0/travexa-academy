@@ -4,6 +4,8 @@ import { X, MapPin, Loader2, Plane } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { EASE_OUT } from '@/lib/motion'
 import { reserveVivencialSelf, sendReservaEmail } from '@/hooks/useVivencialPago'
+import { onVivencialReservado } from '@/hooks/useGamification'
+import { useAuth } from '@/contexts/AuthContext'
 import { puntosSalida, puntoSalidaLabel } from '@/lib/vivencial'
 import type { Course } from '@/types'
 
@@ -21,6 +23,7 @@ interface Props {
  * numero_reserva). NO cobra: el pago sigue siendo transferencia coordinada con Yesica.
  */
 export default function PuntoSalidaModal({ open, onClose, course, onReserved }: Props) {
+  const { user } = useAuth()
   const puntos = useMemo(() => puntosSalida(course), [course])
   const [selected, setSelected] = useState(0)
   const [reserving, setReserving] = useState(false)
@@ -33,6 +36,7 @@ export default function PuntoSalidaModal({ open, onClose, course, onReserved }: 
     try {
       const enrollmentId = await reserveVivencialSelf(course.id, label)
       sendReservaEmail(enrollmentId) // fire-and-forget
+      if (user?.id) void onVivencialReservado(user.id, enrollmentId) // puntos (idempotente por enrollment)
       onReserved(enrollmentId)
     } catch (e) {
       const msg = (e as Error).message

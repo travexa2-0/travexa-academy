@@ -158,14 +158,10 @@ export function useSubmitReview(userId: string | undefined) {
         publicado:  true,
       })
       if (error) throw new Error(error.message as string)
-      // +20 XP y +10 Créditos por reseña publicada
-      await db().rpc('award_points_and_credits', {
-        p_user_id:       userId!,
-        p_xp:            20,
-        p_creditos:      10,
-        p_tipo:          'ganado',
-        p_motivo:        'resena_publicada',
-        p_referencia_id: courseId,
+      // Puntos por reseña publicada — vía la edge function award-points (fuente
+      // única de verdad; idempotente por (motivo, referencia_id)).
+      await supabase.functions.invoke('award-points', {
+        body: { userId: userId!, accion: 'resena_publicada', referenciaId: courseId },
       })
     },
     onSuccess: () => {

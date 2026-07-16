@@ -280,6 +280,7 @@ export default function Profile() {
   const [certFor, setCertFor]   = useState<Enrollment | null>(null)
   const [vivFor, setVivFor]     = useState<Enrollment | null>(null)
   const [showGanar, setShowGanar]   = useState(false)
+  const [showGanarXp, setShowGanarXp] = useState(false)
   const [showCanjear, setShowCanjear] = useState(false)
   const [showRanking, setShowRanking] = useState(false)
   const [showUpload, setShowUpload]   = useState(false)
@@ -509,6 +510,7 @@ export default function Profile() {
                 allBadges={allBadges} earnedIds={earnedIds} userBadges={userBadges}
                 ranking={ranking} certificates={certificates} tx={pointsTx}
                 onGanar={() => setShowGanar(true)}
+                onGanarXp={() => setShowGanarXp(true)}
                 onRanking={() => setShowRanking(true)} onUpload={() => setShowUpload(true)}
                 onCert={(titulo, fecha) => setCertFor({ id: 'ext', completado: true, course: { titulo }, fecha_completado: fecha } as unknown as Enrollment)}
               />
@@ -528,6 +530,7 @@ export default function Profile() {
       <CertModal enrollment={certFor} userName={`${nombre} ${apellido}`.trim()} onClose={() => setCertFor(null)} />
       <VivModal enrollment={vivFor} onClose={() => setVivFor(null)} />
       <GanarModal open={showGanar} onClose={() => setShowGanar(false)} onCanjear={() => { setShowGanar(false); setShowCanjear(true) }} />
+      <GanarXpModal open={showGanarXp} onClose={() => setShowGanarXp(false)} />
       <CanjearModal open={showCanjear} onClose={() => setShowCanjear(false)} onGo={() => { setShowCanjear(false); navigate('/beneficios') }} />
       <RankingModal open={showRanking} onClose={() => setShowRanking(false)} />
       <UploadModal open={showUpload} uid={uid} onClose={() => setShowUpload(false)} />
@@ -902,12 +905,12 @@ function Line({ icon, children }: { icon: React.ReactNode; children: React.React
 }
 
 // ── LOGROS TAB ────────────────────────────────────────────────────────
-function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBadges, ranking, certificates, tx, onGanar, onRanking, onUpload, onCert }: {
+function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBadges, ranking, certificates, tx, onGanar, onGanarXp, onRanking, onUpload, onCert }: {
   uid?: string; puntos: number; creditos: number; nInfo: ReturnType<typeof nivelInfo>
   allBadges: Badge[]; earnedIds: Set<string>; userBadges: Array<{ badge?: Badge; earned_at: string; badge_id: string }>
   ranking: RankingRow[]; certificates: Array<{ id: string; numero: string; emitido_at: string; course?: { titulo?: string } }>
   tx: PointsTx[]
-  onGanar: () => void; onRanking: () => void; onUpload: () => void
+  onGanar: () => void; onGanarXp: () => void; onRanking: () => void; onUpload: () => void
   onCert: (numero: string, date: string) => void
 }) {
   const earnedAtMap = useMemo(() => {
@@ -949,12 +952,15 @@ function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBad
       <div className="grid grid-cols-1 min-[560px]:grid-cols-2 gap-4 mb-7">
         {/* nivel + ranking */}
         <div className="rounded-2xl border p-5" style={{ background: 'var(--bg-2)', borderColor: 'var(--line)' }}>
-          <div className="flex items-center gap-3.5 mb-4">
-            <div className="w-14 h-14 rounded-[14px] flex items-center justify-center font-display font-bold text-2xl shrink-0" style={{ background: 'linear-gradient(135deg,var(--primary),var(--neon))', color: '#0A1E29' }}>{nInfo.actual.n}</div>
-            <div>
-              <div className="font-display font-bold text-[.95rem]" style={{ color: 'var(--text-1)' }}>{nInfo.actual.nombre}</div>
-              <div className="text-[.75rem] mt-0.5" style={{ color: 'var(--text-3)' }}>{nInfo.siguiente ? `Próximo: Nivel ${nInfo.siguiente.n} · ${nInfo.siguiente.nombre}` : 'Nivel máximo'}</div>
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-14 h-14 rounded-[14px] flex items-center justify-center font-display font-bold text-2xl shrink-0" style={{ background: 'linear-gradient(135deg,var(--primary),var(--neon))', color: '#0A1E29' }}>{nInfo.actual.n}</div>
+              <div className="min-w-0">
+                <div className="font-display font-bold text-[.95rem]" style={{ color: 'var(--text-1)' }}>{nInfo.actual.nombre}</div>
+                <div className="text-[.75rem] mt-0.5" style={{ color: 'var(--text-3)' }}>{nInfo.siguiente ? `Próximo: Nivel ${nInfo.siguiente.n} · ${nInfo.siguiente.nombre}` : 'Nivel máximo'}</div>
+              </div>
             </div>
+            <button onClick={onGanarXp} className="font-mono text-[9px] tracking-wide uppercase rounded-md px-2.5 py-1 shrink-0" style={{ color: NEON, background: 'var(--neon-dim)', border: '1px solid rgba(0,229,200,.25)' }}>Cómo ganar XP</button>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(245,243,236,.1)' }}>
             <motion.div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,var(--primary),var(--neon))', boxShadow: '0 0 10px var(--neon-glow)' }}
@@ -1351,11 +1357,16 @@ function MovRow({ t }: { t: PointsTx }) {
 // "Ver cómo canjear". Antes este contenido vivía fijo en la card; ahora la card
 // muestra los movimientos reales y esto pasó al modal (Sesión 27).
 function GanarModal({ open, onClose, onCanjear }: { open: boolean; onClose: () => void; onCanjear: () => void }) {
+  // Valores reales de la tabla de puntos (edge function award-points), pool Créditos.
   const earnCredits = [
-    { label: 'Escribir una reseña', v: '+10' },
+    { label: 'Escribir una reseña', v: '+15' },
+    { label: 'Comprar un curso', v: '+20' },
     { label: 'Referir un asesor', v: '+20' },
+    { label: 'Reservar un vivencial', v: '+30' },
     { label: 'Completar un curso', v: '+40' },
-    { label: 'Completar vivencial', v: '+300' },
+    { label: 'Perfil completo', v: '+50' },
+    { label: 'Racha de 30 días', v: '+100' },
+    { label: 'Completar un vivencial', v: '+300' },
   ]
   return (
     <Modal open={open} onClose={onClose} maxW={440}>
@@ -1371,6 +1382,37 @@ function GanarModal({ open, onClose, onCanjear }: { open: boolean; onClose: () =
           ))}
         </div>
         <button onClick={onCanjear} className="w-full mt-4 py-2.5 rounded-[9px] text-[12.5px] font-bold border" style={{ background: 'var(--neon-dim)', color: NEON, borderColor: 'rgba(0,229,200,.25)' }}>Ver cómo canjear →</button>
+      </div>
+    </Modal>
+  )
+}
+
+// Modal "Cómo ganar XP": solo las acciones que otorgan XP (de menor a mayor). El
+// XP sube tu nivel y tu posición en el ranking; no se canjea (a diferencia de los
+// Créditos). Valores reales de la tabla de puntos (edge function award-points).
+function GanarXpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const earnXp = [
+    { label: 'Completar una lección', v: '+10' },
+    { label: 'Asistir a una clase en vivo', v: '+20' },
+    { label: 'Comprar un curso', v: '+30' },
+    { label: 'Reservar un vivencial', v: '+50' },
+    { label: 'Racha de 30 días', v: '+50' },
+    { label: 'Completar un curso', v: '+100' },
+    { label: 'Completar un vivencial', v: '+300' },
+  ]
+  return (
+    <Modal open={open} onClose={onClose} maxW={440}>
+      <ModalX onClose={onClose} />
+      <div className="p-6">
+        <div className="font-display font-bold text-[1.2rem] mb-1" style={{ color: 'var(--text-1)' }}>Cómo ganar XP ⚡</div>
+        <div className="font-mono text-[9px] tracking-wide uppercase mb-3" style={{ color: 'var(--text-3)' }}>De menor a mayor · el XP sube tu nivel y ranking</div>
+        <div className="flex flex-col">
+          {earnXp.map(c => (
+            <div key={c.label} className="flex items-center justify-between text-[.86rem] py-2.5 border-b last:border-b-0" style={{ color: 'var(--text-2)', borderColor: 'var(--line)' }}>
+              <span>{c.label}</span><span className="font-display font-bold" style={{ color: NEON }}>{c.v} XP</span>
+            </div>
+          ))}
+        </div>
       </div>
     </Modal>
   )

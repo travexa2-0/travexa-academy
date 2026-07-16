@@ -4,154 +4,109 @@ import { createNotification } from './useNotifications'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = () => supabase as any
 
-// ── Points config ─────────────────────────────────────────────────
+// ── Acciones de puntos ────────────────────────────────────────────
+// Deben existir en la edge function award-points (única fuente de verdad).
+export type AccionPuntos =
+  | 'registro'
+  | 'perfil_completado'
+  | 'curso_comprado'
+  | 'leccion_completada'
+  | 'curso_completado'
+  | 'vivencial_reservado'
+  | 'vivencial_completado'
+  | 'resena_publicada'
+  | 'racha_30_dias'
+  | 'clase_en_vivo_asistida'
+  | 'referido_registrado'
+  | 'referido_compra'
+  | 'logro_compartido'
 
-export const POINTS = {
-  REGISTRO:         200,
-  LECCION_COMPLETA: 10,
-  CURSO_COMPLETO:   200,
-  RESENA:           50,
-  SHARE_LOGRO:      25,
-  REFERIDO:         500,
-  LIVE_ASISTIR:     100,
-  PRIMER_VIVENCIAL: 300,
-  STREAK_7:         100,
-} as const
+interface AwardResult {
+  awarded: boolean   // true si ESTE llamado otorgó (false si ya estaba, por idempotencia)
+  xp: number
+  creditos: number
+  badges: string[]
+}
 
-// ── Badge conditions ──────────────────────────────────────────────
-
-// Deben coincidir EXACTAMENTE con academy_badges.condicion en la DB
-// (mismos valores que lee la edge function check-badges).
-type BadgeCondicion =
-  | 'first_lesson'
-  | 'streak_7'
-  | 'first_review'
-  | 'first_vivencial'
-  | 'first_referral'
-  | 'streak_100'
-  | 'top10_monthly'
-
-// ── Core: award points (idempotente por referencia_id + motivo) ──
-
-async function awardPoints(
-  userId: string,
-  puntos: number,
-  motivo: string,
-  referenciaId?: string,
-): Promise<boolean> {
-  if (referenciaId) {
-    const { data: existing } = await db()
-      .from('academy_points_transactions')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('motivo', motivo)
-      .eq('referencia_id', referenciaId)
-      .maybeSingle()
-    if (existing) return false // ya fue otorgado
+// Única vía para otorgar puntos desde el cliente. La edge function award-points es
+// la fuente de verdad: aplica la tabla de puntos (XP + Créditos), garantiza
+// idempotencia por (motivo, referencia_id) y dispara el chequeo de badges. El front
+// ya no inserta transacciones ni actualiza totales a mano.
+async function awardViaEdge(userId: string, accion: AccionPuntos, referenciaId?: string): Promise<AwardResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke('award-points', {
+      body: { userId, accion, referenciaId },
+    })
+    if (error) return { awarded: false, xp: 0, creditos: 0, badges: [] }
+    const d = (data ?? {}) as { success?: boolean; already_awarded?: boolean; xp?: number; creditos?: number; badges?: string[] }
+    return {
+      awarded: !!d.success && !d.already_awarded,
+      xp: d.xp ?? 0,
+      creditos: d.creditos ?? 0,
+      badges: d.badges ?? [],
+    }
+  } catch {
+    return { awarded: false, xp: 0, creditos: 0, badges: [] }
   }
-
-  const [{ data: profile }] = await Promise.all([
-    db().from('academy_profiles').select('puntos').eq('user_id', userId).single(),
-  ])
-
-  const puntosActuales = (profile?.puntos ?? 0) as number
-
-  await Promise.all([
-    db().from('academy_points_transactions').insert({
-      user_id: userId,
-      puntos,
-      tipo: 'ganado',
-      motivo,
-      referencia_id: referenciaId ?? null,
-    }),
-    db().from('academy_profiles').update({ puntos: puntosActuales + puntos }).eq('user_id', userId),
-  ])
-
-  return true
 }
 
-// ── Badge check & award ───────────────────────────────────────────
+// ── Racha (ventana de 30 días, ligada a formación) ────────────────
+const STREAK_WINDOW_DAYS = 30
+const DAY_MS = 86_400_000
 
-async function checkAndAwardBadge(
-  userId: string,
-  condicion: BadgeCondicion,
-): Promise<string | null> {
-  // ¿El badge existe?
-  const { data: badge } = await db()
-    .from('academy_badges')
-    .select('id, nombre, icono')
-    .eq('condicion', condicion)
-    .eq('activo', true)
-    .maybeSingle()
+interface StreakResult { streak: number; leveledUp: boolean }
 
-  if (!badge) return null
-
-  // ¿El usuario ya lo tiene?
-  const { data: existing } = await db()
-    .from('academy_user_badges')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('badge_id', badge.id)
-    .maybeSingle()
-
-  if (existing) return null
-
-  // Otorgar
-  await db().from('academy_user_badges').insert({ user_id: userId, badge_id: badge.id })
-
-  // Notificación
-  await createNotification(
-    userId,
-    'badge_desbloqueado',
-    `🏆 ¡Badge desbloqueado: ${badge.nombre}!`,
-    `Ganaste el badge "${badge.icono} ${badge.nombre}". ¡Seguí así!`,
-    '/perfil',
-  )
-
-  return badge.nombre as string
-}
-
-// ── Update streak ─────────────────────────────────────────────────
-
-async function updateStreak(userId: string): Promise<number> {
+// Se llama SOLO desde acciones de formación/vivencial (nunca desde un login).
+// Unidad mínima = 30 días (no existe racha de 7):
+//  · Más de 30 días sin actividad → la racha se reinicia (streak = 1).
+//  · Cada ventana de 30 días completada manteniendo actividad → streak_actual +1.
+// Es una sola racha por alumno, basada en su actividad de formación más reciente,
+// sin importar de qué curso. `ultimo_acceso_leccion` = última actividad;
+// `streak_window_start` = ancla de la ventana actual (hacen falta ambos para
+// distinguir "cruzó una ventana" de "hubo un gap > 30 días").
+async function updateStreak(userId: string): Promise<StreakResult> {
   const { data: profile } = await db()
     .from('academy_profiles')
-    .select('streak_actual, streak_maximo, ultimo_acceso_leccion')
+    .select('streak_actual, streak_maximo, ultimo_acceso_leccion, streak_window_start')
     .eq('user_id', userId)
     .single()
 
-  if (!profile) return 0
+  if (!profile) return { streak: 0, leveledUp: false }
 
-  const hoy        = new Date().toISOString().split('T')[0]
-  const ayer       = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-  const ultimoAcceso = profile.ultimo_acceso_leccion as string | null
+  const now          = Date.now()
+  const lastActivity = profile.ultimo_acceso_leccion ? new Date(profile.ultimo_acceso_leccion).getTime() : null
+  const windowStart  = profile.streak_window_start ? new Date(profile.streak_window_start).getTime() : null
+  const streakActual = (profile.streak_actual as number) ?? 0
+  const gapDays      = lastActivity != null ? (now - lastActivity) / DAY_MS : Infinity
 
-  let nuevoStreak = profile.streak_actual as number
+  let streak: number
+  let newWindowStart: number
+  let leveledUp = false
 
-  if (ultimoAcceso === hoy) return nuevoStreak  // ya contado hoy
-  if (ultimoAcceso === ayer) nuevoStreak += 1
-  else nuevoStreak = 1  // rompió racha
+  if (windowStart == null || lastActivity == null || gapDays > STREAK_WINDOW_DAYS) {
+    // Primera actividad, o gap mayor a 30 días → racha nueva desde 1.
+    streak = 1
+    newWindowStart = now
+  } else if ((now - windowStart) / DAY_MS >= STREAK_WINDOW_DAYS) {
+    // Se completó una ventana de 30 días manteniendo actividad → sube un nivel.
+    streak = streakActual + 1
+    newWindowStart = now
+    leveledUp = true
+  } else {
+    // Dentro de la ventana actual: sigue viva, sin cambio de nivel.
+    streak = streakActual > 0 ? streakActual : 1
+    newWindowStart = windowStart
+  }
 
-  const nuevoMax = Math.max(nuevoStreak, profile.streak_maximo as number)
-
+  const nuevoMax = Math.max(streak, (profile.streak_maximo as number) ?? 0)
   await db().from('academy_profiles').update({
-    streak_actual: nuevoStreak,
+    streak_actual: streak,
     streak_maximo: nuevoMax,
-    ultimo_acceso_leccion: hoy,
+    ultimo_acceso_leccion: new Date(now).toISOString(),
+    streak_window_start: new Date(newWindowStart).toISOString(),
   }).eq('user_id', userId)
 
-  return nuevoStreak
-}
-
-// ── Count helper ──────────────────────────────────────────────────
-
-async function countUserLessons(userId: string): Promise<number> {
-  const { count } = await db()
-    .from('academy_lesson_progress')
-    .select('id', { count: 'exact' })
-    .eq('user_id', userId)
-    .eq('completada', true)
-  return (count ?? 0) as number
+  return { streak, leveledUp }
 }
 
 // ── Public API ────────────────────────────────────────────────────
@@ -165,44 +120,40 @@ export async function onLessonComplete(
   allLessonsCount: number,
   completedLessonsCount: number,  // después de marcar esta
 ): Promise<{ puntosGanados: number; badgeGanado: string | null; cursoCompleto: boolean }> {
-  let puntosGanados = 0
+  let puntosGanados = 0  // XP para el toast
   let badgeGanado: string | null = null
   let cursoCompleto = false
 
-  // 1. Puntos por lección
-  const awarded = await awardPoints(userId, POINTS.LECCION_COMPLETA, 'leccion_completa', lessonId)
-  if (awarded) puntosGanados += POINTS.LECCION_COMPLETA
+  // 1. Puntos por lección (edge). El badge de primera lección lo evalúa check-badges.
+  const leccion = await awardViaEdge(userId, 'leccion_completada', lessonId)
+  puntosGanados += leccion.xp
+  if (leccion.badges[0]) badgeGanado = leccion.badges[0]
 
-  // 2. Actualizar streak
-  const streak = await updateStreak(userId)
-
-  // 3. Primera lección ever → badge
-  const totalLecciones = await countUserLessons(userId)
-  if (totalLecciones === 1) {
-    badgeGanado = await checkAndAwardBadge(userId, 'first_lesson')
+  // 2. Racha de formación. Si cruza una ventana de 30 días → bono racha_30_dias.
+  const { streak, leveledUp } = await updateStreak(userId)
+  if (leveledUp) {
+    const racha = await awardViaEdge(userId, 'racha_30_dias', `racha_${userId}_${streak}`)
+    puntosGanados += racha.xp
+    if (racha.badges[0]) badgeGanado = racha.badges[0]
+    await createNotification(
+      userId,
+      'streak',
+      `🔥 ¡Racha de ${streak} ${streak === 1 ? 'mes' : 'meses'}!`,
+      `Sumaste ${racha.xp} XP y ${racha.creditos} créditos. ¡Seguí así!`,
+      '/perfil',
+    )
   }
 
-  // 4. Streak 7 días
-  if (streak === 7) {
-    await awardPoints(userId, POINTS.STREAK_7, 'streak_7', `streak_7_${userId}`)
-    puntosGanados += POINTS.STREAK_7
-    const b = await checkAndAwardBadge(userId, 'streak_7')
-    if (b) badgeGanado = b
-    await createNotification(userId, 'streak', '🔥 ¡7 días seguidos!', '+100 puntos bonus. ¡Sos una máquina!', '/perfil')
-  }
-
-  // 5. Streak peligro notif (los sábados/domingos para motivar) — simple: si streak > 3, recuerda
-  // (simplificado para MVP)
-
-  // 6. Curso completo
+  // 3. Curso completo
   if (completedLessonsCount >= allLessonsCount && allLessonsCount > 0) {
     cursoCompleto = true
 
-    const courseAwarded = await awardPoints(userId, POINTS.CURSO_COMPLETO, 'curso_completo', courseId)
-    if (courseAwarded) {
-      puntosGanados += POINTS.CURSO_COMPLETO
+    const curso = await awardViaEdge(userId, 'curso_completado', courseId)
+    puntosGanados += curso.xp
+    if (curso.badges[0]) badgeGanado = curso.badges[0]
 
-      // Actualizar contador en profile
+    // Efectos "una sola vez" solo cuando ESTE llamado marcó el curso como completo.
+    if (curso.awarded) {
       const { data: profile } = await db()
         .from('academy_profiles')
         .select('total_cursos_completados')
@@ -211,26 +162,23 @@ export async function onLessonComplete(
       const total = ((profile?.total_cursos_completados ?? 0) as number) + 1
       await db().from('academy_profiles').update({ total_cursos_completados: total }).eq('user_id', userId)
 
-      // Enrollment: marcar completado
       await db()
         .from('academy_enrollments')
         .update({ completado: true, progreso_pct: 100, fecha_completado: new Date().toISOString() })
         .eq('user_id', userId)
         .eq('course_id', courseId)
 
-      // Certificado
       await db().from('academy_certificates').insert({
         user_id: userId,
         course_id: courseId,
         enrollment_id: courseId,  // aproximado; idealmente obtener enrollment_id real
       })
 
-      // Notificación de curso completo
       await createNotification(
         userId,
         'curso_completado',
         `🎓 ¡Completaste "${courseTitle}"!`,
-        `Ganaste ${POINTS.CURSO_COMPLETO} puntos. Tu certificado ya está disponible.`,
+        `Sumaste ${curso.xp} XP y ${curso.creditos} créditos. Tu certificado ya está disponible.`,
         '/perfil?tab=certificados',
       )
     }
@@ -247,26 +195,29 @@ export async function onLessonComplete(
   return { puntosGanados, badgeGanado, cursoCompleto }
 }
 
-/** Llamar al primer vivencial completado. */
-export async function onPrimerVivencial(userId: string): Promise<void> {
-  await awardPoints(userId, POINTS.PRIMER_VIVENCIAL, 'primer_vivencial', `vivencial_${userId}`)
-  await checkAndAwardBadge(userId, 'first_vivencial')
+/** Llamar cuando el usuario completa un vivencial. */
+export async function onVivencialCompletado(userId: string): Promise<void> {
+  const res = await awardViaEdge(userId, 'vivencial_completado', `vivencial_completado_${userId}`)
+  if (!res.awarded) return
 
   const { data: p } = await db().from('academy_profiles').select('total_vivenciales').eq('user_id', userId).single()
   const total = ((p?.total_vivenciales ?? 0) as number) + 1
   await db().from('academy_profiles').update({ total_vivenciales: total }).eq('user_id', userId)
 
-  await createNotification(userId, 'vivencial_completo', '✈️ ¡Primer viaje vivencial!', '+300 puntos. Bienvenido al mundo de los fam trips.', '/perfil')
+  await createNotification(userId, 'vivencial_completo', '✈️ ¡Viaje vivencial completado!', `Sumaste ${res.xp} XP y ${res.creditos} créditos.`, '/perfil')
+}
+
+/** Llamar al confirmar la reserva de un vivencial. */
+export async function onVivencialReservado(userId: string, enrollmentId: string): Promise<void> {
+  await awardViaEdge(userId, 'vivencial_reservado', enrollmentId)
 }
 
 /** Llamar cuando un referido completa su primera compra. */
 export async function onReferralComplete(referrerId: string, referredId: string): Promise<void> {
-  await awardPoints(referrerId, POINTS.REFERIDO, 'referido_exitoso', referredId)
-  await checkAndAwardBadge(referrerId, 'first_referral')
-  await createNotification(referrerId, 'referido_registrado', '👥 ¡Referido exitoso!', '+500 puntos. Tu colega se sumó a Travexa Academy.', '/perfil?tab=referidos')
+  await awardViaEdge(referrerId, 'referido_compra', referredId)
 }
 
 /** Puntos por compartir un logro. */
 export async function onShareLogro(userId: string, referenciaId: string): Promise<void> {
-  await awardPoints(userId, POINTS.SHARE_LOGRO, 'share_logro', referenciaId)
+  await awardViaEdge(userId, 'logro_compartido', referenciaId)
 }

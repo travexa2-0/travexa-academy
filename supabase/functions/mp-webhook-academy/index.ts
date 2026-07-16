@@ -102,6 +102,20 @@ async function recordFinalCoursePayment(admin: Admin, args: {
     }, { onConflict: 'mp_external_reference' })
 }
 
+// Puntos por compra de curso — vía la edge function award-points (fuente única de
+// verdad, idempotente por (motivo, referencia_id=courseId)). No crítico.
+async function awardCursoComprado(userId: string, courseId: string) {
+  try {
+    const url = Deno.env.get('SUPABASE_URL') ?? ''
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    await fetch(`${url}/functions/v1/award-points`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ userId, accion: 'curso_comprado', referenciaId: courseId }),
+    })
+  } catch (_) { /* el pago y la inscripción ya están hechos; los puntos no son críticos */ }
+}
+
 // Inscripción idempotente. La tabla tiene UNIQUE (user_id, course_id), así que
 // el upsert con ignoreDuplicates se traduce a INSERT ... ON CONFLICT DO NOTHING:
 // si el otro camino (redirect o webhook) ya inscribió al usuario, esta llamada
@@ -220,10 +234,11 @@ Deno.serve(async (req) => {
         ref, userId, courseId, paymentId: String(resourceId), estado, mpData,
       })
 
-      // Inscripción solo si aprobó. Idempotente: reintentos de webhook no duplican
-      // ni inflan el contador de alumnos.
+      // Inscripción + puntos solo si aprobó. Idempotente: reintentos de webhook no
+      // duplican ni inflan el contador de alumnos, ni re-otorgan puntos.
       if (estado === 'aprobado') {
         await ensureEnrollment(supabaseAdmin, userId, courseId)
+        await awardCursoComprado(userId, courseId)
       }
 
       return json({ ok: true, status: mpData.status, estado })

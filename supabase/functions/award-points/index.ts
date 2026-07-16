@@ -4,13 +4,24 @@ import { handleCors, jsonResponse } from '../_shared/cors.ts'
 // POST { userId, accion, referenciaId? }
 // Grants XP + Créditos for a given action via award_points_and_credits(),
 // then triggers check-badges. Idempotent when referenciaId is provided.
+// Fuente ÚNICA de verdad de puntos (XP + Créditos) de toda la plataforma. Todo
+// trigger del cliente llama a esta función; ya no hay tablas de puntos paralelas.
+// Regla: el XP solo lo dan acciones de formación/vivencial, salvo `registro` (bono
+// de bienvenida a propósito). Ver Bloque 3.
 const TABLA_ACCIONES: Record<string, { xp: number; creditos: number; motivo: string }> = {
-  resena_publicada:     { xp: 20,  creditos: 10,  motivo: 'resena_publicada' },
-  referido_registrado:  { xp: 30,  creditos: 20,  motivo: 'referido_registrado' },
-  curso_completado:     { xp: 100, creditos: 40,  motivo: 'curso_completado' },
-  vivencial_completado: { xp: 300, creditos: 300, motivo: 'vivencial_completado' },
-  bono_bienvenida:      { xp: 0,   creditos: 50,  motivo: 'bono_bienvenida' },
-  perfil_completado:    { xp: 50,  creditos: 50,  motivo: 'perfil_completado' },
+  registro:               { xp: 20,  creditos: 20,  motivo: 'registro' },
+  perfil_completado:      { xp: 0,   creditos: 50,  motivo: 'perfil_completado' },
+  curso_comprado:         { xp: 30,  creditos: 20,  motivo: 'curso_comprado' },
+  leccion_completada:     { xp: 10,  creditos: 5,   motivo: 'leccion_completada' },
+  curso_completado:       { xp: 100, creditos: 40,  motivo: 'curso_completado' },
+  vivencial_reservado:    { xp: 50,  creditos: 30,  motivo: 'vivencial_reservado' },
+  vivencial_completado:   { xp: 300, creditos: 300, motivo: 'vivencial_completado' },
+  resena_publicada:       { xp: 0,   creditos: 15,  motivo: 'resena_publicada' },
+  racha_30_dias:          { xp: 50,  creditos: 100, motivo: 'racha_30_dias' },
+  clase_en_vivo_asistida: { xp: 20,  creditos: 15,  motivo: 'clase_en_vivo_asistida' },
+  referido_registrado:    { xp: 0,   creditos: 20,  motivo: 'referido_registrado' },
+  referido_compra:        { xp: 0,   creditos: 100, motivo: 'referido_compra' },
+  logro_compartido:       { xp: 0,   creditos: 15,  motivo: 'logro_compartido' },
 }
 
 Deno.serve(async (req) => {

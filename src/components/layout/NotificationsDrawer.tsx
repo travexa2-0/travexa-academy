@@ -54,7 +54,14 @@ function groupByDate(notifications: ReturnType<typeof useNotifications>['notific
   return groups.filter(g => g.items.length > 0)
 }
 
-// ── Component ─────────────────────────────────────────────────────
+// ── Escala de capas (z-index) ─────────────────────────────────────
+// Orden consistente de arriba hacia abajo:
+//   modales de página (700/800) > notificaciones (60/70) > header (50) >
+//   menú mobile (40) > barras sticky de página, ej. tabs de /perfil (30) > contenido.
+// El panel de notificaciones arranca DEBAJO del header (no lo invade) y queda por
+// encima en z, así nunca lo recorta ni le tapa el nav. El backdrop también arranca
+// bajo el header, para que el header y su campana sigan visibles y clickeables.
+const HEADER_OFFSET = 56 // alto del header fijo (coincide con el spacer h-14)
 
 interface Props {
   open: boolean
@@ -77,20 +84,21 @@ export default function NotificationsDrawer({ open, onClose }: Props) {
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — arranca debajo del header, así el header queda intacto */}
           <motion.div
-            className="fixed inset-0 z-40"
-            style={{ background: 'rgba(6,13,20,.5)' }}
+            className="fixed left-0 right-0 bottom-0 z-[60]"
+            style={{ top: HEADER_OFFSET, background: 'rgba(6,13,20,.5)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
 
-          {/* Drawer */}
+          {/* Drawer — abre debajo del header (no invade el nav) y por encima en z */}
           <motion.aside
-            className="fixed top-0 right-0 bottom-0 z-50 flex flex-col border-l overflow-hidden"
+            className="fixed right-0 bottom-0 z-[70] flex flex-col border-l border-t overflow-hidden"
             style={{
+              top: HEADER_OFFSET,
               width: 'min(380px, 95vw)',
               background: 'var(--bg-2)',
               borderColor: 'var(--line)',

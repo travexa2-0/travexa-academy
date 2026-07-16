@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home, LayoutDashboard, Users } from 'lucide-react'
+import { BookOpen, LogOut, User, Menu, X, Bell, Library, Globe, Home, LayoutDashboard, Users, GraduationCap } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
@@ -28,8 +28,15 @@ export default function Header() {
   const { isAdmin } = useIsAdmin()
   const { isInstructor } = useInstructorSelf()
 
-  // Un admin que además figure como instructor entra al backoffice de admin.
-  const backofficeTo = isAdmin ? '/admin/resumen' : isInstructor ? '/instructor/resumen' : null
+  // Accesos de gestión en el nav. Admin e instructor son independientes: quien
+  // es las dos cosas ve LOS DOS links (con textos distintos, para no confundir).
+  // "Backoffice" → /admin/* ; "Portal instructor" → /instructor/*. La prioridad
+  // admin sigue viviendo en los gates (InstructorGate manda admins a /admin/*),
+  // acá solo decidimos qué se muestra.
+  const workLinks = [
+    isAdmin      && { to: '/admin/resumen',      label: 'Backoffice',        icon: LayoutDashboard },
+    isInstructor && { to: '/instructor/resumen', label: 'Portal instructor', icon: GraduationCap },
+  ].filter(Boolean) as { to: string; label: string; icon: typeof LayoutDashboard }[]
 
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, 'change', (y) => {
@@ -159,14 +166,14 @@ export default function Header() {
                     Mi perfil
                   </Button>
                 </Link>
-                {backofficeTo && (
-                  <Link to={backofficeTo}>
+                {workLinks.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to}>
                     <Button variant="ghost" size="sm" className="gap-1.5 text-sm h-9" style={{ color: 'var(--gold)' }}>
-                      <LayoutDashboard className="h-3.5 w-3.5" />
-                      Backoffice
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
                     </Button>
                   </Link>
-                )}
+                ))}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -257,11 +264,11 @@ export default function Header() {
                 <Link to="/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--text-2)' }}>
                   <User className="h-4 w-4" /> Mi perfil
                 </Link>
-                {backofficeTo && (
-                  <Link to={backofficeTo} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--gold)' }}>
-                    <LayoutDashboard className="h-4 w-4" /> Backoffice
+                {workLinks.map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium" style={{ color: 'var(--gold)' }}>
+                    <Icon className="h-4 w-4" /> {label}
                   </Link>
-                )}
+                ))}
                 <button onClick={() => { void handleSignOut() }} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-left" style={{ color: 'var(--text-3)' }}>
                   <LogOut className="h-4 w-4" /> Cerrar sesión
                 </button>

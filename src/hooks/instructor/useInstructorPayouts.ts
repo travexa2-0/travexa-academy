@@ -6,12 +6,12 @@ import type { InstructorPayout } from '@/types'
 const MAX_FACTURA_BYTES = 10 * 1024 * 1024 // el bucket acepta hasta 10MB
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 
-async function fetchOwnPayouts(instructorId: string): Promise<InstructorPayout[]> {
-  const { data, error } = await supabase
-    .from('academy_instructor_payouts')
-    .select('*')
-    .eq('instructor_id', instructorId)
-    .order('periodo', { ascending: false })
+// Vía RPC `get_instructor_payouts` (SECURITY DEFINER): scopea al instructor logueado
+// y NO devuelve monto_bruto_ars (el bruto recaudado del mes por Travexa). La policy
+// que dejaba leer la tabla directa —con esa columna— fue removida.
+async function fetchOwnPayouts(): Promise<InstructorPayout[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_instructor_payouts')
   if (error) throw new Error(error.message)
   return (data ?? []) as unknown as InstructorPayout[]
 }
@@ -19,7 +19,7 @@ async function fetchOwnPayouts(instructorId: string): Promise<InstructorPayout[]
 export function useOwnPayouts(instructorId: string | undefined) {
   return useQuery({
     queryKey: ['instructor-payouts', instructorId],
-    queryFn:  () => fetchOwnPayouts(instructorId!),
+    queryFn:  fetchOwnPayouts,
     enabled:  !!instructorId,
     staleTime: 1000 * 30,
   })

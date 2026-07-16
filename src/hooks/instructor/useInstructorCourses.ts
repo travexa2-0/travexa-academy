@@ -31,46 +31,34 @@ export function useOwnCourse(instructorId: string | undefined, courseId: string 
 }
 
 // ── Ventas aprobadas de los cursos propios ────────────────────────
+// Una fila por pago aprobado de un curso propio, con la GANANCIA del instructor ya
+// aplicada por el servidor (monto × share / 100). El monto bruto de Travexa nunca
+// llega al cliente: la RPC `get_instructor_sales` no lo devuelve, y la policy que
+// dejaba leer academy_payments.monto_ars directo fue removida. `ganancia_ars` viene
+// SIN redondear; se redondea al sumar (ver gananciaDe en earnings.ts) para que el
+// total coincida exacto con round(bruto × share / 100).
 export interface CourseSale {
   id: string
   course_id: string
   user_id: string
-  monto_ars: number
   created_at: string
+  ganancia_ars: number
 }
 
-// `academy_payments` tiene dos policies de SELECT que aplican al instructor: los pagos
-// de sus cursos y los pagos que hizo él mismo como alumno. Restringimos por course_id
-// para que un curso comprado a otro instructor no se cuele como venta propia.
-async function fetchOwnSales(courseIds: string[]): Promise<CourseSale[]> {
-  if (courseIds.length === 0) return []
-  const { data, error } = await supabase
-    .from('academy_payments')
-    .select('id, course_id, user_id, monto_ars, created_at')
-    .in('course_id', courseIds)
-    .eq('tipo', 'curso')
-    .eq('estado', 'aprobado')
-    .order('created_at', { ascending: false })
+async function fetchOwnSales(): Promise<CourseSale[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_instructor_sales')
   if (error) throw new Error(error.message)
-
-  type Row = { id: string; course_id: string | null; user_id: string; monto_ars: number | null; created_at: string }
-  return ((data as Row[] | null) ?? [])
-    .filter(r => r.course_id !== null)
-    .map(r => ({
-      id: r.id,
-      course_id: r.course_id!,
-      user_id: r.user_id,
-      monto_ars: r.monto_ars ?? 0,
-      created_at: r.created_at,
-    }))
+  return ((data ?? []) as CourseSale[])
 }
 
-export function useOwnSales(courseIds: string[] | undefined) {
-  const ids = courseIds ?? []
+// El scoping al instructor logueado lo hace la RPC (auth.uid()), así que no recibe
+// courseIds: devuelve todas las ventas propias y cada pantalla filtra por curso.
+export function useOwnSales(enabled: boolean) {
   return useQuery({
-    queryKey: ['instructor-sales', [...ids].sort()],
-    queryFn:  () => fetchOwnSales(ids),
-    enabled:  courseIds !== undefined,
+    queryKey: ['instructor-sales'],
+    queryFn:  fetchOwnSales,
+    enabled,
     staleTime: 1000 * 30,
   })
 }

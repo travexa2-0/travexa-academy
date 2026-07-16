@@ -8,14 +8,13 @@ export function yaSeDio(course: Pick<Course, 'tipo' | 'live_date'>): boolean {
   return new Date(course.live_date) < new Date()
 }
 
-// La ganancia siempre sale de los pagos aprobados reales, nunca de precio × inscriptos:
-// el precio de un curso puede haber cambiado después de una venta.
-export function gananciaArs(brutoArs: number, sharePct: number): number {
-  return Math.round((brutoArs * sharePct) / 100)
-}
-
-export function brutoDe(sales: CourseSale[]): number {
-  return sales.reduce((acc, s) => acc + s.monto_ars, 0)
+// La ganancia sale de los pagos aprobados reales (el servidor ya aplicó el revenue
+// share por venta), nunca de precio × inscriptos ni multiplicando el bruto en el
+// cliente. Sumamos las ganancias por venta (sin redondear) y redondeamos al final:
+// eso equivale exactamente a round(bruto × share / 100), pero sin que el bruto de
+// Travexa pase nunca por el cliente.
+export function gananciaDe(sales: CourseSale[]): number {
+  return Math.round(sales.reduce((acc, s) => acc + s.ganancia_ars, 0))
 }
 
 // Clave 'YYYY-MM' para agrupar por mes calendario.

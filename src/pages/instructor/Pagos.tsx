@@ -50,9 +50,8 @@ function PayoutRow({ payout, userId }: { payout: InstructorPayout; userId: strin
       <td style={{ fontWeight: 600, color: 'var(--ink)', textTransform: 'capitalize' }}>
         {periodLabel(payout.periodo.slice(0, 7))}
       </td>
-      <td className="num">{payout.cantidad_ventas}</td>
-      <td className="num">{formatArs(payout.monto_bruto_ars)}</td>
-      <td className="num" style={{ fontWeight: 600 }}>{formatArs(payout.monto_instructor_ars)}</td>
+      <td className="num align-right">{payout.cantidad_ventas}</td>
+      <td className="num align-right" style={{ fontWeight: 600 }}>{formatArs(payout.monto_instructor_ars)}</td>
 
       <td>
         {payout.factura_url ? (
@@ -134,7 +133,6 @@ export default function InstructorPagos() {
                 <tr>
                   <th>Período</th>
                   <th className="align-right">Ventas</th>
-                  <th className="align-right">Facturado</th>
                   <th className="align-right">Tu monto</th>
                   <th>Tu factura</th>
                   <th>Comprobante de Travexa</th>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useInstructorSelf } from '@/hooks/useInstructorSelf'
 import { useOwnCourses, useOwnSales } from '@/hooks/instructor/useInstructorCourses'
 import { formatArs } from '../admin/format'
-import { brutoDe, estadoCurso, gananciaArs } from './earnings'
+import { estadoCurso, gananciaDe } from './earnings'
 
 const TIPO_LABEL: Record<string, string> = {
   grabado: 'Grabado',
@@ -25,22 +25,16 @@ export default function InstructorCursos() {
   const navigate = useNavigate()
   const { instructor } = useInstructorSelf()
   const { data: cursos, isLoading } = useOwnCourses(instructor?.id)
-
-  const courseIds = useMemo(() => cursos?.map(c => c.id), [cursos])
-  const { data: sales } = useOwnSales(courseIds)
-
-  const share = instructor?.revenue_share_pct ?? 0
+  const { data: sales } = useOwnSales(!!instructor?.id)
 
   const rows = useMemo(() => (cursos ?? []).map(c => {
     const propias = (sales ?? []).filter(s => s.course_id === c.id)
-    const bruto = brutoDe(propias)
     return {
       curso: c,
       inscriptos: propias.length,
-      bruto,
-      ganancia: gananciaArs(bruto, share),
+      ganancia: gananciaDe(propias),
     }
-  }), [cursos, sales, share])
+  }), [cursos, sales])
 
   if (isLoading) {
     return <div style={{ color: 'var(--ink-faint)', padding: '40px 0', textAlign: 'center' }}>Cargando…</div>
@@ -98,8 +92,8 @@ export default function InstructorCursos() {
                     </td>
                     <td style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>{TIPO_LABEL[curso.tipo] ?? curso.tipo}</td>
                     <td><EstadoBadge estado={estadoCurso(curso)} /></td>
-                    <td className="num">{inscriptos}</td>
-                    <td className="num">{formatArs(ganancia)}</td>
+                    <td className="num align-right">{inscriptos}</td>
+                    <td className="num align-right">{formatArs(ganancia)}</td>
                   </tr>
                 ))}
               </tbody>

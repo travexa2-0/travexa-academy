@@ -69,8 +69,8 @@ function PagoRow({ payout }: { payout: PayoutRow }) {
     <tr>
       <td style={{ fontWeight: 600, color: 'var(--ink)' }}>{payout.instructor?.nombre ?? '—'}</td>
       <td style={{ textTransform: 'capitalize' }}>{periodoLabel(periodo)}</td>
-      <td className="num">{payout.cantidad_ventas}</td>
-      <td className="num" style={{ fontWeight: 600 }}>{formatArs(payout.monto_instructor_ars)}</td>
+      <td className="num align-right">{payout.cantidad_ventas}</td>
+      <td className="num align-right" style={{ fontWeight: 600 }}>{formatArs(payout.monto_instructor_ars)}</td>
 
       <td>
         {payout.factura_url

@@ -5,7 +5,7 @@ import { useInstructorSelf } from '@/hooks/useInstructorSelf'
 import { useOwnCourses, useOwnSales, useOwnLiveLessons } from '@/hooks/instructor/useInstructorCourses'
 import { useOwnPayouts } from '@/hooks/instructor/useInstructorPayouts'
 import { formatArs } from '../admin/format'
-import { brutoDe, currentPeriodKey, gananciaArs, periodKey, periodLabel } from './earnings'
+import { currentPeriodKey, gananciaDe, periodKey, periodLabel } from './earnings'
 
 interface UpcomingItem {
   key: string
@@ -21,14 +21,13 @@ export default function InstructorResumen() {
 
   const { data: cursos, isLoading } = useOwnCourses(instructor?.id)
   const courseIds = useMemo(() => cursos?.map(c => c.id), [cursos])
-  const { data: sales } = useOwnSales(courseIds)
+  const { data: sales } = useOwnSales(!!instructor?.id)
   const { data: lessons } = useOwnLiveLessons(courseIds)
   const { data: payouts } = useOwnPayouts(instructor?.id)
 
   const mesActual = currentPeriodKey()
   const ventasMes = useMemo(() => (sales ?? []).filter(s => periodKey(s.created_at) === mesActual), [sales, mesActual])
-  const brutoMes = brutoDe(ventasMes)
-  const gananciaMes = gananciaArs(brutoMes, share)
+  const gananciaMes = gananciaDe(ventasMes)
 
   // Próximas fechas: cursos en vivo + clases en vivo dentro de cursos grabados.
   const proximos = useMemo<UpcomingItem[]>(() => {
@@ -82,11 +81,6 @@ export default function InstructorResumen() {
               <div className="kpi-top"><span className="kpi-label">Ventas del mes</span></div>
               <div className="kpi-value"><NumberFlow value={ventasMes.length} /></div>
               <div className="kpi-foot"><span className="kpi-period">{periodLabel(mesActual)}</span></div>
-            </div>
-            <div className="kpi-card">
-              <div className="kpi-top"><span className="kpi-label">Facturado del mes</span></div>
-              <div className="kpi-value"><NumberFlow value={brutoMes} prefix="$" /><span className="unit">ARS</span></div>
-              <div className="kpi-foot"><span className="kpi-period">bruto, antes de tu share</span></div>
             </div>
             <div className="kpi-card">
               <div className="kpi-top"><span className="kpi-label">Tu ganancia proyectada</span></div>

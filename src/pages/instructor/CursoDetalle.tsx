@@ -12,7 +12,7 @@ import {
 } from '@/hooks/instructor/useInstructorModeration'
 import ModItemCard from '@/components/shared/ModItemCard'
 import { displayName } from '@/lib/utils'
-import { brutoDe, estadoCurso, gananciaArs, yaSeDio } from './earnings'
+import { estadoCurso, gananciaDe, yaSeDio } from './earnings'
 import type { Review } from '@/types'
 
 type Tab = 'resumen' | 'comentarios'
@@ -28,12 +28,12 @@ function ResumenTab({ courseId, sharePct, dado, liveDate }: {
   dado: boolean
   liveDate: string | null
 }) {
-  const { data: sales } = useOwnSales(useMemo(() => [courseId], [courseId]))
+  const { data: sales } = useOwnSales(true)
   const { data: buyers } = useCourseBuyerNames(courseId)
 
-  const propias = sales ?? []
-  const bruto = brutoDe(propias)
-  const ganancia = gananciaArs(bruto, sharePct)
+  // La RPC devuelve todas las ventas propias; acá nos quedamos con las de este curso.
+  const propias = useMemo(() => (sales ?? []).filter(s => s.course_id === courseId), [sales, courseId])
+  const ganancia = gananciaDe(propias)
 
   // "Ventas nuevas" = inscripciones posteriores a la fecha en que se dictó el curso.
   const posteriores = useMemo(() => {
@@ -48,11 +48,6 @@ function ResumenTab({ courseId, sharePct, dado, liveDate }: {
           <div className="kpi-top"><span className="kpi-label">Inscriptos pagos</span></div>
           <div className="kpi-value"><NumberFlow value={propias.length} /></div>
           <div className="kpi-foot"><span className="kpi-period">pagos aprobados</span></div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-top"><span className="kpi-label">Facturado</span></div>
-          <div className="kpi-value"><NumberFlow value={bruto} prefix="$" /><span className="unit">ARS</span></div>
-          <div className="kpi-foot"><span className="kpi-period">bruto del curso</span></div>
         </div>
         <div className="kpi-card">
           <div className="kpi-top"><span className="kpi-label">{dado ? 'Tu ganancia final' : 'Tu ganancia proyectada'}</span></div>

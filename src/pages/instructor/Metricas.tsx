@@ -1,15 +1,14 @@
 import { useMemo } from 'react'
 import { useInstructorSelf } from '@/hooks/useInstructorSelf'
-import { useOwnCourses, useOwnSales } from '@/hooks/instructor/useInstructorCourses'
+import { useOwnSales } from '@/hooks/instructor/useInstructorCourses'
 import { useOwnPayouts } from '@/hooks/instructor/useInstructorPayouts'
 import { formatArs } from '../admin/format'
-import { gananciaArs, periodKey, periodLabel } from './earnings'
+import { periodKey, periodLabel } from './earnings'
 
 interface MonthRow {
   key: string
   ventas: number
   alumnos: number
-  bruto: number
   ganancia: number
   cerrado: boolean
 }
@@ -18,22 +17,21 @@ export default function InstructorMetricas() {
   const { instructor } = useInstructorSelf()
   const share = instructor?.revenue_share_pct ?? 0
 
-  const { data: cursos } = useOwnCourses(instructor?.id)
-  const courseIds = useMemo(() => cursos?.map(c => c.id), [cursos])
-  const { data: sales, isLoading } = useOwnSales(courseIds)
+  const { data: sales, isLoading } = useOwnSales(!!instructor?.id)
   const { data: payouts } = useOwnPayouts(instructor?.id)
 
   // Un mes es "cerrado" cuando existe su payout: ahí la ganancia deja de ser proyección
-  // y pasa a ser el monto que liquidó Travexa.
+  // y pasa a ser el monto que liquidó Travexa. La proyección del mes en curso suma las
+  // ganancias por venta (ya con el share aplicado) y redondea al final.
   const rows = useMemo<MonthRow[]>(() => {
-    const porMes = new Map<string, { ventas: number; alumnos: Set<string>; bruto: number }>()
+    const porMes = new Map<string, { ventas: number; alumnos: Set<string>; ganancia: number }>()
 
     for (const s of sales ?? []) {
       const k = periodKey(s.created_at)
-      const acc = porMes.get(k) ?? { ventas: 0, alumnos: new Set<string>(), bruto: 0 }
+      const acc = porMes.get(k) ?? { ventas: 0, alumnos: new Set<string>(), ganancia: 0 }
       acc.ventas += 1
       acc.alumnos.add(s.user_id)
-      acc.bruto += s.monto_ars
+      acc.ganancia += s.ganancia_ars
       porMes.set(k, acc)
     }
 
@@ -47,12 +45,11 @@ export default function InstructorMetricas() {
           key,
           ventas: v.ventas,
           alumnos: v.alumnos.size,
-          bruto: v.bruto,
-          ganancia: payout ? payout.monto_instructor_ars : gananciaArs(v.bruto, share),
+          ganancia: payout ? payout.monto_instructor_ars : Math.round(v.ganancia),
           cerrado: !!payout,
         }
       })
-  }, [sales, payouts, share])
+  }, [sales, payouts])
 
   const totalGanancia = rows.reduce((a, r) => a + r.ganancia, 0)
   const totalVentas = rows.reduce((a, r) => a + r.ventas, 0)
@@ -94,7 +91,6 @@ export default function InstructorMetricas() {
                     <th>Mes</th>
                     <th className="align-right">Cursos vendidos</th>
                     <th className="align-right">Alumnos</th>
-                    <th className="align-right">Facturado</th>
                     <th className="align-right">Tu ganancia</th>
                     <th>Estado</th>
                   </tr>
@@ -103,10 +99,9 @@ export default function InstructorMetricas() {
                   {rows.map(r => (
                     <tr key={r.key}>
                       <td style={{ fontWeight: 600, color: 'var(--ink)', textTransform: 'capitalize' }}>{periodLabel(r.key)}</td>
-                      <td className="num">{r.ventas}</td>
-                      <td className="num">{r.alumnos}</td>
-                      <td className="num">{formatArs(r.bruto)}</td>
-                      <td className="num" style={{ fontWeight: 600 }}>{formatArs(r.ganancia)}</td>
+                      <td className="num align-right">{r.ventas}</td>
+                      <td className="num align-right">{r.alumnos}</td>
+                      <td className="num align-right" style={{ fontWeight: 600 }}>{formatArs(r.ganancia)}</td>
                       <td>
                         {r.cerrado
                           ? <span className="badge badge-published">Cerrado</span>

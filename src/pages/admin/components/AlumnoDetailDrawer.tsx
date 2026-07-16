@@ -76,31 +76,36 @@ export default function AlumnoDetailDrawer({ alumno, open, onClose }: Props) {
   return (
     <Overlay open={open} onClose={onClose} alignRight>
       <div className="slideover">
-        {/* Header de persona: fondo liso + avatar circular grande. La clase
-            .slideover-hero queda para portadas reales (cursos/vivenciales). */}
-        <div className="slideover-hero" style={{ background: 'linear-gradient(135deg,#0A1E29,#16323F)', display: 'flex', flexDirection: 'column' }}>
-          <div className="slideover-hero-top">
-            <button className="modal-close" style={{ background: 'rgba(10,30,41,0.4)', color: '#fff' }} onClick={onClose}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            </button>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {!a.activo && <span className="badge badge-archived">Dado de baja</span>}
-              {g?.tipo_cuenta && <span className="badge" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'capitalize' }}>{g.tipo_cuenta}</span>}
-            </div>
-          </div>
-          <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 20px 18px' }}>
-            <div style={{ width: 116, height: 116, borderRadius: '50%', overflow: 'hidden', border: '3px solid rgba(245,243,236,0.9)', boxShadow: '0 6px 18px -4px rgba(10,30,41,0.55)', background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {a.avatar_url
-                ? <img src={a.avatar_url} alt={fullName(a)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ color: '#fff', fontWeight: 700, fontSize: 34, fontFamily: 'var(--font-display)' }}>{initials(a.nombre, a.apellido, a.email)}</span>}
-            </div>
-            <div className="cat" style={{ marginTop: 12 }}>Alumno</div>
-            <h2 style={{ marginTop: 2 }}>{fullName(a)}</h2>
-          </div>
-        </div>
+        {/* Close flotante: queda siempre accesible aunque el contenido scrollee. */}
+        <button className="modal-close" style={{ position: 'absolute', top: 14, right: 14, zIndex: 5, background: 'rgba(10,30,41,0.55)', color: '#fff' }} onClick={onClose} aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
 
         <div className="slideover-body">
           <div className="so-panel active">
+            {/* Header de persona: avatar circular grande + nombre superpuesto abajo a
+                la izquierda. Va DENTRO del área scrolleable (a diferencia de
+                .slideover-hero), así todo el bloque scrollea junto con el contenido. */}
+            <div style={{ margin: '-22px -22px 16px', padding: '26px 22px 18px', background: 'linear-gradient(135deg,#0A1E29,#16323F)', position: 'relative' }}>
+              {(!a.activo || g?.tipo_cuenta) && (
+                <div style={{ position: 'absolute', top: 16, right: 54, display: 'flex', gap: 6 }}>
+                  {!a.activo && <span className="badge badge-archived">Dado de baja</span>}
+                  {g?.tipo_cuenta && <span className="badge" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'capitalize' }}>{g.tipo_cuenta}</span>}
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
+                <div style={{ width: 128, height: 128, borderRadius: '50%', overflow: 'hidden', border: '3px solid rgba(245,243,236,0.92)', boxShadow: '0 12px 30px -8px rgba(0,0,0,0.65)', background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {a.avatar_url
+                    ? <img src={a.avatar_url} alt={fullName(a)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ color: '#fff', fontWeight: 700, fontSize: 38, fontFamily: 'var(--font-display)' }}>{initials(a.nombre, a.apellido, a.email)}</span>}
+                </div>
+                <div style={{ minWidth: 0, paddingBottom: 6 }}>
+                  <h2 style={{ color: 'var(--white)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.3rem', lineHeight: 1.15 }}>{fullName(a)}</h2>
+                  <div style={{ color: 'rgba(245,243,236,0.7)', fontSize: 12.5, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.email}</div>
+                </div>
+              </div>
+            </div>
+
             {/* Datos */}
             <div className="card" style={{ marginBottom: 16 }}>
               <div className="card-head"><h3 style={{ fontSize: 13 }}>Datos</h3></div>

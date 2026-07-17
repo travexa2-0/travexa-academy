@@ -76,21 +76,25 @@
 }
 @keyframes vv-float { 0%,100% { transform: translate(-50%,-50%) } 50% { transform: translate(-50%, calc(-50% - 12px)) } }
 .vv-hero-inner { position: relative; z-index: 2; width: 100%; padding-bottom: 54px; padding-top: 88px; }
-.vv-hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: auto; }
 .vv-hero-back {
   display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600;
-  color: rgba(255,255,255,.9); background: rgba(6,13,20,.32); backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.2); border-radius: 100px; padding: 7px 14px; cursor: pointer;
-  transition: background .2s;
+  color: rgba(255,255,255,.92); background: rgba(6,13,20,.36); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.28); border-radius: 100px; padding: 8px 15px; cursor: pointer;
+  margin-bottom: 20px; transition: background .2s;
 }
-.vv-hero-back:hover { background: rgba(6,13,20,.5); }
-.vv-hero-actions { display: flex; gap: 8px; }
+.vv-hero-back:hover { background: rgba(6,13,20,.55); }
+/* Copiar link / compartir: debajo del título, sobre las mini-cards. Área
+   táctil ≥44px y glass más opaco para leerse sobre zonas claras de la foto. */
+.vv-hero-share { display: flex; gap: 10px; margin: 4px 0 22px; }
 .vv-hero-icon {
-  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  color: #fff; background: rgba(6,13,20,.32); backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.2); cursor: pointer; transition: background .2s;
+  width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  color: #fff; background: rgba(255,255,255,.18); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.42); cursor: pointer;
+  box-shadow: 0 4px 16px rgba(6,12,24,.25);
+  transition: background .2s, transform .15s var(--vv-ease-out);
 }
-.vv-hero-icon:hover { background: rgba(6,13,20,.5); }
+.vv-hero-icon:hover { background: rgba(255,255,255,.3); }
+.vv-hero-icon:active { transform: scale(.94); }
 .vv-hero .vv-tag {
   display: inline-block; padding: 8px 15px; border: 1px solid rgba(255,255,255,.35); border-radius: 100px;
   font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
@@ -156,7 +160,7 @@
 .vv-exp-head { max-width: 640px; margin-bottom: 56px; }
 .vv-exp-head h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; margin-top: 16px; letter-spacing: -.01em; line-height: 1.15; }
 .vv-exp-head p { margin-top: 14px; color: rgba(255,255,255,.85); font-weight: 500; font-size: 16px; }
-.vv-inc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 32px; }
+.vv-inc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .vv-inc {
   display: flex; align-items: flex-start; gap: 16px;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
@@ -173,7 +177,8 @@
 .vv-inc-extra { max-width: 760px; margin-top: 42px; }
 .vv-inc-extra p { color: rgba(255,255,255,.88); font-weight: 500; font-size: clamp(15.5px, 1.5vw, 17px); margin-top: 20px; line-height: 1.85; white-space: pre-line; }
 .vv-inc-extra p:first-child { margin-top: 0; }
-.vv-exp-hotels-head { max-width: 640px; margin-bottom: 40px; margin-top: 70px; }
+/* Ritmo vertical consistente con "Qué incluye" (que separa ~56px). */
+.vv-exp-hotels-head { max-width: 640px; margin-bottom: 40px; margin-top: 64px; }
 .vv-exp-hotels-head h3 { font-size: clamp(24px, 2.8vw, 34px); font-weight: 800; margin-top: 14px; letter-spacing: -.01em; }
 .vv-hotel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .vv-hotel { position: relative; border-radius: var(--vv-radius); overflow: hidden; aspect-ratio: 16/10.5; display: flex; align-items: flex-end; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.18); }

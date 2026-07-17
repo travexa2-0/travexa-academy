@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, createElement } from 'react'
+import type { CSSProperties, ReactNode, ElementType } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { motion, MotionConfig, useInView } from 'framer-motion'
 import { ArrowLeft, Link2, Share2, Check, MapPin, ChevronDown, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -16,9 +16,10 @@ import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPa
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { mesesHastaSalida, puntosSalida } from '@/lib/vivencial'
 import { formatUsd } from '@/pages/admin/format'
-import { EASE_OUT } from '@/lib/motion'
 import type { ItinerarioDia, Enrollment, VivencialHotel, VivencialTipoDestino } from '@/types'
 import './vivencial-detail.css'
+
+const EASE = 'cubic-bezier(.23,1,.32,1)'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -85,24 +86,73 @@ function parseIncluye(text: string | null | undefined): { chips: string[]; prosa
   return { chips, prosa }
 }
 
-// Reveal-on-scroll — mismo patrón que Reveal.tsx (framer-motion whileInView).
-// El estado vive en React/framer, NO en clases agregadas por fuera al DOM:
-// la versión anterior usaba un IntersectionObserver global con classList y
-// cualquier re-render que reescribiera className borraba el reveal (los días
-// del itinerario desaparecían al hacer hover, títulos quedaban invisibles).
-function rv(delay = 0) {
-  return {
-    initial: { opacity: 0, y: 22 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.12, margin: '0px 0px -40px 0px' },
-    transition: { duration: 0.6, ease: EASE_OUT, delay },
-  } as const
+const prefersReduced = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/**
+ * Reveal-on-scroll driven by React state — NO classList mutation (que React
+ * pisaba al re-renderizar) NI whileInView de framer (que reaplicaba el estado
+ * `initial` opacity:0 en re-renders del padre → parpadeo y textos que quedaban
+ * invisibles como "espacios vacíos"). Acá: se observa una sola vez, al entrar
+ * en viewport `shown` pasa a true PARA SIEMPRE (nunca hay rama que lo oculte),
+ * y se deja de observar. El estilo es determinístico en cada render.
+ */
+function useReveal(delay = 0, opacityOnly = false) {
+  const reduce = useRef(prefersReduced()).current
+  const [shown, setShown] = useState(reduce) // reduced-motion: visible de entrada
+  const done = useRef(reduce)
+
+  const setRef = useCallback((el: HTMLElement | null) => {
+    if (!el || done.current) return
+    if (typeof IntersectionObserver === 'undefined') { done.current = true; setShown(true); return }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {           // sólo al entrar; sin `else`
+          done.current = true
+          setShown(true)
+          io.disconnect()                 // una sola vez
+        }
+      })
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
+    io.observe(el)
+  }, [])
+
+  const style: CSSProperties = reduce
+    ? {}
+    : {
+        opacity: shown ? 1 : 0,
+        // opacityOnly: para ancestros de modales fixed (un transform crearía
+        // un containing block que los rompe).
+        transform: opacityOnly ? undefined : (shown ? 'none' : 'translateY(22px)'),
+        transition: `opacity .6s ${EASE} ${delay}s, transform .6s ${EASE} ${delay}s`,
+        willChange: shown ? undefined : 'opacity, transform',
+      }
+  return { setRef, style, shown }
+}
+
+// Elemento polimórfico que aparece al entrar en viewport (una sola vez).
+type RevealProps = {
+  as?: ElementType
+  className?: string
+  style?: CSSProperties
+  delay?: number
+  children?: ReactNode
+} & Record<string, unknown>
+
+function Reveal({ as = 'div', className, style, delay = 0, children, ...rest }: RevealProps) {
+  const { setRef, style: rvStyle } = useReveal(delay)
+  return createElement(
+    as,
+    { ref: setRef, className, style: { ...rvStyle, ...style }, ...rest },
+    children,
+  )
 }
 
 // ── Subcomponente: día del itinerario ─────────────────────────────
 
 function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: number; defaultOpen: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
+  const { setRef, style } = useReveal()
   const tIn = useRef<ReturnType<typeof setTimeout>>()
   const tOut = useRef<ReturnType<typeof setTimeout>>()
   const canHover = useRef(false)
@@ -112,8 +162,8 @@ function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: numbe
     return () => { clearTimeout(tIn.current); clearTimeout(tOut.current) }
   }, [])
 
-  // Hover desktop: apertura lenta (delay corto de entrada) y cierre suave con
-  // delay 250ms al salir — colapsa vía grid-template-rows, sin desmontar nada.
+  // Hover desktop: apertura lenta y cierre suave con delay 250ms. Colapsa vía
+  // grid-template-rows, sin desmontar contenido.
   const onEnter = () => {
     if (!canHover.current) return
     clearTimeout(tOut.current)
@@ -129,9 +179,10 @@ function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: numbe
   const foto = dia.foto_url || null
 
   return (
-    <motion.div
+    <div
+      ref={setRef}
       className={`vv-day${open ? ' vv-open' : ''}`}
-      {...rv()}
+      style={style}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
@@ -157,7 +208,7 @@ function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: numbe
           </div>
         </div></div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -173,12 +224,13 @@ interface PriceCardProps {
   ctaPct: number
   noIncluye: string | null
   waUrl: string
-  ctaSlot: React.ReactNode
+  ctaSlot: ReactNode
 }
 
 function PriceCard(p: PriceCardProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, amount: 0.3 })
+  // opacityOnly: la card es ancestro de los modales fixed (TransferModal /
+  // PuntoSalidaModal). El mismo `shown` dispara el contador y la barra.
+  const { setRef, style, shown } = useReveal(0, true)
   const [noIncOpen, setNoIncOpen] = useState(false)
 
   const cuposLabel = p.max > 0
@@ -186,22 +238,12 @@ function PriceCard(p: PriceCardProps) {
     : 'Cupos por confirmar'
 
   return (
-    // Reveal solo con opacity: la card es ancestro de los modales fixed
-    // (TransferModal/PuntoSalida) — un transform acá crearía un containing
-    // block y los rompería.
-    <motion.div
-      className="vv-price-card"
-      ref={ref}
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.6, ease: EASE_OUT }}
-    >
+    <div className="vv-price-card" ref={setRef} style={style}>
       {p.señaArs > 0 ? (
         <>
           <div className="vv-lbl">Seña para confirmar tu lugar</div>
           <div className="vv-big">
-            <NumberFlow value={inView ? p.señaArs : 0} prefix="$ " locales="es-AR" format={{ maximumFractionDigits: 0 }} />
+            <NumberFlow value={shown ? p.señaArs : 0} prefix="$ " locales="es-AR" format={{ maximumFractionDigits: 0 }} />
             <small>ARS</small>
           </div>
           {p.cuotaSaldoArs != null ? (
@@ -231,7 +273,7 @@ function PriceCard(p: PriceCardProps) {
       {p.max > 0 && (
         <div className="vv-cupos">
           <div className="vv-cupos-bar">
-            <div className="vv-cupos-fill" style={{ width: inView ? `${p.ctaPct}%` : 0 }} />
+            <div className="vv-cupos-fill" style={{ width: shown ? `${p.ctaPct}%` : 0 }} />
           </div>
           <p>● {cuposLabel}</p>
         </div>
@@ -261,7 +303,7 @@ function PriceCard(p: PriceCardProps) {
           </div></div>
         </>
       )}
-    </motion.div>
+    </div>
   )
 }
 
@@ -319,7 +361,7 @@ export default function VivencialDetail() {
   // Parallax hero + glassbar (aparece pasado el hero, se oculta sobre la reserva).
   useEffect(() => {
     if (!course) return
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduce = prefersReduced()
     let bookingVisible = false
     let pastHero = false
     let ticking = false
@@ -448,7 +490,14 @@ export default function VivencialDetail() {
     showToast('✓ Link copiado al portapapeles')
   }
   function handleShareWA() {
-    const msg = `*Travexa Academy* — ${course!.titulo}\n\n${dias} días / ${noches} noches. Sale ${fmtDate(course!.vivencial_fecha_salida)} desde ${salidaCiudades.join(' · ') || 'Argentina'}.\nSeña: ${fmtARS(course!.vivencial_precio_seña_ars)}\n\n${window.location.href}`
+    const url = window.location.href
+    const text = `${course!.titulo} — Travexa Academy`
+    // Compartir nativo si el dispositivo lo soporta; si no, cae a WhatsApp.
+    if (navigator.share) {
+      navigator.share({ title: text, url }).catch(() => {})
+      return
+    }
+    const msg = `*Travexa Academy* — ${course!.titulo}\n\n${dias} días / ${noches} noches. Sale ${fmtDate(course!.vivencial_fecha_salida)} desde ${salidaCiudades.join(' · ') || 'Argentina'}.\nSeña: ${fmtARS(course!.vivencial_precio_seña_ars)}\n\n${url}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -469,7 +518,6 @@ export default function VivencialDetail() {
     <>
       <Header />
 
-      <MotionConfig reducedMotion="user">
       <div className="vvx" data-theme={tema} style={{ marginTop: -56 }}>
 
         {preview && (
@@ -486,23 +534,23 @@ export default function VivencialDetail() {
           {heroWord && <div className="vv-hero-word" aria-hidden="true">{heroWord}</div>}
 
           <div className="vv-hero-inner vv-container">
-            <div className="vv-hero-top" data-enter="1">
-              <button className="vv-hero-back" onClick={() => navigate('/vivencial')}>
-                <ArrowLeft className="w-[15px] h-[15px]" /> Volver a vivenciales
-              </button>
-              <div className="vv-hero-actions">
-                <button className="vv-hero-icon" onClick={handleCopyLink} aria-label="Copiar link" title="Copiar link">
-                  <Link2 className="w-[16px] h-[16px]" />
-                </button>
-                <button className="vv-hero-icon" onClick={handleShareWA} aria-label="Compartir" title="Compartir">
-                  <Share2 className="w-[16px] h-[16px]" />
-                </button>
-              </div>
-            </div>
+            <button className="vv-hero-back" data-enter="1" onClick={() => navigate('/vivencial')}>
+              <ArrowLeft className="w-[15px] h-[15px]" /> Volver a vivenciales
+            </button>
 
             <span className="vv-tag" data-enter="2">✦ Capacitación vivencial</span>
-            <h1 data-enter="3">{course.titulo}</h1>
+            <h1 data-enter="2">{course.titulo}</h1>
             {course.descripcion && <p className="vv-sub" data-enter="3">{course.descripcion}</p>}
+
+            {/* Copiar link / compartir — debajo del título, junto a las mini-cards. */}
+            <div className="vv-hero-share" data-enter="3">
+              <button className="vv-hero-icon" onClick={handleCopyLink} aria-label="Copiar link" title="Copiar link">
+                <Link2 className="w-[19px] h-[19px]" />
+              </button>
+              <button className="vv-hero-icon" onClick={handleShareWA} aria-label="Compartir" title="Compartir">
+                <Share2 className="w-[19px] h-[19px]" />
+              </button>
+            </div>
 
             <div className="vv-hero-cards" data-enter="4">
               {heroCards.map(c => (
@@ -520,8 +568,8 @@ export default function VivencialDetail() {
           <section className="vv-itinerary">
             <div className="vv-container">
               <div className="vv-itinerary-head">
-                <motion.span className="vv-eyebrow" {...rv()}>Itinerario</motion.span>
-                <motion.h2 {...rv(0.06)}>Un día a la vez,<br />del embarque al regreso.</motion.h2>
+                <Reveal as="span" className="vv-eyebrow">Itinerario</Reveal>
+                <Reveal as="h2" delay={0.06}>Un día a la vez,<br />del embarque al regreso.</Reveal>
               </div>
               <div className="vv-timeline">
                 {itinerario.map((dia, i) => (
@@ -542,37 +590,37 @@ export default function VivencialDetail() {
               {hasIncluye && (
                 <>
                   <div className="vv-exp-head">
-                    <motion.span className="vv-eyebrow" style={{ color: '#E8C685' }} {...rv()}>Qué incluye</motion.span>
-                    <motion.h2 {...rv(0.06)}>Todo resuelto,<br />de punta a punta.</motion.h2>
-                    <motion.p {...rv(0.12)}>Vos ocupate de aprender el destino. De la logística nos encargamos nosotros.</motion.p>
+                    <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }}>Qué incluye</Reveal>
+                    <Reveal as="h2" delay={0.06}>Todo resuelto,<br />de punta a punta.</Reveal>
+                    <Reveal as="p" delay={0.12}>Vos ocupate de aprender el destino. De la logística nos encargamos nosotros.</Reveal>
                   </div>
                   {incChips.length > 0 && (
                     <div className="vv-inc-grid">
                       {incChips.map((item, i) => (
-                        <motion.div className="vv-inc" key={i} {...rv((i % 3) * 0.06)}>
+                        <Reveal className="vv-inc" key={i} delay={(i % 3) * 0.06}>
                           <div className="vv-inc-ico"><Check className="w-[21px] h-[21px]" /></div>
                           <div><h4>{renderBold(item, `inc${i}`)}</h4></div>
-                        </motion.div>
+                        </Reveal>
                       ))}
                     </div>
                   )}
                   {incProsa.length > 0 && (
-                    <motion.div className="vv-inc-extra" {...rv()}>
+                    <Reveal className="vv-inc-extra">
                       {incProsa.map((para, i) => (
                         <p key={i}>{renderBold(para, `incp${i}`)}</p>
                       ))}
-                    </motion.div>
+                    </Reveal>
                   )}
                 </>
               )}
 
               {hoteles.length > 0 && (
                 <>
-                  {/* Título fijo de la sección (no viene de la base): si no hay
-                      bloque de incluye arriba, colapsa el margen superior. */}
+                  {/* Título fijo (no viene de la base). Si no hay bloque de
+                      incluye arriba, colapsa el margen superior. */}
                   <div className="vv-exp-hotels-head" style={hasIncluye ? undefined : { marginTop: 0 }}>
-                    <motion.span className="vv-eyebrow" style={{ color: '#E8C685' }} {...rv()}>Alojamiento</motion.span>
-                    <motion.h3 {...rv(0.06)}>Dormís donde después vas a vender.</motion.h3>
+                    <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }}>Alojamiento</Reveal>
+                    <Reveal as="h3" delay={0.06}>Dormís donde después vas a vender.</Reveal>
                   </div>
                   <div className="vv-hotel-grid">
                     {hoteles.map((h, i) => {
@@ -596,9 +644,9 @@ export default function VivencialDetail() {
                         </>
                       )
                       return h.link ? (
-                        <motion.a className="vv-hotel" key={i} href={h.link} target="_blank" rel="noopener noreferrer" {...rv((i % 2) * 0.08)}>{inner}</motion.a>
+                        <Reveal as="a" className="vv-hotel" key={i} href={h.link} target="_blank" rel="noopener noreferrer" delay={(i % 2) * 0.08}>{inner}</Reveal>
                       ) : (
-                        <motion.div className="vv-hotel" key={i} {...rv((i % 2) * 0.08)}>{inner}</motion.div>
+                        <Reveal className="vv-hotel" key={i} delay={(i % 2) * 0.08}>{inner}</Reveal>
                       )
                     })}
                   </div>
@@ -612,16 +660,16 @@ export default function VivencialDetail() {
         {puntos.length > 0 && (
           <section className="vv-departures vv-container">
             <div className="vv-departures-head">
-              <motion.span className="vv-eyebrow" {...rv()}>Puntos de salida</motion.span>
-              <motion.h2 {...rv(0.06)}>Subís cerca de tu casa.</motion.h2>
+              <Reveal as="span" className="vv-eyebrow">Puntos de salida</Reveal>
+              <Reveal as="h2" delay={0.06}>Subís cerca de tu casa.</Reveal>
             </div>
             <div className="vv-dep-grid">
               {puntos.map((p, i) => (
-                <motion.div className="vv-dep" key={i} {...rv((i % 4) * 0.06)}>
+                <Reveal className="vv-dep" key={i} delay={(i % 4) * 0.06}>
                   <div className="vv-pin"><MapPin className="w-[20px] h-[20px]" /></div>
                   <h4>{p.ciudad}</h4>
                   {p.detalle_encuentro && <p>{p.detalle_encuentro}</p>}
-                </motion.div>
+                </Reveal>
               ))}
             </div>
           </section>
@@ -635,16 +683,16 @@ export default function VivencialDetail() {
           <div className="vv-booking-in">
             <div>
               {/* Copy fijo del mockup — no viene de la base. */}
-              <motion.span className="vv-eyebrow" style={{ color: '#E8C685' }} {...rv()}>Reservá tu lugar</motion.span>
-              <motion.h2 {...rv(0.06)}>Confirmá con la seña y pagá en cuotas.</motion.h2>
-              <motion.p className="vv-lead" {...rv(0.12)}>
+              <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }}>Reservá tu lugar</Reveal>
+              <Reveal as="h2" delay={0.06}>Confirmá con la seña y pagá en cuotas.</Reveal>
+              <Reveal as="p" className="vv-lead" delay={0.12}>
                 El idioma del vivencial es {idiomaLabel}{max > 0 ? ` y el cupo máximo es de ${max} asesores` : ''}. Los lugares se confirman por orden de seña.
-              </motion.p>
+              </Reveal>
               <ul className="vv-benefits">
                 {CTA_FEATURES.map((f, i) => (
-                  <motion.li key={i} {...rv(0.15 + i * 0.06)}>
+                  <Reveal as="li" key={i} delay={0.15 + i * 0.06}>
                     <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />{f}
-                  </motion.li>
+                  </Reveal>
                 ))}
               </ul>
             </div>
@@ -680,7 +728,6 @@ export default function VivencialDetail() {
           </div>
         </div>
       </div>
-      </MotionConfig>
 
       {/* Footer estándar del sitio: la reserva es el último bloque del
           vivencial y de ahí se pasa directo al pie, sin franjas vacías. */}

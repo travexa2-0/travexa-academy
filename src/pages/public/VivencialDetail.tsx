@@ -86,6 +86,45 @@ function parseIncluye(text: string | null | undefined): { chips: string[]; prosa
   return { chips, prosa }
 }
 
+// Un párrafo de prosa es "subtítulo" si es una única línea corta terminada en
+// "?" (ej: "¿A quién está dirigido?"). Genérico, no atado a estos textos.
+function isProsaSub(para: string): boolean {
+  const lines = para.split('\n').map(l => l.trim()).filter(Boolean)
+  return lines.length === 1 && lines[0].length <= 60 && lines[0].endsWith('?')
+}
+
+// Agrupa la prosa en bloques: cada subtítulo abre un bloque nuevo; todo lo que
+// sigue hasta el próximo subtítulo (o el final) es su contenido. La prosa
+// inicial sin subtítulo (manifiesto) es el primer bloque. Sin subtítulos → un
+// solo bloque. Cada bloque se renderiza en su propia card de vidrio.
+function groupProsa(prosa: string[]): string[][] {
+  const groups: string[][] = []
+  let cur: string[] | null = null
+  for (const para of prosa) {
+    if (isProsaSub(para) || !cur) { cur = []; groups.push(cur) }
+    cur.push(para)
+  }
+  return groups
+}
+
+// Render de un párrafo de prosa: lista (varias líneas cortas), subtítulo
+// (línea "?") o párrafo normal. Mantiene renderBold en los tres casos.
+function renderProsaItem(para: string, key: string) {
+  const lines = para.split('\n').map(l => l.trim()).filter(Boolean)
+  if (lines.length > 1) {
+    return (
+      <ul className="vv-inc-list" key={key}>
+        {lines.map((l, j) => <li key={j}>{renderBold(l, `${key}-${j}`)}</li>)}
+      </ul>
+    )
+  }
+  const line = lines[0] ?? ''
+  if (line.length <= 60 && line.endsWith('?')) {
+    return <h4 className="vv-inc-sub" key={key}>{renderBold(line, key)}</h4>
+  }
+  return <p key={key}>{renderBold(line, key)}</p>
+}
+
 const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -630,24 +669,14 @@ export default function VivencialDetail() {
                   )}
                   {incProsa.length > 0 && (
                     <Reveal className="vv-inc-extra" revealKey={rk('inc-prosa')}>
-                      {incProsa.map((para, i) => {
-                        // Un párrafo con varias líneas cortas (sin blanco entre
-                        // ellas) es una lista → <ul>. Una línea corta que termina
-                        // en "?" es un subtítulo de sección. El resto, prosa normal.
-                        const lines = para.split('\n').map(l => l.trim()).filter(Boolean)
-                        if (lines.length > 1) {
-                          return (
-                            <ul className="vv-inc-list" key={i}>
-                              {lines.map((l, j) => <li key={j}>{renderBold(l, `incp${i}-${j}`)}</li>)}
-                            </ul>
-                          )
-                        }
-                        const line = lines[0] ?? ''
-                        if (line.length <= 60 && line.endsWith('?')) {
-                          return <h4 className="vv-inc-sub" key={i}>{renderBold(line, `incp${i}`)}</h4>
-                        }
-                        return <p key={i}>{renderBold(line, `incp${i}`)}</p>
-                      })}
+                      {/* Cada bloque (cortado por subtítulo) en su propia card de
+                          vidrio, para que el texto tenga contraste consistente
+                          sin importar qué parte de la foto quede detrás. */}
+                      {groupProsa(incProsa).map((group, gi) => (
+                        <div className="vv-inc-card" key={gi}>
+                          {group.map((para, i) => renderProsaItem(para, `incp${gi}-${i}`))}
+                        </div>
+                      ))}
                     </Reveal>
                   )}
                 </>

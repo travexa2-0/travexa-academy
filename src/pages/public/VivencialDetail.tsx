@@ -90,32 +90,51 @@ const prefersReduced = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /**
- * Reveal-on-scroll driven by React state — NO classList mutation (que React
- * pisaba al re-renderizar) NI whileInView de framer (que reaplicaba el estado
- * `initial` opacity:0 en re-renders del padre → parpadeo y textos que quedaban
- * invisibles como "espacios vacíos"). Acá: se observa una sola vez, al entrar
- * en viewport `shown` pasa a true PARA SIEMPRE (nunca hay rama que lo oculte),
- * y se deja de observar. El estilo es determinístico en cada render.
+ * Registro global (nivel de módulo, FUERA de React) de los elementos que ya se
+ * revelaron en esta sesión de pestaña. No lo resetea ningún remount de React —
+ * sólo un refresh real de la página. Es el blindaje contra el parpadeo:
+ * si algo desmonta y vuelve a montar una sección (refetch, StrictMode, un
+ * cambio de key aguas arriba, lo que sea), la key ya está acá y el elemento
+ * nace visible en vez de arrancar invisible y esperar de nuevo al observer.
  */
-function useReveal(delay = 0, opacityOnly = false) {
+const revealedKeys = new Set<string>()
+
+/**
+ * Reveal-on-scroll a prueba de remounts. `key` es un id estable y único por
+ * elemento. El estado inicial consulta el registro global: si esa key ya se
+ * reveló alguna vez, el componente NACE en shown=true (sin parpadeo, sin
+ * esperar al observer). La primera vez, el IntersectionObserver dispara una
+ * sola vez (sólo en isIntersecting, sin rama que oculte), marca la key como
+ * revelada para siempre y anima la entrada. El estilo es determinístico.
+ */
+function useReveal(key: string, delay = 0, opacityOnly = false) {
   const reduce = useRef(prefersReduced()).current
-  const [shown, setShown] = useState(reduce) // reduced-motion: visible de entrada
-  const done = useRef(reduce)
+  const [shown, setShown] = useState(() => reduce || revealedKeys.has(key))
+  const done = useRef(shown)
+  const ioRef = useRef<IntersectionObserver | null>(null)
 
   const setRef = useCallback((el: HTMLElement | null) => {
-    if (!el || done.current) return
-    if (typeof IntersectionObserver === 'undefined') { done.current = true; setShown(true); return }
+    // React 18 llama al callback ref con null al desmontar (no soporta cleanup
+    // como return): desconectamos ahí para no dejar observers colgados.
+    if (el === null) { ioRef.current?.disconnect(); ioRef.current = null; return }
+    if (done.current) return
+    if (typeof IntersectionObserver === 'undefined') {
+      done.current = true; revealedKeys.add(key); setShown(true); return
+    }
+    ioRef.current?.disconnect()
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
-        if (e.isIntersecting) {           // sólo al entrar; sin `else`
+        if (e.isIntersecting) {            // sólo al entrar; nunca se oculta
           done.current = true
+          revealedKeys.add(key)            // revelado PARA SIEMPRE (esta sesión)
           setShown(true)
-          io.disconnect()                 // una sola vez
+          io.disconnect()                  // una sola vez
         }
       })
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
+    ioRef.current = io
     io.observe(el)
-  }, [])
+  }, [key])
 
   const style: CSSProperties = reduce
     ? {}
@@ -131,16 +150,18 @@ function useReveal(delay = 0, opacityOnly = false) {
 }
 
 // Elemento polimórfico que aparece al entrar en viewport (una sola vez).
+// `revealKey` debe ser un id estable y único (ej: `${slug}:inc-chip-2`).
 type RevealProps = {
   as?: ElementType
+  revealKey: string
   className?: string
   style?: CSSProperties
   delay?: number
   children?: ReactNode
 } & Record<string, unknown>
 
-function Reveal({ as = 'div', className, style, delay = 0, children, ...rest }: RevealProps) {
-  const { setRef, style: rvStyle } = useReveal(delay)
+function Reveal({ as = 'div', revealKey, className, style, delay = 0, children, ...rest }: RevealProps) {
+  const { setRef, style: rvStyle } = useReveal(revealKey, delay)
   return createElement(
     as,
     { ref: setRef, className, style: { ...rvStyle, ...style }, ...rest },
@@ -150,9 +171,9 @@ function Reveal({ as = 'div', className, style, delay = 0, children, ...rest }: 
 
 // ── Subcomponente: día del itinerario ─────────────────────────────
 
-function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: number; defaultOpen: boolean }) {
+function DayItem({ dia, index, defaultOpen, revealKey }: { dia: ItinerarioDia; index: number; defaultOpen: boolean; revealKey: string }) {
   const [open, setOpen] = useState(defaultOpen)
-  const { setRef, style } = useReveal()
+  const { setRef, style } = useReveal(revealKey)
   const tIn = useRef<ReturnType<typeof setTimeout>>()
   const tOut = useRef<ReturnType<typeof setTimeout>>()
   const canHover = useRef(false)
@@ -225,12 +246,13 @@ interface PriceCardProps {
   noIncluye: string | null
   waUrl: string
   ctaSlot: ReactNode
+  revealKey: string
 }
 
 function PriceCard(p: PriceCardProps) {
   // opacityOnly: la card es ancestro de los modales fixed (TransferModal /
   // PuntoSalidaModal). El mismo `shown` dispara el contador y la barra.
-  const { setRef, style, shown } = useReveal(0, true)
+  const { setRef, style, shown } = useReveal(p.revealKey, 0, true)
   const [noIncOpen, setNoIncOpen] = useState(false)
 
   const cuposLabel = p.max > 0
@@ -474,6 +496,10 @@ export default function VivencialDetail() {
 
   const idiomaLabel = !course.idioma || course.idioma.toLowerCase() === 'es' ? 'español' : course.idioma
 
+  // Key estable por elemento para el registro de revelados. Incluye el slug para
+  // que cada vivencial anime fresco, pero sea idéntica entre renders/remounts.
+  const rk = (s: string) => `${slug}:${s}`
+
   // WhatsApp: siempre al Business global de consultas.
   const waDigits = cleanWhatsappNumber(whatsappBusiness ?? '') || '5491112345678'
   const waUrl = `https://wa.me/${waDigits}?text=${encodeURIComponent(`Hola! Quiero consultar por el vivencial ${course.titulo} (${fmtDate(course.vivencial_fecha_salida)}). ¿Me pasás más info?`)}`
@@ -568,12 +594,12 @@ export default function VivencialDetail() {
           <section className="vv-itinerary">
             <div className="vv-container">
               <div className="vv-itinerary-head">
-                <Reveal as="span" className="vv-eyebrow">Itinerario</Reveal>
-                <Reveal as="h2" delay={0.06}>Un día a la vez,<br />del embarque al regreso.</Reveal>
+                <Reveal as="span" className="vv-eyebrow" revealKey={rk('itin-eyebrow')}>Itinerario</Reveal>
+                <Reveal as="h2" delay={0.06} revealKey={rk('itin-title')}>Un día a la vez,<br />del embarque al regreso.</Reveal>
               </div>
               <div className="vv-timeline">
                 {itinerario.map((dia, i) => (
-                  <DayItem key={i} dia={dia} index={i} defaultOpen={i === 0} />
+                  <DayItem key={i} dia={dia} index={i} defaultOpen={i === 0} revealKey={rk(`itin-day-${i}`)} />
                 ))}
               </div>
             </div>
@@ -590,14 +616,14 @@ export default function VivencialDetail() {
               {hasIncluye && (
                 <>
                   <div className="vv-exp-head">
-                    <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }}>Qué incluye</Reveal>
-                    <Reveal as="h2" delay={0.06}>Todo resuelto,<br />de punta a punta.</Reveal>
-                    <Reveal as="p" delay={0.12}>Vos ocupate de aprender el destino. De la logística nos encargamos nosotros.</Reveal>
+                    <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }} revealKey={rk('inc-eyebrow')}>Qué incluye</Reveal>
+                    <Reveal as="h2" delay={0.06} revealKey={rk('inc-title')}>Todo resuelto,<br />de punta a punta.</Reveal>
+                    <Reveal as="p" delay={0.12} revealKey={rk('inc-sub')}>Vos ocupate de aprender el destino. De la logística nos encargamos nosotros.</Reveal>
                   </div>
                   {incChips.length > 0 && (
                     <div className="vv-inc-grid">
                       {incChips.map((item, i) => (
-                        <Reveal className="vv-inc" key={i} delay={(i % 3) * 0.06}>
+                        <Reveal className="vv-inc" key={i} delay={(i % 3) * 0.06} revealKey={rk(`inc-chip-${i}`)}>
                           <div className="vv-inc-ico"><Check className="w-[21px] h-[21px]" /></div>
                           <div><h4>{renderBold(item, `inc${i}`)}</h4></div>
                         </Reveal>
@@ -605,7 +631,7 @@ export default function VivencialDetail() {
                     </div>
                   )}
                   {incProsa.length > 0 && (
-                    <Reveal className="vv-inc-extra">
+                    <Reveal className="vv-inc-extra" revealKey={rk('inc-prosa')}>
                       {incProsa.map((para, i) => (
                         <p key={i}>{renderBold(para, `incp${i}`)}</p>
                       ))}
@@ -619,8 +645,8 @@ export default function VivencialDetail() {
                   {/* Título fijo (no viene de la base). Si no hay bloque de
                       incluye arriba, colapsa el margen superior. */}
                   <div className="vv-exp-hotels-head" style={hasIncluye ? undefined : { marginTop: 0 }}>
-                    <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }}>Alojamiento</Reveal>
-                    <Reveal as="h3" delay={0.06}>Dormís donde después vas a vender.</Reveal>
+                    <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }} revealKey={rk('hotel-eyebrow')}>Alojamiento</Reveal>
+                    <Reveal as="h3" delay={0.06} revealKey={rk('hotel-title')}>Dormís donde después vas a vender.</Reveal>
                   </div>
                   <div className="vv-hotel-grid">
                     {hoteles.map((h, i) => {
@@ -644,9 +670,9 @@ export default function VivencialDetail() {
                         </>
                       )
                       return h.link ? (
-                        <Reveal as="a" className="vv-hotel" key={i} href={h.link} target="_blank" rel="noopener noreferrer" delay={(i % 2) * 0.08}>{inner}</Reveal>
+                        <Reveal as="a" className="vv-hotel" key={i} href={h.link} target="_blank" rel="noopener noreferrer" delay={(i % 2) * 0.08} revealKey={rk(`hotel-${i}`)}>{inner}</Reveal>
                       ) : (
-                        <Reveal className="vv-hotel" key={i} delay={(i % 2) * 0.08}>{inner}</Reveal>
+                        <Reveal className="vv-hotel" key={i} delay={(i % 2) * 0.08} revealKey={rk(`hotel-${i}`)}>{inner}</Reveal>
                       )
                     })}
                   </div>
@@ -660,12 +686,12 @@ export default function VivencialDetail() {
         {puntos.length > 0 && (
           <section className="vv-departures vv-container">
             <div className="vv-departures-head">
-              <Reveal as="span" className="vv-eyebrow">Puntos de salida</Reveal>
-              <Reveal as="h2" delay={0.06}>Subís cerca de tu casa.</Reveal>
+              <Reveal as="span" className="vv-eyebrow" revealKey={rk('dep-eyebrow')}>Puntos de salida</Reveal>
+              <Reveal as="h2" delay={0.06} revealKey={rk('dep-title')}>Subís cerca de tu casa.</Reveal>
             </div>
             <div className="vv-dep-grid">
               {puntos.map((p, i) => (
-                <Reveal className="vv-dep" key={i} delay={(i % 4) * 0.06}>
+                <Reveal className="vv-dep" key={i} delay={(i % 4) * 0.06} revealKey={rk(`dep-${i}`)}>
                   <div className="vv-pin"><MapPin className="w-[20px] h-[20px]" /></div>
                   <h4>{p.ciudad}</h4>
                   {p.detalle_encuentro && <p>{p.detalle_encuentro}</p>}
@@ -683,14 +709,14 @@ export default function VivencialDetail() {
           <div className="vv-booking-in">
             <div>
               {/* Copy fijo del mockup — no viene de la base. */}
-              <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }}>Reservá tu lugar</Reveal>
-              <Reveal as="h2" delay={0.06}>Confirmá con la seña y pagá en cuotas.</Reveal>
-              <Reveal as="p" className="vv-lead" delay={0.12}>
+              <Reveal as="span" className="vv-eyebrow" style={{ color: '#E8C685' }} revealKey={rk('booking-eyebrow')}>Reservá tu lugar</Reveal>
+              <Reveal as="h2" delay={0.06} revealKey={rk('booking-title')}>Confirmá con la seña y pagá en cuotas.</Reveal>
+              <Reveal as="p" className="vv-lead" delay={0.12} revealKey={rk('booking-lead')}>
                 El idioma del vivencial es {idiomaLabel}{max > 0 ? ` y el cupo máximo es de ${max} asesores` : ''}. Los lugares se confirman por orden de seña.
               </Reveal>
               <ul className="vv-benefits">
                 {CTA_FEATURES.map((f, i) => (
-                  <Reveal as="li" key={i} delay={0.15 + i * 0.06}>
+                  <Reveal as="li" key={i} delay={0.15 + i * 0.06} revealKey={rk(`booking-benefit-${i}`)}>
                     <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />{f}
                   </Reveal>
                 ))}
@@ -708,6 +734,7 @@ export default function VivencialDetail() {
               noIncluye={course.no_incluye}
               waUrl={waUrl}
               ctaSlot={ctaSlot}
+              revealKey={rk('booking-pricecard')}
             />
           </div>
         </section>

@@ -179,7 +179,9 @@
 /* Prosa de `incluye` (manifiesto / Q&A que Yesica escribe después de los
    bullets): tratamiento tipográfico de lectura, no cards. pre-line respeta los
    saltos simples dentro de un párrafo (listas del Q&A). */
-.vv-inc-extra { max-width: 760px; margin-top: 42px; display: grid; gap: 22px; }
+/* Las cards ocupan TODO el ancho de la sección (igual que la grilla de chips),
+   no una columna angosta. margin-top separa del grid de chips de arriba. */
+.vv-inc-extra { margin-top: 42px; display: grid; gap: 22px; }
 /* Cada bloque de prosa en una card de vidrio (mismo lenguaje que .vv-inc). */
 .vv-inc-card {
   background: rgba(255,255,255,.1);
@@ -187,9 +189,12 @@
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   border-radius: 20px;
-  padding: 28px 30px;
+  padding: 30px 34px;
 }
 .vv-inc-card > *:first-child { margin-top: 0; }
+/* La card llena el ancho; el texto adentro se estira pero con un tope de línea
+   generoso para que no queden renglones incómodamente largos en desktop grande. */
+.vv-inc-card > * { max-width: 980px; }
 .vv-inc-extra p { color: rgba(255,255,255,.9); font-weight: 500; font-size: clamp(15.5px, 1.5vw, 17px); margin-top: 20px; line-height: 1.85; }
 /* Subtítulos dentro de la prosa (líneas "¿...?"): un quiebre de sección. */
 .vv-inc-sub { font-size: clamp(17px, 1.7vw, 20px); font-weight: 700; color: #fff; margin-top: 34px; letter-spacing: -.01em; line-height: 1.3; }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MapPin, Loader2, Plane } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -45,7 +46,9 @@ export default function PuntoSalidaModal({ open, onClose, course, onReserved }: 
     }
   }
 
-  return (
+  // Portal a <body>: mismo motivo que TransferModal — el modal fixed no debe
+  // quedar atrapado en el stacking context de .vv-booking-in.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -119,6 +122,7 @@ export default function PuntoSalidaModal({ open, onClose, course, onReserved }: 
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

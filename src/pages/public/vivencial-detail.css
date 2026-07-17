@@ -148,7 +148,12 @@
    contenido pinta encima por orden de origen. Así la sección NO crea un
    stacking context que atrape los modales (position:fixed) que abre la card. */
 .vv-experience { position: relative; color: #fff; background: var(--vv-dark); }
-.vv-exp-bg { position: absolute; inset: 0; overflow: hidden; }
+/* La capa de foto (absolute) va explícitamente DEBAJO del contenido. Sin esto,
+   por orden de pintado CSS un sibling posicionado tapa al contenido en-flujo:
+   el texto (opacity 1) quedaba oculto tras el overlay salvo mientras su
+   transición de reveal aplicaba un transform (stacking context temporal).
+   Diagnóstico Playwright: el texto daba elementFromPoint = .vv-exp-bg. */
+.vv-exp-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
 .vv-exp-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .vv-exp-bg::after {
   content: ""; position: absolute; inset: 0;
@@ -156,7 +161,7 @@
     linear-gradient(105deg, rgba(12,20,32,.82) 0%, rgba(12,20,32,.55) 48%, rgba(12,20,32,.35) 100%),
     linear-gradient(180deg, rgba(12,20,32,.55) 0%, rgba(12,20,32,.15) 45%, rgba(12,20,32,.6) 100%);
 }
-.vv-experience .vv-inner { padding: 110px 24px 120px; }
+.vv-experience .vv-inner { position: relative; z-index: 1; padding: 110px 24px 120px; }
 .vv-exp-head { max-width: 640px; margin-bottom: 56px; }
 .vv-exp-head h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; margin-top: 16px; letter-spacing: -.01em; line-height: 1.15; }
 .vv-exp-head p { margin-top: 14px; color: rgba(255,255,255,.85); font-weight: 500; font-size: 16px; }
@@ -204,10 +209,10 @@
 
 /* ============ RESERVA (glass sobre foto) ============ */
 .vv-booking { position: relative; color: #fff; overflow: hidden; border-radius: 32px; margin: 0 20px 60px; background: var(--vv-dark); scroll-margin-top: 80px; }
-.vv-booking-bg { position: absolute; inset: 0; overflow: hidden; }
+.vv-booking-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
 .vv-booking-bg img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
 .vv-booking-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(10,16,28,.72) 0%, rgba(10,16,28,.45) 55%, rgba(10,16,28,.6) 100%); }
-.vv-booking-in { max-width: 1200px; margin: 0 auto; padding: 96px 48px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; align-items: center; }
+.vv-booking-in { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 96px 48px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; align-items: center; }
 .vv-booking h2 { font-size: clamp(28px, 3.6vw, 44px); font-weight: 800; margin: 16px 0 18px; letter-spacing: -.01em; line-height: 1.12; }
 .vv-booking .vv-lead { color: rgba(255,255,255,.85); font-size: 16px; font-weight: 500; max-width: 460px; }
 .vv-booking .vv-benefits { list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }

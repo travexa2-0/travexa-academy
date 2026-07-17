@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, createElement } from 'react'
 import type { CSSProperties, ReactNode, ElementType } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Link2, Share2, Check, MapPin, ChevronDown, ExternalLink } from 'lucide-react'
+import { Link2, Share2, Check, MapPin, ChevronDown, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -560,16 +560,14 @@ export default function VivencialDetail() {
           {heroWord && <div className="vv-hero-word" aria-hidden="true">{heroWord}</div>}
 
           <div className="vv-hero-inner vv-container">
-            <button className="vv-hero-back" data-enter="1" onClick={() => navigate('/vivencial')}>
-              <ArrowLeft className="w-[15px] h-[15px]" /> Volver a vivenciales
-            </button>
-
-            <span className="vv-tag" data-enter="2">✦ Capacitación vivencial</span>
-            <h1 data-enter="2">{course.titulo}</h1>
-            {course.descripcion && <p className="vv-sub" data-enter="3">{course.descripcion}</p>}
+            {/* La vuelta a vivenciales vive en el header de navegación real (Vivencial),
+                no se duplica en el hero. */}
+            <span className="vv-tag" data-enter="1">✦ Capacitación vivencial</span>
+            <h1 data-enter="1">{course.titulo}</h1>
+            {course.descripcion && <p className="vv-sub" data-enter="2">{course.descripcion}</p>}
 
             {/* Copiar link / compartir — debajo del título, junto a las mini-cards. */}
-            <div className="vv-hero-share" data-enter="3">
+            <div className="vv-hero-share" data-enter="2">
               <button className="vv-hero-icon" onClick={handleCopyLink} aria-label="Copiar link" title="Copiar link">
                 <Link2 className="w-[19px] h-[19px]" />
               </button>
@@ -578,7 +576,7 @@ export default function VivencialDetail() {
               </button>
             </div>
 
-            <div className="vv-hero-cards" data-enter="4">
+            <div className="vv-hero-cards" data-enter="3">
               {heroCards.map(c => (
                 <div className="vv-hero-card" key={c.k}>
                   <div className="vv-k">{c.k}</div>

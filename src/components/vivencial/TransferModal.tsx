@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Upload, FileText, Loader2, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -130,7 +131,10 @@ export default function TransferModal({ open, onClose, course, userId, montoSuge
     }
   }
 
-  return (
+  // Portal a <body>: el modal (fixed, z-[700]) no debe quedar atrapado en el
+  // stacking context de la sección de reserva (.vv-booking-in tiene z-index),
+  // que lo dejaría por debajo del header. Portaleado escapa a nivel de página.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -281,6 +285,7 @@ export default function TransferModal({ open, onClose, course, userId, montoSuge
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

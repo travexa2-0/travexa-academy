@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { useInView } from 'framer-motion'
+import { motion, MotionConfig, useInView } from 'framer-motion'
 import { ArrowLeft, Link2, Share2, Check, MapPin, ChevronDown, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import NumberFlow from '@number-flow/react'
 import Header from '@/components/layout/Header'
+import Footer from '@/components/layout/Footer'
 import { useCourseDetail } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -15,6 +16,7 @@ import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPa
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { mesesHastaSalida, puntosSalida } from '@/lib/vivencial'
 import { formatUsd } from '@/pages/admin/format'
+import { EASE_OUT } from '@/lib/motion'
 import type { ItinerarioDia, Enrollment, VivencialHotel, VivencialTipoDestino } from '@/types'
 import './vivencial-detail.css'
 
@@ -50,14 +52,52 @@ function calcDuracion(salida: string | null, regreso: string | null): { dias: nu
 const THEMES: readonly VivencialTipoDestino[] = ['playa', 'montana', 'desierto', 'selva', 'ciudad']
 
 // Beneficios fijos de la card de reserva — iguales para todos los vivenciales.
+// NO vienen de la base (hardcodeados a propósito, como en el mockup).
 const CTA_FEATURES = [
   'Viajá, disfrutá y capacitate profesionalmente',
   'Instructores con más de 15 años de experiencia',
   'Convertite en profesional del destino y crecé con Travexa',
 ]
 
-// Un ítem de "incluye" corto va como chip; los párrafos largos van como texto.
-const CHIP_MAXLEN = 55
+// Umbral para considerar una línea "bullet corto" (chip) vs prosa.
+const CHIP_MAXLEN = 60
+
+/**
+ * `incluye` es texto libre: bullets cortos al inicio (una frase por línea) y,
+ * opcionalmente, prosa larga después (manifiesto, Q&A). Regla genérica:
+ * líneas cortas consecutivas desde el inicio — hasta la primera línea en
+ * blanco o la primera línea larga — son chips; TODO lo que sigue es prosa
+ * (párrafos separados por saltos dobles). Nada hardcodeado por vivencial.
+ */
+function parseIncluye(text: string | null | undefined): { chips: string[]; prosa: string[] } {
+  if (!text) return { chips: [], prosa: [] }
+  const lines = text.split(/\r?\n/)
+  const chips: string[] = []
+  let i = 0
+  while (i < lines.length) {
+    const l = lines[i].trim()
+    if (!l || l.length > CHIP_MAXLEN) break
+    chips.push(l)
+    i++
+  }
+  const rest = lines.slice(i).join('\n').trim()
+  const prosa = rest ? rest.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean) : []
+  return { chips, prosa }
+}
+
+// Reveal-on-scroll — mismo patrón que Reveal.tsx (framer-motion whileInView).
+// El estado vive en React/framer, NO en clases agregadas por fuera al DOM:
+// la versión anterior usaba un IntersectionObserver global con classList y
+// cualquier re-render que reescribiera className borraba el reveal (los días
+// del itinerario desaparecían al hacer hover, títulos quedaban invisibles).
+function rv(delay = 0) {
+  return {
+    initial: { opacity: 0, y: 22 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.12, margin: '0px 0px -40px 0px' },
+    transition: { duration: 0.6, ease: EASE_OUT, delay },
+  } as const
+}
 
 // ── Subcomponente: día del itinerario ─────────────────────────────
 
@@ -72,6 +112,8 @@ function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: numbe
     return () => { clearTimeout(tIn.current); clearTimeout(tOut.current) }
   }, [])
 
+  // Hover desktop: apertura lenta (delay corto de entrada) y cierre suave con
+  // delay 250ms al salir — colapsa vía grid-template-rows, sin desmontar nada.
   const onEnter = () => {
     if (!canHover.current) return
     clearTimeout(tOut.current)
@@ -87,8 +129,9 @@ function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: numbe
   const foto = dia.foto_url || null
 
   return (
-    <div
-      className={`vv-day vv-reveal${open ? ' vv-open' : ''}`}
+    <motion.div
+      className={`vv-day${open ? ' vv-open' : ''}`}
+      {...rv()}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
@@ -114,7 +157,7 @@ function DayItem({ dia, index, defaultOpen }: { dia: ItinerarioDia; index: numbe
           </div>
         </div></div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -143,7 +186,17 @@ function PriceCard(p: PriceCardProps) {
     : 'Cupos por confirmar'
 
   return (
-    <div className="vv-price-card vv-reveal" ref={ref}>
+    // Reveal solo con opacity: la card es ancestro de los modales fixed
+    // (TransferModal/PuntoSalida) — un transform acá crearía un containing
+    // block y los rompería.
+    <motion.div
+      className="vv-price-card"
+      ref={ref}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.6, ease: EASE_OUT }}
+    >
       {p.señaArs > 0 ? (
         <>
           <div className="vv-lbl">Seña para confirmar tu lugar</div>
@@ -208,7 +261,7 @@ function PriceCard(p: PriceCardProps) {
           </div></div>
         </>
       )}
-    </div>
+    </motion.div>
   )
 }
 
@@ -243,7 +296,6 @@ export default function VivencialDetail() {
   })
   const refreshEnrollment = () => void queryClient.invalidateQueries({ queryKey: enrollmentKey })
 
-  const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const heroImgRef = useRef<HTMLImageElement>(null)
   const bookingRef = useRef<HTMLElement>(null)
@@ -263,26 +315,6 @@ export default function VivencialDetail() {
       navigate(`/cursos/${course.slug}`, { replace: true })
     }
   }, [course, navigate])
-
-  // Reveal on scroll — observa los .vv-reveal una vez montado el contenido.
-  useEffect(() => {
-    if (!course) return
-    const root = rootRef.current
-    if (!root) return
-    const els = Array.from(root.querySelectorAll<HTMLElement>('.vv-reveal:not(.vv-in)'))
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e, i) => {
-        if (e.isIntersecting) {
-          const el = e.target as HTMLElement
-          el.style.transitionDelay = `${(i % 4) * 60}ms`
-          el.classList.add('vv-in')
-          io.unobserve(el)
-        }
-      })
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
-    els.forEach(el => io.observe(el))
-    return () => io.disconnect()
-  }, [course])
 
   // Parallax hero + glassbar (aparece pasado el hero, se oculta sobre la reserva).
   useEffect(() => {
@@ -377,14 +409,18 @@ export default function VivencialDetail() {
       ? [{ nombre: course.vivencial_hotel, noches, link: '', foto_url: null }]
       : []
 
-  // Itinerario: sólo días con contenido real (título o descripción).
-  const itinerario = (course.vivencial_itinerario ?? []).filter(d => (d.titulo?.trim() || d.descripcion?.trim()))
+  // Itinerario: chequeo defensivo de forma (claves dia/titulo/descripcion) y
+  // sólo días con contenido real — un elemento malformado no rompe la lista.
+  const itinerario = (course.vivencial_itinerario ?? []).filter(
+    (d): d is ItinerarioDia =>
+      !!d && typeof d === 'object' &&
+      Boolean((d.titulo ?? '').trim() || (d.descripcion ?? '').trim()),
+  )
 
-  // Incluye: ítems cortos → chips; párrafos largos → texto bajo la grilla.
-  const incLines = richTextLines(course.incluye)
-  const incChips = incLines.filter(l => l.length <= CHIP_MAXLEN)
-  const incParas = incLines.filter(l => l.length > CHIP_MAXLEN)
-  const showExperience = incChips.length > 0 || incParas.length > 0 || hoteles.length > 0
+  // Incluye: bullets iniciales → chips; el resto (manifiesto/Q&A) → prosa.
+  const { chips: incChips, prosa: incProsa } = parseIncluye(course.incluye)
+  const hasIncluye = incChips.length > 0 || incProsa.length > 0
+  const showExperience = hasIncluye || hoteles.length > 0
 
   // Precios (misma lógica que la página vieja: precio_ars/usd ya son el total final).
   const mesesCuota = mesesHastaSalida(course.vivencial_fecha_salida)
@@ -433,7 +469,8 @@ export default function VivencialDetail() {
     <>
       <Header />
 
-      <div ref={rootRef} className="vvx" data-theme={tema} style={{ marginTop: -56 }}>
+      <MotionConfig reducedMotion="user">
+      <div className="vvx" data-theme={tema} style={{ marginTop: -56 }}>
 
         {preview && (
           <div style={{ position: 'sticky', top: 0, zIndex: 70, background: '#C99A3A', color: '#0A1E29', textAlign: 'center', padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>
@@ -483,8 +520,8 @@ export default function VivencialDetail() {
           <section className="vv-itinerary">
             <div className="vv-container">
               <div className="vv-itinerary-head">
-                <span className="vv-eyebrow vv-reveal">Itinerario</span>
-                <h2 className="vv-reveal">Un día a la vez,<br />del embarque al regreso.</h2>
+                <motion.span className="vv-eyebrow" {...rv()}>Itinerario</motion.span>
+                <motion.h2 {...rv(0.06)}>Un día a la vez,<br />del embarque al regreso.</motion.h2>
               </div>
               <div className="vv-timeline">
                 {itinerario.map((dia, i) => (
@@ -502,38 +539,40 @@ export default function VivencialDetail() {
               {expFoto && <img src={expFoto} alt="" loading="lazy" />}
             </div>
             <div className="vv-inner vv-container">
-              {(incChips.length > 0 || incParas.length > 0) && (
+              {hasIncluye && (
                 <>
                   <div className="vv-exp-head">
-                    <span className="vv-eyebrow vv-reveal" style={{ color: '#E8C685' }}>Qué incluye</span>
-                    <h2 className="vv-reveal">Todo resuelto,<br />de punta a punta.</h2>
-                    <p className="vv-reveal">Vos ocupate de aprender el destino. De la logística nos encargamos nosotros.</p>
+                    <motion.span className="vv-eyebrow" style={{ color: '#E8C685' }} {...rv()}>Qué incluye</motion.span>
+                    <motion.h2 {...rv(0.06)}>Todo resuelto,<br />de punta a punta.</motion.h2>
+                    <motion.p {...rv(0.12)}>Vos ocupate de aprender el destino. De la logística nos encargamos nosotros.</motion.p>
                   </div>
                   {incChips.length > 0 && (
                     <div className="vv-inc-grid">
                       {incChips.map((item, i) => (
-                        <div className="vv-inc vv-reveal" key={i}>
+                        <motion.div className="vv-inc" key={i} {...rv((i % 3) * 0.06)}>
                           <div className="vv-inc-ico"><Check className="w-[21px] h-[21px]" /></div>
                           <div><h4>{renderBold(item, `inc${i}`)}</h4></div>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   )}
-                  {incParas.length > 0 && (
-                    <div className="vv-inc-extra vv-reveal">
-                      {incParas.map((para, i) => (
+                  {incProsa.length > 0 && (
+                    <motion.div className="vv-inc-extra" {...rv()}>
+                      {incProsa.map((para, i) => (
                         <p key={i}>{renderBold(para, `incp${i}`)}</p>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
                 </>
               )}
 
               {hoteles.length > 0 && (
                 <>
-                  <div className="vv-exp-hotels-head">
-                    <span className="vv-eyebrow vv-reveal" style={{ color: '#E8C685' }}>Alojamiento</span>
-                    <h3 className="vv-reveal">Dormís donde después vas a vender.</h3>
+                  {/* Título fijo de la sección (no viene de la base): si no hay
+                      bloque de incluye arriba, colapsa el margen superior. */}
+                  <div className="vv-exp-hotels-head" style={hasIncluye ? undefined : { marginTop: 0 }}>
+                    <motion.span className="vv-eyebrow" style={{ color: '#E8C685' }} {...rv()}>Alojamiento</motion.span>
+                    <motion.h3 {...rv(0.06)}>Dormís donde después vas a vender.</motion.h3>
                   </div>
                   <div className="vv-hotel-grid">
                     {hoteles.map((h, i) => {
@@ -557,9 +596,9 @@ export default function VivencialDetail() {
                         </>
                       )
                       return h.link ? (
-                        <a className="vv-hotel vv-reveal" key={i} href={h.link} target="_blank" rel="noopener noreferrer">{inner}</a>
+                        <motion.a className="vv-hotel" key={i} href={h.link} target="_blank" rel="noopener noreferrer" {...rv((i % 2) * 0.08)}>{inner}</motion.a>
                       ) : (
-                        <div className="vv-hotel vv-reveal" key={i}>{inner}</div>
+                        <motion.div className="vv-hotel" key={i} {...rv((i % 2) * 0.08)}>{inner}</motion.div>
                       )
                     })}
                   </div>
@@ -573,16 +612,16 @@ export default function VivencialDetail() {
         {puntos.length > 0 && (
           <section className="vv-departures vv-container">
             <div className="vv-departures-head">
-              <span className="vv-eyebrow vv-reveal">Puntos de salida</span>
-              <h2 className="vv-reveal">Subís cerca de tu casa.</h2>
+              <motion.span className="vv-eyebrow" {...rv()}>Puntos de salida</motion.span>
+              <motion.h2 {...rv(0.06)}>Subís cerca de tu casa.</motion.h2>
             </div>
             <div className="vv-dep-grid">
               {puntos.map((p, i) => (
-                <div className="vv-dep vv-reveal" key={i}>
+                <motion.div className="vv-dep" key={i} {...rv((i % 4) * 0.06)}>
                   <div className="vv-pin"><MapPin className="w-[20px] h-[20px]" /></div>
                   <h4>{p.ciudad}</h4>
                   {p.detalle_encuentro && <p>{p.detalle_encuentro}</p>}
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
@@ -595,16 +634,17 @@ export default function VivencialDetail() {
           </div>
           <div className="vv-booking-in">
             <div>
-              <span className="vv-eyebrow vv-reveal" style={{ color: '#E8C685' }}>Reservá tu lugar</span>
-              <h2 className="vv-reveal">Confirmá con la seña y pagá en cuotas.</h2>
-              <p className="vv-lead vv-reveal">
+              {/* Copy fijo del mockup — no viene de la base. */}
+              <motion.span className="vv-eyebrow" style={{ color: '#E8C685' }} {...rv()}>Reservá tu lugar</motion.span>
+              <motion.h2 {...rv(0.06)}>Confirmá con la seña y pagá en cuotas.</motion.h2>
+              <motion.p className="vv-lead" {...rv(0.12)}>
                 El idioma del vivencial es {idiomaLabel}{max > 0 ? ` y el cupo máximo es de ${max} asesores` : ''}. Los lugares se confirman por orden de seña.
-              </p>
+              </motion.p>
               <ul className="vv-benefits">
                 {CTA_FEATURES.map((f, i) => (
-                  <li className="vv-reveal" key={i}>
+                  <motion.li key={i} {...rv(0.15 + i * 0.06)}>
                     <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />{f}
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             </div>
@@ -640,6 +680,11 @@ export default function VivencialDetail() {
           </div>
         </div>
       </div>
+      </MotionConfig>
+
+      {/* Footer estándar del sitio: la reserva es el último bloque del
+          vivencial y de ahí se pasa directo al pie, sin franjas vacías. */}
+      <Footer />
 
       {/* Toast (copiar link) */}
       {toast && (

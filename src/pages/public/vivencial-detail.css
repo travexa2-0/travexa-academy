@@ -28,6 +28,10 @@
   color: var(--vv-ink);
   line-height: 1.65;
   min-height: 100vh;
+  /* flow-root: contiene el margin-bottom de .vv-booking (último hijo). Sin esto
+     el margen colapsaba fuera de .vvx y el fondo oscuro del body se veía como
+     una franja vacía entre la reserva y el footer. */
+  display: flow-root;
   /* Transición de entrada al llegar desde el listado. SOLO opacity: un transform
      acá crearía un containing block que rompería los modales position:fixed. */
   animation: vv-page-in .45s var(--vv-ease-out) both;
@@ -48,9 +52,9 @@
 }
 .vv-eyebrow::before { content: ""; width: 28px; height: 1.5px; background: currentColor; }
 
-/* Reveal on scroll */
-.vv-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s var(--vv-ease-out), transform .6s var(--vv-ease-out); }
-.vv-reveal.vv-in { opacity: 1; transform: none; }
+/* Reveal on scroll: ahora lo maneja framer-motion (whileInView) en el TSX.
+   El patrón anterior (IntersectionObserver + classList) se rompía cuando React
+   reescribía className en un re-render y borraba la clase agregada al DOM. */
 
 /* ============ HERO ============ */
 /* isolation:isolate acá es seguro (no hay modales dentro del hero) y contiene
@@ -141,7 +145,7 @@
    stacking context que atrape los modales (position:fixed) que abre la card. */
 .vv-experience { position: relative; color: #fff; background: var(--vv-dark); }
 .vv-exp-bg { position: absolute; inset: 0; overflow: hidden; }
-.vv-exp-bg img { width: 100%; height: 100%; object-fit: cover; }
+.vv-exp-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .vv-exp-bg::after {
   content: ""; position: absolute; inset: 0;
   background:
@@ -163,8 +167,11 @@
 .vv-inc-ico { width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; color: var(--vv-gold); }
 .vv-inc-ico svg { width: 21px; height: 21px; }
 .vv-inc h4 { font-size: 15.5px; font-weight: 700; line-height: 1.35; }
-.vv-inc-extra { max-width: 720px; margin-bottom: 70px; }
-.vv-inc-extra p { color: rgba(255,255,255,.82); font-weight: 500; font-size: 15px; margin-top: 12px; line-height: 1.75; }
+/* Prosa de `incluye` (manifiesto / Q&A que Yesica escribe después de los
+   bullets): tratamiento tipográfico de lectura, no cards. pre-line respeta los
+   saltos simples dentro de un párrafo (listas del Q&A). */
+.vv-inc-extra { max-width: 760px; margin-top: 42px; }
+.vv-inc-extra p { color: rgba(255,255,255,.88); font-weight: 500; font-size: clamp(15.5px, 1.5vw, 17px); margin-top: 20px; line-height: 1.85; white-space: pre-line; }
 .vv-inc-extra p:first-child { margin-top: 0; }
 .vv-exp-hotels-head { max-width: 640px; margin-bottom: 40px; margin-top: 70px; }
 .vv-exp-hotels-head h3 { font-size: clamp(24px, 2.8vw, 34px); font-weight: 800; margin-top: 14px; letter-spacing: -.01em; }
@@ -297,6 +304,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .vvx *, .vvx *::before, .vvx *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  .vv-reveal, .vv-hero [data-enter] { opacity: 1; transform: none; }
+  .vv-hero [data-enter] { opacity: 1; transform: none; }
   .vv-hero-word { animation: none; }
 }

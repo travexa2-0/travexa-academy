@@ -190,28 +190,20 @@
 
   /* ============ CATALOGO — marquee loop + hover reveal ============ */
   .catalogo{ padding:96px 0 92px; background:var(--content-bg); }
-  .marquee-mask{ margin-top:36px; overflow:hidden; position:relative; }
-  .marquee-mask::before, .marquee-mask::after{ content:''; position:absolute; top:0; bottom:0; width:70px; z-index:2; pointer-events:none; }
-  .marquee-mask::before{ left:0; background:linear-gradient(90deg, var(--content-bg), transparent); }
-  .marquee-mask::after{ right:0; background:linear-gradient(270deg, var(--content-bg), transparent); }
-  .course-track{ display:flex; gap:20px; }
-  /* modo scroll: un set no entra en el contenedor → marquee continuo.
-     El set va duplicado en el DOM y se traslada -50% (una copia) en loop. */
-  .course-track.is-scroll{ width:max-content; animation:home-marquee 42s linear infinite; }
-  /* modo centrado: el catálogo entra entero → fila centrada, sin loop
-     (evita el salto y las cards pegadas al borde izquierdo). Sin flex-wrap: así
-     el ancho natural del set se puede medir (si desborda, pasa a modo scroll). */
-  .course-track.is-centered{ width:100%; justify-content:center; }
-  .marquee-mask:hover .course-track.is-scroll{ animation-play-state:paused; }
+  /* Grilla flex centrada con wrap: las cards crecen para llenar la fila (sin
+     hueco a la derecha con pocas) y envuelven en filas cuando hay muchas.
+     flex:1 1 340px + max-width acota el tamaño; justify-center centra la última
+     fila incompleta. Reemplaza el marquee auto-scroll. */
+  .course-grid{ margin-top:38px; display:flex; flex-wrap:wrap; justify-content:center; gap:24px; }
   .course-card{
-    flex:0 0 auto; width:clamp(288px, 82vw, 344px); position:relative; overflow:hidden;
-    background:var(--content-white); border-radius:20px;
+    flex:1 1 340px; max-width:440px; position:relative; overflow:hidden;
+    background:var(--content-white); border-radius:22px;
     border:1px solid var(--content-line);
     box-shadow:0 1px 2px rgba(18,39,51,0.04), 0 18px 40px -20px rgba(18,39,51,0.26);
     transition:transform .25s var(--ease-out), box-shadow .25s var(--ease-out);
   }
   .course-card:hover{ transform:translateY(-6px); box-shadow:0 26px 52px -18px rgba(18,39,51,0.34); }
-  .course-thumb{ position:relative; height:190px; background-size:cover; background-position:center; overflow:hidden; background-color:var(--bg3); }
+  .course-thumb{ position:relative; height:228px; background-size:cover; background-position:center; overflow:hidden; background-color:var(--bg3); }
   .course-badges{ position:absolute; top:10px; left:10px; display:flex; gap:6px; z-index:2; }
   .badge-pill{ font-family:var(--font-mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; padding:5px 9px; border-radius:999px; color:#fff; background:rgba(10,30,41,0.72); backdrop-filter:blur(6px); }
   .badge-pill.live{ background:var(--live); display:flex; align-items:center; gap:5px; }
@@ -226,15 +218,15 @@
     opacity:0; transition:opacity .28s var(--ease-out);
   }
   .course-card:hover .course-hover-info{ opacity:1; }
-  .course-hover-info p{ font-size:12.5px; color:var(--text-2); line-height:1.5; }
-  .course-body{ padding:18px 19px 20px; }
-  .course-body h4{ font-family:var(--font-display); font-size:1.1rem; font-weight:600; color:var(--content-ink); line-height:1.28; }
+  .course-hover-info p{ font-size:13.5px; color:var(--text-2); line-height:1.55; }
+  .course-body{ padding:20px 22px 22px; }
+  .course-body h4{ font-family:var(--font-display); font-size:1.24rem; font-weight:600; color:var(--content-ink); line-height:1.28; }
   .course-instructor{ font-size:12.5px; color:var(--content-ink-soft); margin-top:4px; }
   .course-meta{ display:flex; align-items:center; gap:5px; margin-top:11px; font-size:12px; color:var(--content-ink-soft); }
   .course-meta .star{ color:var(--gold); }
   .course-meta .dot{ opacity:.5; }
   .course-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:13px; padding-top:13px; border-top:1px solid var(--content-line); }
-  .course-price{ font-family:var(--font-display); font-weight:700; font-size:1.18rem; color:var(--content-ink); }
+  .course-price{ font-family:var(--font-display); font-weight:700; font-size:1.32rem; color:var(--content-ink); }
   .course-price.free{ color:var(--primary); }
   .chip-level{ font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; text-transform:uppercase; color:var(--content-ink-soft); background:#EDF1EF; padding:4px 8px; border-radius:6px; }
   .catalogo-foot{ margin-top:26px; text-align:center; }

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { useLayoutEffect, useRef, useState } from 'react'
 import type { Course } from '@/types'
 import { Reveal } from './Reveal'
 
@@ -72,32 +71,10 @@ interface Props {
 export default function FeaturedCoursesMarquee({ courses, loading }: Props) {
   const hasCourses = courses.length > 0
 
-  // El marquee solo debe animarse cuando UN set de cards es más ancho que el
-  // contenedor visible; si no, las cards quedaban pegadas a la izquierda y el
-  // loop de -50% saltaba sobre una distancia mínima (se veía "trabado en la 1ª
-  // tarjeta"). Cuando el catálogo entra entero, se centra estático (sin loop).
-  const maskRef  = useRef<HTMLDivElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const [scroll, setScroll] = useState(false)
-
-  useLayoutEffect(() => {
-    if (!hasCourses) return
-    const measure = () => {
-      const mask = maskRef.current
-      const track = trackRef.current
-      if (!mask || !track) return
-      // Los dos sets son idénticos: si ya está en modo scroll, un set = mitad.
-      const oneSet = scroll ? track.scrollWidth / 2 : track.scrollWidth
-      setScroll(oneSet > mask.clientWidth + 4)
-    }
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [hasCourses, courses.length, scroll])
-
-  // En modo scroll se duplica el set para el loop continuo (translateX -50%).
-  const rendered = scroll ? [...courses, ...courses] : courses
-
+  // Layout: grilla flex centrada con wrap. Se ve equilibrada con 2 cards (crecen
+  // y quedan centradas, sin hueco a la derecha) y con muchas (envuelven en filas,
+  // una por fila en mobile). Reemplaza al marquee auto-scroll, que con pocas
+  // cards las dejaba chicas y pegadas a la izquierda.
   return (
     <section className="catalogo">
       <div className="container">
@@ -114,16 +91,12 @@ export default function FeaturedCoursesMarquee({ courses, loading }: Props) {
             </Link>
           </div>
         </Reveal>
-      </div>
 
-      {hasCourses ? (
-        <div className="marquee-mask" ref={maskRef}>
-          <div className={`course-track ${scroll ? 'is-scroll' : 'is-centered'}`} ref={trackRef}>
-            {rendered.map((c, i) => <CourseCardMini key={`${c.id}-${i}`} course={c} />)}
+        {hasCourses ? (
+          <div className="course-grid">
+            {courses.map((c) => <CourseCardMini key={c.id} course={c} />)}
           </div>
-        </div>
-      ) : (
-        <div className="container">
+        ) : (
           <div className="catalogo-empty">
             <h4>{loading ? 'Cargando cursos…' : 'Los primeros cursos están en camino'}</h4>
             <p>
@@ -132,8 +105,8 @@ export default function FeaturedCoursesMarquee({ courses, loading }: Props) {
                 : 'Estamos preparando la primera tanda de cursos. Registrate gratis y te avisamos apenas estén disponibles.'}
             </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   )
 }

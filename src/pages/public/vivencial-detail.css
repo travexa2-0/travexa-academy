@@ -1,0 +1,302 @@
+/* ============================================================
+   Vivencial — página pública de detalle (rediseño V2)
+   Fuente de verdad visual: vivencial-detalle.V2.html (raíz academy).
+   Todo scopeado bajo .vvx con tokens --vv-* para no chocar con el
+   tema global oscuro de Academy (que sigue vivo en el Header, modales
+   reusados, etc.). data-theme adapta la atmósfera al destino.
+   ============================================================ */
+
+.vvx {
+  --vv-ink: #1C2430;
+  --vv-ink-soft: #5A6472;
+  --vv-gold: #C79A4B;
+  --vv-gold-deep: #A87F35;
+  --vv-gold-soft: #F0E6D2;
+  --vv-dark: #14213D; /* azul profundo Travexa para textos sobre foto */
+  --vv-white: #fff;
+  --vv-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --vv-ease-io: cubic-bezier(0.77, 0, 0.175, 1);
+  --vv-radius: 22px;
+
+  /* default playa */
+  --vv-bg: #FDFDFB;
+  --vv-mist: #F4F5F2;
+  --vv-line: #E7E8E3;
+
+  position: relative;
+  background: var(--vv-bg);
+  color: var(--vv-ink);
+  line-height: 1.65;
+  min-height: 100vh;
+  /* Transición de entrada al llegar desde el listado. SOLO opacity: un transform
+     acá crearía un containing block que rompería los modales position:fixed. */
+  animation: vv-page-in .45s var(--vv-ease-out) both;
+}
+@keyframes vv-page-in { from { opacity: 0 } to { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .vvx { animation: none; } }
+.vvx[data-theme="playa"]    { --vv-bg:#FDFDFB; --vv-mist:#F4F5F2; --vv-line:#E7E8E3 }
+.vvx[data-theme="montana"]  { --vv-bg:#F7F8F9; --vv-mist:#EEF0F2; --vv-line:#E0E3E7 }
+.vvx[data-theme="desierto"] { --vv-bg:#FCF9F3; --vv-mist:#F5EFE3; --vv-line:#EAE1CF }
+.vvx[data-theme="selva"]    { --vv-bg:#F8FBF7; --vv-mist:#EDF3EC; --vv-line:#DFE8DE }
+.vvx[data-theme="ciudad"]   { --vv-bg:#FAFAFA; --vv-mist:#F0F0F0; --vv-line:#E4E4E4 }
+
+.vvx img { display: block; max-width: 100%; }
+.vv-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.vv-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--vv-gold);
+}
+.vv-eyebrow::before { content: ""; width: 28px; height: 1.5px; background: currentColor; }
+
+/* Reveal on scroll */
+.vv-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s var(--vv-ease-out), transform .6s var(--vv-ease-out); }
+.vv-reveal.vv-in { opacity: 1; transform: none; }
+
+/* ============ HERO ============ */
+/* isolation:isolate acá es seguro (no hay modales dentro del hero) y contiene
+   los z-index internos (word/inner) sin filtrarse al resto de la página. */
+.vv-hero { position: relative; height: 100svh; min-height: 620px; display: flex; align-items: flex-end; color: #fff; overflow: hidden; isolation: isolate; }
+.vv-hero-media { position: absolute; inset: 0; background: var(--vv-dark); }
+.vv-hero-media img { width: 100%; height: 112%; object-fit: cover; will-change: transform; }
+.vv-hero-media::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(12,20,32,.42) 0%, rgba(12,20,32,.05) 40%, rgba(12,20,32,.7) 100%);
+}
+.vv-hero-word {
+  position: absolute; left: 50%; top: 36%; transform: translate(-50%, -50%);
+  font-size: clamp(84px, 16vw, 220px); font-weight: 800; letter-spacing: .06em;
+  color: #fff; z-index: 1; user-select: none; white-space: nowrap; pointer-events: none;
+  -webkit-text-stroke: 1px rgba(255,255,255,.55);
+  text-shadow: 0 0 40px rgba(255,255,255,.35), 0 24px 60px rgba(6,12,24,.55), 0 2px 0 rgba(255,255,255,.2);
+  opacity: .92; animation: vv-float 7s ease-in-out infinite;
+}
+@keyframes vv-float { 0%,100% { transform: translate(-50%,-50%) } 50% { transform: translate(-50%, calc(-50% - 12px)) } }
+.vv-hero-inner { position: relative; z-index: 2; width: 100%; padding-bottom: 54px; padding-top: 88px; }
+.vv-hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: auto; }
+.vv-hero-back {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600;
+  color: rgba(255,255,255,.9); background: rgba(6,13,20,.32); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.2); border-radius: 100px; padding: 7px 14px; cursor: pointer;
+  transition: background .2s;
+}
+.vv-hero-back:hover { background: rgba(6,13,20,.5); }
+.vv-hero-actions { display: flex; gap: 8px; }
+.vv-hero-icon {
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: #fff; background: rgba(6,13,20,.32); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.2); cursor: pointer; transition: background .2s;
+}
+.vv-hero-icon:hover { background: rgba(6,13,20,.5); }
+.vv-hero .vv-tag {
+  display: inline-block; padding: 8px 15px; border: 1px solid rgba(255,255,255,.35); border-radius: 100px;
+  font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  background: rgba(255,255,255,.1); backdrop-filter: blur(10px); margin-bottom: 20px;
+}
+.vv-hero h1 { font-size: clamp(36px, 5.6vw, 66px); line-height: 1.06; font-weight: 800; max-width: 840px; letter-spacing: -.015em; margin-bottom: 14px; }
+.vv-hero p.vv-sub { font-size: clamp(15px, 1.5vw, 18px); max-width: 560px; color: rgba(255,255,255,.88); margin-bottom: 30px; font-weight: 500; }
+.vv-hero-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+.vv-hero-card { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.24); backdrop-filter: blur(14px); border-radius: 16px; padding: 12px 18px; min-width: 132px; }
+.vv-hero-card .vv-k { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.68); font-weight: 600; margin-bottom: 2px; }
+.vv-hero-card .vv-v { font-size: 14.5px; font-weight: 700; line-height: 1.35; }
+.vv-hero [data-enter] { opacity: 0; transform: translateY(26px); animation: vv-enter .8s var(--vv-ease-out) forwards; }
+.vv-hero [data-enter="1"] { animation-delay: .08s } .vv-hero [data-enter="2"] { animation-delay: .2s }
+.vv-hero [data-enter="3"] { animation-delay: .32s } .vv-hero [data-enter="4"] { animation-delay: .44s }
+@keyframes vv-enter { to { opacity: 1; transform: none } }
+
+/* ============ ITINERARIO ============ */
+.vv-itinerary { padding: 100px 0; }
+.vv-itinerary-head { max-width: 680px; margin-bottom: 64px; }
+.vv-itinerary-head h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; margin-top: 16px; letter-spacing: -.01em; line-height: 1.15; }
+.vv-timeline { position: relative; }
+.vv-timeline::before { content: ""; position: absolute; left: 24px; top: 8px; bottom: 8px; width: 1.5px; background: linear-gradient(var(--vv-gold) 0%, var(--vv-line) 100%); }
+.vv-day { position: relative; padding: 0 0 24px 76px; }
+.vv-day-dot {
+  position: absolute; left: 12px; top: 8px; width: 25px; height: 25px; border-radius: 50%;
+  background: var(--vv-bg); border: 1.5px solid var(--vv-gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: var(--vv-gold); transition: background .25s, color .25s;
+}
+.vv-day.vv-open .vv-day-dot { background: var(--vv-gold); color: #fff; }
+.vv-day-card { background: var(--vv-white); border: 1px solid var(--vv-line); border-radius: var(--vv-radius); overflow: hidden; transition: box-shadow .35s var(--vv-ease-out), border-color .3s; }
+.vv-day.vv-open .vv-day-card { box-shadow: 0 18px 50px rgba(20,33,61,.10); border-color: transparent; }
+.vv-day-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 26px; background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit; color: inherit; }
+.vv-day-btn .vv-l { display: flex; flex-direction: column; gap: 3px; }
+.vv-day-btn .vv-dlabel { font-size: 10.5px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--vv-gold); }
+.vv-day-btn .vv-dtitle { font-size: 18px; font-weight: 700; }
+.vv-day-btn .vv-chev { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--vv-line); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: transform .45s var(--vv-ease-out), background .25s, border-color .25s; }
+.vv-day.vv-open .vv-chev { transform: rotate(180deg); background: var(--vv-gold-soft); border-color: var(--vv-gold-soft); }
+.vv-day-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .65s var(--vv-ease-io); }
+.vv-day.vv-open .vv-day-body { grid-template-rows: 1fr; }
+.vv-day-body-in { overflow: hidden; }
+.vv-day-content { display: grid; grid-template-columns: 1.35fr 1fr; gap: 26px; padding: 2px 26px 26px; }
+.vv-day-content.vv-nophoto { grid-template-columns: 1fr; }
+.vv-day-content p { color: var(--vv-ink-soft); font-size: 15px; font-weight: 500; }
+.vv-day-content .vv-ph { border-radius: 16px; overflow: hidden; aspect-ratio: 16/10; background: var(--vv-mist); }
+.vv-day-content .vv-ph img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); opacity: 0; transition: transform 1s var(--vv-ease-out), opacity .6s var(--vv-ease-out); }
+.vv-day.vv-open .vv-day-content .vv-ph img { transform: scale(1); opacity: 1; }
+
+/* ============ EXPERIENCIA (Qué incluye + Alojamiento sobre imagen) ============ */
+/* Sin isolation/z-index en la sección: el fondo va primero en el DOM y el
+   contenido pinta encima por orden de origen. Así la sección NO crea un
+   stacking context que atrape los modales (position:fixed) que abre la card. */
+.vv-experience { position: relative; color: #fff; background: var(--vv-dark); }
+.vv-exp-bg { position: absolute; inset: 0; overflow: hidden; }
+.vv-exp-bg img { width: 100%; height: 100%; object-fit: cover; }
+.vv-exp-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(105deg, rgba(12,20,32,.82) 0%, rgba(12,20,32,.55) 48%, rgba(12,20,32,.35) 100%),
+    linear-gradient(180deg, rgba(12,20,32,.55) 0%, rgba(12,20,32,.15) 45%, rgba(12,20,32,.6) 100%);
+}
+.vv-experience .vv-inner { padding: 110px 24px 120px; }
+.vv-exp-head { max-width: 640px; margin-bottom: 56px; }
+.vv-exp-head h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; margin-top: 16px; letter-spacing: -.01em; line-height: 1.15; }
+.vv-exp-head p { margin-top: 14px; color: rgba(255,255,255,.85); font-weight: 500; font-size: 16px; }
+.vv-inc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 32px; }
+.vv-inc {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
+  backdrop-filter: blur(16px) saturate(1.4); border-radius: 18px; padding: 20px 22px;
+  transition: background .25s, transform .3s var(--vv-ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .vv-inc:hover { background: rgba(255,255,255,.17); transform: translateY(-3px); } }
+.vv-inc-ico { width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; color: var(--vv-gold); }
+.vv-inc-ico svg { width: 21px; height: 21px; }
+.vv-inc h4 { font-size: 15.5px; font-weight: 700; line-height: 1.35; }
+.vv-inc-extra { max-width: 720px; margin-bottom: 70px; }
+.vv-inc-extra p { color: rgba(255,255,255,.82); font-weight: 500; font-size: 15px; margin-top: 12px; line-height: 1.75; }
+.vv-inc-extra p:first-child { margin-top: 0; }
+.vv-exp-hotels-head { max-width: 640px; margin-bottom: 40px; margin-top: 70px; }
+.vv-exp-hotels-head h3 { font-size: clamp(24px, 2.8vw, 34px); font-weight: 800; margin-top: 14px; letter-spacing: -.01em; }
+.vv-hotel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.vv-hotel { position: relative; border-radius: var(--vv-radius); overflow: hidden; aspect-ratio: 16/10.5; display: flex; align-items: flex-end; color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.18); }
+.vv-hotel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--vv-ease-out); }
+@media (hover: hover) and (pointer: fine) { .vv-hotel:hover img { transform: scale(1.05); } }
+.vv-hotel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 42%, rgba(10,16,28,.85)); }
+.vv-hotel .vv-hz { position: relative; z-index: 1; padding: 24px; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
+.vv-hotel h4 { font-size: 21px; font-weight: 800; margin: 4px 0 2px; }
+.vv-hotel .vv-nights { font-size: 12.5px; color: rgba(255,255,255,.82); font-weight: 500; }
+.vv-hotel .vv-go { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px); background: rgba(255,255,255,.12); transition: background .25s, transform .3s var(--vv-ease-out); }
+@media (hover: hover) and (pointer: fine) { .vv-hotel:hover .vv-go { background: var(--vv-gold); transform: rotate(45deg); } }
+
+/* ============ SALIDAS ============ */
+.vv-departures { padding: 100px 0; }
+.vv-departures-head { margin-bottom: 44px; max-width: 640px; }
+.vv-departures-head h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; margin-top: 16px; letter-spacing: -.01em; }
+.vv-dep-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.vv-dep { background: var(--vv-white); border: 1px solid var(--vv-line); border-radius: var(--vv-radius); padding: 24px; transition: border-color .25s, transform .3s var(--vv-ease-out), box-shadow .3s var(--vv-ease-out); }
+@media (hover: hover) and (pointer: fine) { .vv-dep:hover { border-color: var(--vv-gold); transform: translateY(-3px); box-shadow: 0 14px 34px rgba(20,33,61,.07); } }
+.vv-dep .vv-pin { color: var(--vv-gold); margin-bottom: 12px; }
+.vv-dep h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.vv-dep p { font-size: 13px; color: var(--vv-ink-soft); font-weight: 500; line-height: 1.6; }
+
+/* ============ RESERVA (glass sobre foto) ============ */
+.vv-booking { position: relative; color: #fff; overflow: hidden; border-radius: 32px; margin: 0 20px 60px; background: var(--vv-dark); scroll-margin-top: 80px; }
+.vv-booking-bg { position: absolute; inset: 0; overflow: hidden; }
+.vv-booking-bg img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
+.vv-booking-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(10,16,28,.72) 0%, rgba(10,16,28,.45) 55%, rgba(10,16,28,.6) 100%); }
+.vv-booking-in { max-width: 1200px; margin: 0 auto; padding: 96px 48px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; align-items: center; }
+.vv-booking h2 { font-size: clamp(28px, 3.6vw, 44px); font-weight: 800; margin: 16px 0 18px; letter-spacing: -.01em; line-height: 1.12; }
+.vv-booking .vv-lead { color: rgba(255,255,255,.85); font-size: 16px; font-weight: 500; max-width: 460px; }
+.vv-booking .vv-benefits { list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.vv-booking .vv-benefits li { display: flex; gap: 12px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.9); }
+.vv-booking .vv-benefits svg { flex-shrink: 0; margin-top: 3px; color: var(--vv-gold); }
+
+/* price card: liquid glass premium */
+.vv-price-card {
+  position: relative; border-radius: 26px; padding: 36px;
+  background: rgba(255,255,255,.1);
+  backdrop-filter: blur(26px) saturate(1.6); -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,.3);
+  box-shadow: 0 24px 70px rgba(6,12,24,.4), inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(255,255,255,.08);
+  overflow: hidden;
+}
+.vv-price-card::before { content: ""; position: absolute; top: -60%; left: -30%; width: 70%; height: 220%; background: linear-gradient(105deg, transparent, rgba(255,255,255,.16), transparent); transform: rotate(8deg); pointer-events: none; }
+.vv-price-card .vv-lbl { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.72); font-weight: 700; }
+.vv-price-card .vv-big { font-size: clamp(34px, 4.2vw, 50px); font-weight: 800; line-height: 1.05; margin: 10px 0 4px; letter-spacing: -.01em; display: flex; align-items: baseline; flex-wrap: wrap; }
+.vv-price-card .vv-big small { font-size: .4em; font-weight: 700; color: var(--vv-gold); vertical-align: middle; margin-left: 6px; }
+.vv-price-card .vv-note { font-size: 13.5px; color: rgba(255,255,255,.82); font-weight: 500; }
+.vv-price-card .vv-note strong { color: #fff; }
+.vv-price-rows { margin: 24px 0; border-top: 1px solid rgba(255,255,255,.2); }
+.vv-price-rows .vv-row { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.16); font-size: 14px; font-weight: 500; }
+.vv-price-rows .vv-row span:first-child { color: rgba(255,255,255,.72); }
+.vv-price-rows .vv-row strong { font-weight: 700; }
+.vv-cupos { margin: 4px 0 24px; }
+.vv-cupos-bar { height: 6px; border-radius: 100px; background: rgba(255,255,255,.2); overflow: hidden; margin-bottom: 9px; }
+.vv-cupos-fill { height: 100%; width: 0; border-radius: 100px; background: linear-gradient(90deg, var(--vv-gold), #E8C685); transition: width 1.2s var(--vv-ease-io); }
+.vv-cupos p { font-size: 12.5px; color: #E8C685; font-weight: 700; letter-spacing: .04em; }
+
+.vv-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px 24px; border-radius: 15px; border: 0; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 700; text-decoration: none; transition: transform .15s var(--vv-ease-out), background .2s, box-shadow .25s; }
+.vv-btn:active { transform: scale(.97); }
+.vv-btn-gold { background: var(--vv-gold); color: #fff; box-shadow: 0 10px 26px rgba(199,154,75,.35); }
+.vv-btn-gold:hover { background: var(--vv-gold-deep); }
+.vv-btn-ghost { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.35); margin-top: 12px; }
+.vv-btn-ghost:hover { background: rgba(255,255,255,.18); }
+.vv-deadline { font-size: 12.5px; color: rgba(255,255,255,.68); text-align: center; margin-top: 16px; font-weight: 500; }
+.vv-btn-noinc { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 600; color: rgba(255,255,255,.7); transition: color .2s; }
+.vv-btn-noinc:hover { color: #fff; }
+.vv-btn-noinc svg { transition: transform .35s var(--vv-ease-out); }
+.vv-btn-noinc[aria-expanded="true"] svg { transform: rotate(180deg); }
+.vv-noinc { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--vv-ease-io); }
+.vv-noinc.vv-open { grid-template-rows: 1fr; }
+.vv-noinc-in { overflow: hidden; }
+.vv-noinc ul { list-style: none; padding: 4px 6px 8px; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.vv-noinc li { position: relative; padding-left: 22px; font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.78); }
+.vv-noinc li::before { content: "✕"; position: absolute; left: 0; top: 0; font-size: 11px; color: #E8938A; font-weight: 700; }
+
+/* pago del usuario inscripto dentro de la price card (saldo, chip en revisión) */
+.vv-enrolled-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.vv-enrolled-line .vv-k { font-size: 13px; color: rgba(255,255,255,.72); font-weight: 500; }
+.vv-enrolled-line .vv-v { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; color: #fff; }
+
+/* ============ LIQUID GLASS BAR ============ */
+.vv-glassbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; padding: 0 18px calc(14px + env(safe-area-inset-bottom)); pointer-events: none; transform: translateY(130%); transition: transform .55s var(--vv-ease-io); }
+.vv-glassbar.vv-show { transform: none; }
+.vv-glassbar-in {
+  pointer-events: auto; max-width: 1000px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 14px 12px 22px; border-radius: 26px;
+  background: rgba(255,255,255,.6); backdrop-filter: blur(26px) saturate(1.7); -webkit-backdrop-filter: blur(26px) saturate(1.7);
+  border: 1px solid rgba(255,255,255,.8);
+  box-shadow: 0 14px 44px rgba(20,33,61,.18), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.vv-glassbar .vv-gp .vv-k { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--vv-ink-soft); font-weight: 700; }
+.vv-glassbar .vv-gp .vv-v { font-size: 18px; font-weight: 800; line-height: 1.2; color: var(--vv-ink); }
+.vv-glassbar .vv-gp .vv-v small { font-size: 11.5px; font-weight: 600; color: var(--vv-ink-soft); }
+.vv-glassbar .vv-gc { font-size: 12.5px; color: var(--vv-ink-soft); font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.vv-glassbar .vv-gc .vv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--vv-gold); animation: vv-pulse 2s infinite; }
+@keyframes vv-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(199,154,75,.5) } 50% { box-shadow: 0 0 0 6px rgba(199,154,75,0) } }
+.vv-glassbar .vv-bar-btn { border: 0; cursor: pointer; font-family: inherit; font-weight: 700; width: auto; padding: 13px 26px; border-radius: 17px; background: var(--vv-ink); color: #fff; font-size: 14px; transition: background .2s, transform .15s var(--vv-ease-out); white-space: nowrap; }
+.vv-glassbar .vv-bar-btn:hover { background: #2A3648; }
+.vv-glassbar .vv-bar-btn:active { transform: scale(.97); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 960px) {
+  .vv-inc-grid { grid-template-columns: 1fr 1fr; }
+  .vv-dep-grid { grid-template-columns: 1fr 1fr; }
+  .vv-booking-in { grid-template-columns: 1fr; gap: 44px; padding: 64px 28px; }
+}
+@media (max-width: 680px) {
+  .vv-hero h1 { font-size: 34px; }
+  .vv-hero-inner { padding-top: 76px; }
+  .vv-hero-card { min-width: calc(50% - 6px); padding: 10px 14px; }
+  .vv-day { padding-left: 58px; }
+  .vv-timeline::before { left: 16px; }
+  .vv-day-dot { left: 4px; }
+  .vv-day-content { grid-template-columns: 1fr; padding: 0 20px 22px; }
+  .vv-day-btn { padding: 17px 20px; }
+  .vv-inc-grid { grid-template-columns: 1fr; }
+  .vv-hotel-grid { grid-template-columns: 1fr; }
+  .vv-dep-grid { grid-template-columns: 1fr; }
+  .vv-booking { margin: 0 12px 40px; border-radius: 26px; }
+  .vv-glassbar { padding: 0 10px calc(10px + env(safe-area-inset-bottom)); }
+  .vv-glassbar-in { padding: 10px 10px 10px 16px; border-radius: 22px; }
+  .vv-glassbar .vv-gc { display: none; }
+  .vv-glassbar .vv-gp .vv-v { font-size: 16px; }
+  .vv-glassbar .vv-bar-btn { padding: 12px 18px; font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vvx *, .vvx *::before, .vvx *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .vv-reveal, .vv-hero [data-enter] { opacity: 1; transform: none; }
+  .vv-hero-word { animation: none; }
+}

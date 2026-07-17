@@ -189,7 +189,14 @@ export interface ItinerarioDia {
   dia: string   // texto libre, ej: "Día 1", "Días 3-4"
   titulo: string
   descripcion: string
+  // Foto opcional del día (nuevo, opcional). Si falta, la card del día se muestra
+  // a ancho completo sin placeholder roto.
+  foto_url?: string | null
 }
+
+// Atmósfera visual del vivencial según el destino. Setea el data-theme del
+// contenedor raíz de la página pública (tokens --vv-* en el CSS). Default: playa.
+export type VivencialTipoDestino = 'playa' | 'montana' | 'desierto' | 'selva' | 'ciudad'
 
 // ── Punto de salida (vivencial) ──
 // `detalle_encuentro` es texto libre que cubre a la vez el punto de embarque y
@@ -339,6 +346,8 @@ export interface Course {
   vivencial_ciudad_salida: string | null   // DEPRECADA — usar vivencial_puntos_salida
   vivencial_pais: string | null
   vivencial_region: string | null
+  // Atmósfera visual del destino (playa/montana/desierto/selva/ciudad). Default UI: playa.
+  vivencial_tipo_destino: VivencialTipoDestino | null
   vivencial_localidades: string[]           // filtro público por localidad
   vivencial_punto_encuentro: string | null  // DEPRECADA — absorbido en detalle_encuentro
   vivencial_cupo_maximo: number | null

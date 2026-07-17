@@ -8,7 +8,7 @@ import TransferModal from './TransferModal'
 import PuntoSalidaModal from './PuntoSalidaModal'
 import type { Course, Enrollment } from '@/types'
 
-type Variant = 'cta-card' | 'boarding' | 'perfil'
+type Variant = 'cta-card' | 'boarding' | 'perfil' | 'booking'
 
 interface Props {
   course: Course
@@ -46,14 +46,34 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
   const señaSugerida = course.vivencial_precio_seña_ars ?? 0
 
   const btnPrimary = { background: 'var(--primary)', color: 'var(--text-1)' } as const
-  // Solo la card pública (cta-card) muestra el saldo acá: en 'perfil' y 'boarding'
-  // ya lo muestra el PagoProgressBar del host, así que repetirlo lo duplicaba.
-  const showSaldoLine = variant === 'cta-card'
+  // La card de reserva pública (cta-card / booking) muestra el saldo acá: en
+  // 'perfil' y 'boarding' ya lo muestra el PagoProgressBar del host, así que
+  // repetirlo lo duplicaba.
+  const showSaldoLine = variant === 'cta-card' || variant === 'booking'
+  // Variante 'booking': la nueva página pública sobre foto (liquid glass premium).
+  // Botones dorados (.vv-btn) y texto claro; misma lógica que el resto.
+  const isBooking = variant === 'booking'
 
   const openComprobante = () => setModalMode(pagado > 0 ? 'saldo' : 'sena')
 
+  const transferModal = modalMode && userId && (
+    <TransferModal
+      open onClose={() => setModalMode(null)} course={course} userId={userId}
+      mode={modalMode} montoSugerido={modalMode === 'saldo' ? pendiente : señaSugerida}
+      enrollmentId={enrollment?.id ?? null}
+      onDone={onChanged}
+    />
+  )
+
   // ── Estado: pago completado ─────────────────────────────────────
   if (hasEnrollment && pagoCompletado) {
+    if (isBooking) {
+      return (
+        <div className="flex items-center justify-center gap-2" style={{ padding: '16px 24px', borderRadius: 15, fontWeight: 700, fontSize: 15, background: 'rgba(74,222,128,.16)', color: '#BBF7D0', border: '1px solid rgba(74,222,128,.4)' }}>
+          <CheckCircle2 className="h-4 w-4" /> Viaje pagado
+        </div>
+      )
+    }
     return (
       <div className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm" style={{ background: 'var(--success-s)', color: 'var(--success)' }}>
         <CheckCircle2 className="h-4 w-4" /> Viaje pagado
@@ -63,6 +83,33 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
 
   // ── Estado: inscripto (con o sin pagos) → informar transferencia ─
   if (hasEnrollment) {
+    if (isBooking) {
+      return (
+        <div>
+          {showSaldoLine && (
+            <div className="vv-enrolled-line">
+              <span className="vv-k">Saldo pendiente</span>
+              <span className="vv-v">{fmtARS(pendiente)}</span>
+            </div>
+          )}
+          {hasPendingComprobante ? (
+            <div className="flex items-center justify-center gap-2" style={{ padding: '16px 24px', borderRadius: 15, fontWeight: 700, fontSize: 15, background: 'rgba(232,198,133,.16)', color: '#E8C685', border: '1px solid rgba(232,198,133,.4)' }}>
+              <Clock className="h-4 w-4" /> Comprobante en revisión
+            </div>
+          ) : (
+            <button onClick={openComprobante} className="vv-btn vv-btn-gold">
+              <ArrowRightLeft className="h-[18px] w-[18px]" /> Informar transferencia
+            </button>
+          )}
+          {enrollment?.fecha_limite_pago && (
+            <p className="vv-deadline">
+              Tenés hasta el {fmtFechaLimite(enrollment.fecha_limite_pago)} para completar el pago, o se libera tu lugar.
+            </p>
+          )}
+          {transferModal}
+        </div>
+      )
+    }
     return (
       <div className="space-y-2.5">
         {showSaldoLine && (
@@ -88,14 +135,7 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
           </p>
         )}
 
-        {modalMode && userId && (
-          <TransferModal
-            open onClose={() => setModalMode(null)} course={course} userId={userId}
-            mode={modalMode} montoSugerido={modalMode === 'saldo' ? pendiente : señaSugerida}
-            enrollmentId={enrollment?.id ?? null}
-            onDone={onChanged}
-          />
-        )}
+        {transferModal}
       </div>
     )
   }
@@ -116,6 +156,19 @@ export default function VivencialPagoCTA({ course, enrollment, userId, variant =
   }
 
   const tagStyle = { background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--text-2)', borderWidth: 1 } as const
+
+  if (isBooking) {
+    return (
+      <div>
+        <button onClick={reservar} className="vv-btn vv-btn-gold">
+          <Plane className="h-[18px] w-[18px]" /> Reservar mi lugar
+        </button>
+        {showPunto && (
+          <PuntoSalidaModal open onClose={() => setShowPunto(false)} course={course} onReserved={onReserved} />
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">

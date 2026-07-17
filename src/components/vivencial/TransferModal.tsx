@@ -38,7 +38,8 @@ const METODOS: { key: MetodoTransferencia; label: string }[] = [
   { key: 'deposito', label: 'Depósito' },
 ]
 
-const inputStyle = { background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--text-1)' } as const
+// Liquid glass oscuro: inputs translúcidos sobre el blur del modal.
+const inputStyle = { background: 'rgba(255,255,255,.08)', borderColor: 'rgba(255,255,255,.22)', color: '#fff' } as const
 
 export default function TransferModal({ open, onClose, course, userId, montoSugerido, enrollmentId: existingEnrollmentId, onDone }: Props) {
   const qc = useQueryClient()
@@ -134,17 +135,23 @@ export default function TransferModal({ open, onClose, course, userId, montoSuge
       {open && (
         <motion.div
           className="fixed inset-0 z-[700] flex items-center justify-center p-4"
-          style={{ background: 'rgba(6,13,20,.6)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'rgba(12,20,32,.35)', backdropFilter: 'blur(10px) saturate(1.2)', WebkitBackdropFilter: 'blur(10px) saturate(1.2)' }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose() }}
         >
           <motion.div
-            className="relative w-full max-w-[460px] rounded-[20px] border max-h-[92vh] overflow-y-auto"
-            style={{ background: 'var(--bg-2)', borderColor: 'var(--line-s)', padding: '30px 26px 24px', boxShadow: '0 30px 70px rgba(0,0,0,.55)' }}
-            initial={{ opacity: 0, y: 18, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: .97 }}
-            transition={{ duration: 0.3, ease: EASE_OUT }}
+            className="relative w-full max-w-[520px] rounded-[26px] max-h-[92vh] overflow-y-auto"
+            style={{
+              background: 'rgba(20,33,61,.72)',
+              backdropFilter: 'blur(30px) saturate(1.6)', WebkitBackdropFilter: 'blur(30px) saturate(1.6)',
+              border: '1px solid rgba(255,255,255,.28)', color: '#fff',
+              padding: '32px 28px 26px',
+              boxShadow: '0 30px 90px rgba(6,12,24,.55), inset 0 1px 0 rgba(255,255,255,.4)',
+            }}
+            initial={{ opacity: 0, y: 24, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: .97 }}
+            transition={{ duration: 0.35, ease: EASE_OUT }}
           >
-            <button onClick={onClose} disabled={submitting} className="absolute top-4 right-4 w-[30px] h-[30px] rounded-full flex items-center justify-center border" style={{ background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--text-3)' }} aria-label="Cerrar">
+            <button onClick={onClose} disabled={submitting} className="absolute top-5 right-5 w-[38px] h-[38px] rounded-full flex items-center justify-center border" style={{ background: 'rgba(255,255,255,.1)', borderColor: 'rgba(255,255,255,.3)', color: '#fff' }} aria-label="Cerrar">
               <X className="w-[14px] h-[14px]" />
             </button>
 
@@ -154,14 +161,14 @@ export default function TransferModal({ open, onClose, course, userId, montoSuge
                   <CheckCircle2 className="h-7 w-7" style={{ color: 'var(--success)' }} />
                 </div>
                 <h3 className="font-display font-bold text-lg mb-2" style={{ color: 'var(--text-1)' }}>Recibimos tu comprobante</h3>
-                <p className="text-sm mb-6" style={{ color: 'var(--text-2)' }}>Yesica lo va a revisar y te vamos a avisar cuando quede confirmado. No hace falta que lo subas de nuevo.</p>
+                <p className="text-sm mb-6" style={{ color: 'var(--text-2)' }}>El equipo Travexa lo va a revisar y te vamos a avisar cuando quede confirmado. No hace falta que lo subas de nuevo.</p>
                 <button onClick={onClose} className="w-full py-3 rounded-xl font-semibold text-sm" style={{ background: 'var(--primary)', color: 'var(--text-1)' }}>Listo</button>
               </div>
             ) : (
               <>
                 <p className="font-mono text-xs mb-1" style={{ color: 'var(--gold)' }}>✈ {course.titulo}</p>
                 <h3 className="font-display font-bold text-xl mb-1" style={{ color: 'var(--text-1)' }}>{title}</h3>
-                <p className="text-sm mb-5" style={{ color: 'var(--text-2)' }}>Contanos los datos del pago y subí el comprobante. Yesica lo revisa a mano.</p>
+                <p className="text-sm mb-5" style={{ color: 'var(--text-2)' }}>Contanos los datos del pago y subí el comprobante. El equipo Travexa lo revisa a mano.</p>
 
                 {reserving ? (
                   <div className="flex items-center justify-center py-10">
@@ -265,7 +272,7 @@ export default function TransferModal({ open, onClose, course, userId, montoSuge
                       {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando…</> : 'Enviar comprobante'}
                     </button>
                     <p className="text-xs text-center" style={{ color: 'var(--text-3)' }}>
-                      Ingresa como pendiente hasta que Yesica lo apruebe.
+                      Ingresa como pendiente hasta que el equipo Travexa lo apruebe.
                     </p>
                   </div>
                 )}

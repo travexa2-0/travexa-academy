@@ -630,9 +630,24 @@ export default function VivencialDetail() {
                   )}
                   {incProsa.length > 0 && (
                     <Reveal className="vv-inc-extra" revealKey={rk('inc-prosa')}>
-                      {incProsa.map((para, i) => (
-                        <p key={i}>{renderBold(para, `incp${i}`)}</p>
-                      ))}
+                      {incProsa.map((para, i) => {
+                        // Un párrafo con varias líneas cortas (sin blanco entre
+                        // ellas) es una lista → <ul>. Una línea corta que termina
+                        // en "?" es un subtítulo de sección. El resto, prosa normal.
+                        const lines = para.split('\n').map(l => l.trim()).filter(Boolean)
+                        if (lines.length > 1) {
+                          return (
+                            <ul className="vv-inc-list" key={i}>
+                              {lines.map((l, j) => <li key={j}>{renderBold(l, `incp${i}-${j}`)}</li>)}
+                            </ul>
+                          )
+                        }
+                        const line = lines[0] ?? ''
+                        if (line.length <= 60 && line.endsWith('?')) {
+                          return <h4 className="vv-inc-sub" key={i}>{renderBold(line, `incp${i}`)}</h4>
+                        }
+                        return <p key={i}>{renderBold(line, `incp${i}`)}</p>
+                      })}
                     </Reveal>
                   )}
                 </>

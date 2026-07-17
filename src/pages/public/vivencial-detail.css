@@ -180,8 +180,14 @@
    bullets): tratamiento tipográfico de lectura, no cards. pre-line respeta los
    saltos simples dentro de un párrafo (listas del Q&A). */
 .vv-inc-extra { max-width: 760px; margin-top: 42px; }
-.vv-inc-extra p { color: rgba(255,255,255,.88); font-weight: 500; font-size: clamp(15.5px, 1.5vw, 17px); margin-top: 20px; line-height: 1.85; white-space: pre-line; }
-.vv-inc-extra p:first-child { margin-top: 0; }
+.vv-inc-extra p { color: rgba(255,255,255,.88); font-weight: 500; font-size: clamp(15.5px, 1.5vw, 17px); margin-top: 20px; line-height: 1.85; }
+.vv-inc-extra > *:first-child { margin-top: 0; }
+/* Subtítulos dentro de la prosa (líneas "¿...?"): un quiebre de sección. */
+.vv-inc-sub { font-size: clamp(17px, 1.7vw, 20px); font-weight: 700; color: #fff; margin-top: 34px; letter-spacing: -.01em; line-height: 1.3; }
+/* Lista de destinatarios: líneas cortas consecutivas → bullets dorados. */
+.vv-inc-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 9px; }
+.vv-inc-list li { position: relative; padding-left: 20px; color: rgba(255,255,255,.88); font-weight: 500; font-size: clamp(15.5px, 1.5vw, 17px); line-height: 1.6; }
+.vv-inc-list li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 5px; height: 5px; border-radius: 50%; background: #E8C685; }
 /* Ritmo vertical consistente con "Qué incluye" (que separa ~56px). */
 .vv-exp-hotels-head { max-width: 640px; margin-bottom: 40px; margin-top: 64px; }
 .vv-exp-hotels-head h3 { font-size: clamp(24px, 2.8vw, 34px); font-weight: 800; margin-top: 14px; letter-spacing: -.01em; }

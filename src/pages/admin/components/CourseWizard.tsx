@@ -148,6 +148,10 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
   }
   const prev = () => setStep(s => Math.max(1, s - 1))
 
+  // Un paso del stepper es clickeable si TODOS los demás pasos (menos el destino)
+  // están completos — justamente se puede estar saltando ahí para completarlo.
+  const canJumpTo = (target: number) => STEPS.every((_, i) => i + 1 === target || validateStep(i + 1) === null)
+
   const onPickFile = async (file: File) => {
     setUploading(true)
     try {
@@ -229,9 +233,13 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         <div className="route-stepper">
           {STEPS.map((label, i) => {
             const n = i + 1
+            const jumpable = n !== step && canJumpTo(n)
             return (
               <div key={label} style={{ display: 'contents' }}>
-                <div className={`rs-step${n === step ? ' current' : ''}${n < step ? ' done' : ''}`}>
+                <div
+                  className={`rs-step${n === step ? ' current' : ''}${n < step ? ' done' : ''}${jumpable ? ' clickable' : ''}`}
+                  onClick={jumpable ? () => setStep(n) : undefined}
+                >
                   <div className="rs-node">{n}</div><div className="rs-label">{label}</div>
                 </div>
                 {n < STEPS.length && (
@@ -468,15 +476,15 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         </div>
 
         <div className="modal-foot">
-          {/* Navegación en el extremo izquierdo; Cancelar (destructivo) pegado a la acción principal. */}
-          <button className="btn btn-ghost" onClick={prev} style={{ visibility: step === 1 ? 'hidden' : 'visible' }}>← Atrás</button>
+          {/* Cancelar (destructivo) al extremo izquierdo; navegación de pasos agrupada a la derecha. */}
+          <button className="btn btn-destructive" onClick={requestClose}>Cancelar</button>
           <div style={{ display: 'flex', gap: 10 }}>
             {initial && step < STEPS.length && (
               <button className="btn btn-secondary" onClick={() => finish({ keepOpen: true })} disabled={saving || !dirty} title={dirty ? 'Guardar los cambios ya hechos' : 'No hay cambios sin guardar'}>
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </button>
             )}
-            <button className="btn btn-destructive" onClick={requestClose}>Cancelar</button>
+            <button className="btn btn-ghost" onClick={prev} style={{ visibility: step === 1 ? 'hidden' : 'visible' }}>← Atrás</button>
             {step < STEPS.length
               ? <button className="btn btn-primary" onClick={next}>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M9 6l6 6-6 6" /></svg></button>
               : <button className="btn btn-primary" onClick={() => finish()} disabled={saving || (!!initial && !dirty)}>{saving ? 'Guardando…' : (initial ? 'Guardar cambios' : 'Guardar borrador')}</button>}

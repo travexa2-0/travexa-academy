@@ -9,7 +9,7 @@ import { formatArs, formatNum, formatUsd } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useUpsertCourse, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
 import {
-  PAISES, TIPO_TRASLADO_OPTIONS, REGIMEN_ALIMENTOS_OPTIONS,
+  PAISES, TIPO_TRASLADO_OPTIONS, REGIMEN_ALIMENTOS_OPTIONS, TIPO_DESTINO_OPTIONS,
   type Course, type ItinerarioDia, type VivencialPuntoSalida, type VivencialHotel,
 } from '@/types'
 
@@ -26,6 +26,7 @@ interface FormState {
   region: string
   localidades: string[]
   category_id: string
+  tipo_destino: string
   puntos_salida: VivencialPuntoSalida[]
   fecha_salida: string
   fecha_regreso: string
@@ -54,6 +55,11 @@ interface FormState {
 
 const STEPS = ['Destino', 'Precio', 'Itinerario', 'Incluye', 'Revisión']
 
+// Tags por posición del array `fotos` — solo visuales, comunican dónde se usa cada
+// una en la página pública. Foto 1 → portada/hero, 2 → fondo de "Qué incluye +
+// Alojamiento", 3 → fondo de "Reservá tu lugar". Fotos 4+ no llevan tag (galería).
+const FOTO_POS_TAGS = ['PORTADA', 'EXPERIENCIA', 'RESERVA'] as const
+
 function initialState(initial?: Course | null): FormState {
   return {
     titulo: initial?.titulo ?? '',
@@ -61,6 +67,7 @@ function initialState(initial?: Course | null): FormState {
     region: initial?.vivencial_region ?? '',
     localidades: initial?.vivencial_localidades ?? [],
     category_id: initial?.category_id ?? '',
+    tipo_destino: initial?.vivencial_tipo_destino ?? '',
     // Backfill: si el vivencial viejo solo tenía ciudad_salida, la traemos como primer punto.
     // Se asigna un `id` client-side a cada fila para tener key estable en el builder.
     puntos_salida: (initial?.vivencial_puntos_salida?.length
@@ -217,6 +224,10 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
   const next = () => { const err = validateStep(step); if (err) { toast.error(err); return } setStep(s => Math.min(STEPS.length, s + 1)) }
   const prev = () => setStep(s => Math.max(1, s - 1))
 
+  // Un paso del stepper es clickeable si TODOS los demás pasos (menos el destino)
+  // están completos — justamente se puede estar saltando ahí para completarlo.
+  const canJumpTo = (target: number) => STEPS.every((_, i) => i + 1 === target || validateStep(i + 1) === null)
+
   const onPickFile = async (file: File) => {
     setUploading(true)
     try {
@@ -265,6 +276,8 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         no_incluye: form.no_incluye.trim() || null,
         vivencial_pais: form.pais || null,
         vivencial_region: form.region || null,
+        // Atmósfera de color de la página pública. Si queda vacío, el público usa 'playa'.
+        vivencial_tipo_destino: (form.tipo_destino || null) as CourseWrite['vivencial_tipo_destino'],
         vivencial_localidades: form.localidades,
         vivencial_puntos_salida: puntos,
         vivencial_hoteles: hoteles,
@@ -315,9 +328,10 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         <div className="route-stepper">
           {STEPS.map((label, i) => {
             const n = i + 1
+            const jumpable = n !== step && canJumpTo(n)
             return (
               <div key={label} style={{ display: 'contents' }}>
-                <div className={`rs-step${n === step ? ' current' : ''}${n < step ? ' done' : ''}`}><div className="rs-node">{n}</div><div className="rs-label">{label}</div></div>
+                <div className={`rs-step${n === step ? ' current' : ''}${n < step ? ' done' : ''}${jumpable ? ' clickable' : ''}`} onClick={jumpable ? () => setStep(n) : undefined}><div className="rs-node">{n}</div><div className="rs-label">{label}</div></div>
                 {n < STEPS.length && <div className={`rs-track${n < step ? ' done' : ''}${n === step ? ' current-track' : ''}`}><span className="plane">✈</span></div>}
               </div>
             )
@@ -330,18 +344,27 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
               <div className="wiz-step-title">Destino y logística</div>
               <div className="wiz-step-sub">Dónde es, desde dónde sale, dónde se duerme y cuándo.</div>
               <div className="field"><label className="f-label">Título del vivencial</label><input className="input" type="text" placeholder="Ej: Fam Trip: Salta y los Valles Calchaquíes" value={form.titulo} onChange={e => set('titulo', e.target.value)} /></div>
-              <div className="field-row cols-3">
+              <div className="field-row cols-2">
                 <div className="field"><label className="f-label">País</label>
                   <select className="select" value={form.pais} onChange={e => set('pais', e.target.value)}>
                     {PAISES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div className="field"><label className="f-label">Región / Provincia <span className="opt">(opcional)</span></label><input className="input" type="text" placeholder="Ej: Salta" value={form.region} onChange={e => set('region', e.target.value)} /></div>
+              </div>
+              <div className="field-row cols-2">
                 <div className="field"><label className="f-label">Categoría</label>
                   <select className="select" value={form.category_id} onChange={e => set('category_id', e.target.value)}>
                     <option value="">Sin categoría</option>
                     {(categories ?? []).map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                   </select>
+                </div>
+                <div className="field"><label className="f-label">Tipo de destino</label>
+                  <select className="select" value={form.tipo_destino} onChange={e => set('tipo_destino', e.target.value)}>
+                    <option value="">Sin definir (playa)</option>
+                    {TIPO_DESTINO_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                  <div className="f-hint">Define la atmósfera de color de la página pública.</div>
                 </div>
               </div>
 
@@ -406,7 +429,7 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                     {form.fotos.map((url, i) => (
                       <div className="gallery-thumb" key={url}>
                         <img src={url} alt={`Foto ${i + 1}`} loading="lazy" />
-                        {form.thumbnail_url === url && <span className="gallery-cover-badge">Portada</span>}
+                        {FOTO_POS_TAGS[i] && <span className="gallery-cover-badge">{FOTO_POS_TAGS[i]}</span>}
                         <button type="button" className="gallery-thumb-remove" title="Quitar foto" onClick={() => removeFoto(url)}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M18 6L6 18M6 6l12 12" /></svg>
                         </button>
@@ -417,7 +440,7 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                 <div className="upload-zone" onClick={() => { if (!uploading) fileRef.current?.click() }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
                   <div className="u-title">{uploading ? 'Subiendo…' : form.fotos.length ? 'Agregar más fotos' : 'Subir galería'}</div>
-                  <div className="u-sub">La primera que subas es la portada · {form.fotos.length} cargadas</div>
+                  <div className="u-sub">La 1ª es la portada · la 2ª el fondo de Qué incluye · la 3ª el fondo de Reserva · {form.fotos.length} cargadas</div>
                 </div>
               </div>
             </div>
@@ -461,7 +484,7 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
             <div className="wiz-step-panel active">
               <div className="wiz-step-title">Itinerario día por día</div>
               <div className="wiz-step-sub">Esto es lo que más mira un asesor antes de anotarse.</div>
-              <ItineraryBuilder days={form.itinerario} onChange={d => set('itinerario', d)} />
+              <ItineraryBuilder days={form.itinerario} onChange={d => set('itinerario', d)} courseKey={initial?.slug ?? (slugify(form.titulo) || 'nuevo')} />
             </div>
           )}
 
@@ -494,6 +517,36 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                   <PriceBreakdown p={price} />
                 </div>
               </div>
+
+              {/* Resumen del contenido nuevo que alimenta la página pública. */}
+              <div className="stat-mini-grid" style={{ marginTop: 14 }}>
+                <div className="stat-mini">
+                  <div className="v">{TIPO_DESTINO_OPTIONS.find(t => t.value === form.tipo_destino)?.label ?? 'Playa'}</div>
+                  <div className="l">Tipo de destino{form.tipo_destino ? '' : ' (por defecto)'}</div>
+                </div>
+                <div className="stat-mini">
+                  <div className="v">{form.fotos.length}</div>
+                  <div className="l">
+                    {form.fotos.length
+                      ? `Fotos · ${FOTO_POS_TAGS.slice(0, form.fotos.length).join(', ')}${form.fotos.length > FOTO_POS_TAGS.length ? ` +${form.fotos.length - FOTO_POS_TAGS.length} galería` : ''}`
+                      : 'Fotos del destino'}
+                  </div>
+                </div>
+                <div className="stat-mini">
+                  {(() => {
+                    const conFoto = form.itinerario
+                      .map((d, i) => (d.foto_url ? i + 1 : null))
+                      .filter((n): n is number => n != null)
+                    return (
+                      <>
+                        <div className="v">{conFoto.length}/{form.itinerario.length}</div>
+                        <div className="l">{conFoto.length ? `Días con foto: ${conFoto.join(', ')}` : 'Días con foto'}</div>
+                      </>
+                    )
+                  })()}
+                </div>
+              </div>
+
               <div className="draft-banner" style={{ marginTop: 18, marginBottom: 0 }}>
                 <div className="draft-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg></div>
                 <div className="draft-banner-text"><b>Se va a guardar como borrador</b><span>Nadie del catálogo lo ve todavía. Publicar es un paso aparte, después de ver la preview.</span></div>
@@ -503,15 +556,15 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         </div>
 
         <div className="modal-foot">
-          {/* Navegación en el extremo izquierdo; Cancelar (destructivo) pegado a la acción principal. */}
-          <button className="btn btn-ghost" onClick={prev} style={{ visibility: step === 1 ? 'hidden' : 'visible' }}>← Atrás</button>
+          {/* Cancelar (destructivo) al extremo izquierdo; navegación de pasos agrupada a la derecha. */}
+          <button className="btn btn-destructive" onClick={requestClose}>Cancelar</button>
           <div style={{ display: 'flex', gap: 10 }}>
             {initial && step < STEPS.length && (
               <button className="btn btn-secondary" onClick={() => finish({ keepOpen: true })} disabled={saving || !dirty} title={dirty ? 'Guardar los cambios ya hechos' : 'No hay cambios sin guardar'}>
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </button>
             )}
-            <button className="btn btn-destructive" onClick={requestClose}>Cancelar</button>
+            <button className="btn btn-ghost" onClick={prev} style={{ visibility: step === 1 ? 'hidden' : 'visible' }}>← Atrás</button>
             {step < STEPS.length
               ? <button className="btn btn-primary" onClick={next}>Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M9 6l6 6-6 6" /></svg></button>
               : <button className="btn btn-primary" onClick={() => finish()} disabled={saving || (!!initial && !dirty)}>{saving ? 'Guardando…' : (initial ? 'Guardar cambios' : 'Guardar borrador')}</button>}

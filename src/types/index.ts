@@ -198,6 +198,15 @@ export interface ItinerarioDia {
 // contenedor raíz de la página pública (tokens --vv-* en el CSS). Default: playa.
 export type VivencialTipoDestino = 'playa' | 'montana' | 'desierto' | 'selva' | 'ciudad'
 
+// Opciones del select "Tipo de destino" del wizard: label visible → valor persistido.
+export const TIPO_DESTINO_OPTIONS: { value: VivencialTipoDestino; label: string }[] = [
+  { value: 'playa', label: 'Playa' },
+  { value: 'montana', label: 'Montaña' },
+  { value: 'desierto', label: 'Desierto' },
+  { value: 'selva', label: 'Selva' },
+  { value: 'ciudad', label: 'Ciudad' },
+]
+
 // ── Punto de salida (vivencial) ──
 // `detalle_encuentro` es texto libre que cubre a la vez el punto de embarque y
 // las instrucciones de encuentro (ej: "Terminal 2, mostrador Aerolíneas

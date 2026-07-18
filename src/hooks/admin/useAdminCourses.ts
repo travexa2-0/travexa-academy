@@ -318,7 +318,7 @@ export function useHardDeleteCourse() {
 }
 
 // ── Media upload (bucket academy-media) ──────────────────────────
-export async function uploadMedia(courseKey: string, file: File, kind: 'thumbnail' | 'trailer' | 'gallery' | 'pdf' | 'lesson-thumb'): Promise<string> {
+export async function uploadMedia(courseKey: string, file: File, kind: 'thumbnail' | 'trailer' | 'gallery' | 'pdf' | 'lesson-thumb' | `itinerario-${number}`): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg'
   const path = `courses/${courseKey}/${kind}-${Date.now()}.${ext}`
   const { error } = await supabase.storage

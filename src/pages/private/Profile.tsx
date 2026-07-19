@@ -22,8 +22,9 @@ import {
   useRanking, useReviewedCourseIds, useSubmitReview, useUpdateDatos, useUploadCertificate,
   type WishlistItem,
 } from '@/hooks/useProfilePage'
+import { useMyRedemptions } from '@/hooks/useBenefitsStore'
 import { nivelInfo, NIVELES } from '@/types'
-import type { Enrollment, Badge, RankingRow, ItinerarioDia } from '@/types'
+import type { Enrollment, Badge, RankingRow, ItinerarioDia, BenefitRedemption } from '@/types'
 import { cupoEstado } from '@/lib/cupo'
 import { EASE_OUT } from '@/lib/motion'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
@@ -272,8 +273,18 @@ export default function Profile() {
   const { data: referrals = [] }    = useReferrals(uid)
   const { data: reviewedIds = [] }  = useReviewedCourseIds(uid)
   const { data: pointsTx = [] }     = usePointsTransactions(uid)
+  const { data: redemptions = [] }  = useMyRedemptions(uid)
 
   const [tab, setTab] = useState(0)
+
+  // Vuelta desde la tienda ("Ver mis canjes"): abre Logros y scrollea al bloque.
+  useEffect(() => {
+    if (window.location.hash === '#canjes') {
+      setTab(4)
+      const t = setTimeout(() => document.getElementById('canjes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350)
+      return () => clearTimeout(t)
+    }
+  }, [])
   const { data: ranking = [] } = useRanking(tab === 4) // solo carga en Logros
 
   // modals
@@ -292,6 +303,12 @@ export default function Profile() {
   const cursos      = useMemo(() => enrollments.filter(e => e.course?.tipo !== 'vivencial'), [enrollments])
   const vivenciales = useMemo(() => enrollments.filter(e => e.course?.tipo === 'vivencial'), [enrollments])
   const reviewedSet = useMemo(() => new Set(reviewedIds), [reviewedIds])
+  // course_id → slug, para linkear los canjes a la ficha/curso.
+  const courseSlugById = useMemo(() => {
+    const m = new Map<string, string>()
+    ;(enrollmentsQ.data ?? []).forEach(e => { if (e.course_id && e.course?.slug) m.set(e.course_id, e.course.slug) })
+    return m
+  }, [enrollmentsQ.data])
 
   const puntos   = ap?.puntos ?? 0
   const creditos = ap?.creditos ?? 0
@@ -509,9 +526,11 @@ export default function Profile() {
                 uid={uid} puntos={puntos} creditos={creditos} nInfo={nInfo}
                 allBadges={allBadges} earnedIds={earnedIds} userBadges={userBadges}
                 ranking={ranking} certificates={certificates} tx={pointsTx}
+                redemptions={redemptions} courseSlugById={courseSlugById}
                 onGanar={() => setShowGanar(true)}
                 onGanarXp={() => setShowGanarXp(true)}
                 onRanking={() => setShowRanking(true)} onUpload={() => setShowUpload(true)}
+                onGoCurso={(slug) => navigate(`/cursos/${slug}`)}
                 onCert={(titulo, fecha) => setCertFor({ id: 'ext', completado: true, course: { titulo }, fecha_completado: fecha } as unknown as Enrollment)}
               />
             )}
@@ -905,12 +924,14 @@ function Line({ icon, children }: { icon: React.ReactNode; children: React.React
 }
 
 // ── LOGROS TAB ────────────────────────────────────────────────────────
-function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBadges, ranking, certificates, tx, onGanar, onGanarXp, onRanking, onUpload, onCert }: {
+function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBadges, ranking, certificates, tx, redemptions, courseSlugById, onGanar, onGanarXp, onRanking, onUpload, onGoCurso, onCert }: {
   uid?: string; puntos: number; creditos: number; nInfo: ReturnType<typeof nivelInfo>
   allBadges: Badge[]; earnedIds: Set<string>; userBadges: Array<{ badge?: Badge; earned_at: string; badge_id: string }>
   ranking: RankingRow[]; certificates: Array<{ id: string; numero: string; emitido_at: string; course?: { titulo?: string } }>
   tx: PointsTx[]
+  redemptions: BenefitRedemption[]; courseSlugById: Map<string, string>
   onGanar: () => void; onGanarXp: () => void; onRanking: () => void; onUpload: () => void
+  onGoCurso: (slug: string) => void
   onCert: (numero: string, date: string) => void
 }) {
   const earnedAtMap = useMemo(() => {
@@ -995,7 +1016,7 @@ function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBad
         </div>
 
         {/* créditos card */}
-        <div className="rounded-2xl border p-5" style={{ background: 'var(--bg-2)', borderColor: 'rgba(201,154,58,.35)' }}>
+        <div id="canjes" className="rounded-2xl border p-5" style={{ background: 'var(--bg-2)', borderColor: 'rgba(201,154,58,.35)', scrollMarginTop: 120 }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: 'linear-gradient(135deg,rgba(201,154,58,.3),rgba(201,154,58,.1))', border: '1px solid rgba(201,154,58,.3)' }}>🪙</div>
@@ -1011,6 +1032,20 @@ function LogrosTab({ uid, puntos, creditos, nInfo, allBadges, earnedIds, userBad
               {creds.map(t => <MovRow key={t.id} t={t} />)}
             </div>
           )}
+
+          {/* Tus canjes: estado legible de cada canje del usuario */}
+          {redemptions.length > 0 && (
+            <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
+              <div className="font-mono text-[9px] tracking-wide uppercase mb-2" style={{ color: 'var(--text-3)' }}>Tus canjes</div>
+              <div className="flex flex-col max-h-[228px] overflow-y-auto pr-1">
+                {redemptions.map(r => (
+                  <CanjeRow key={r.id} r={r} slug={r.course_id ? courseSlugById.get(r.course_id) : undefined} onGoCurso={onGoCurso} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 text-[.72rem]" style={{ color: 'var(--text-3)' }}>Los créditos vencen al año de obtenidos.</div>
         </div>
       </div>
 
@@ -1349,6 +1384,52 @@ function MovRow({ t }: { t: PointsTx }) {
         <div className="font-mono text-[8.5px] mt-0.5" style={{ color: 'var(--text-3)' }}>{shortDate(t.created_at)}</div>
       </div>
       <span className="font-display text-[.86rem] font-bold whitespace-nowrap" style={{ color: plus ? NEON : '#EF4444' }}>{plus ? '+' : ''}{fmt(t.puntos)} 🪙</span>
+    </div>
+  )
+}
+
+// Una fila de "Tus canjes": traduce estado + tipo a un texto legible y, cuando
+// aplica, deja linkear al curso. El canje es intocable: refleja sus valores
+// copiados al momento del canje.
+function CanjeRow({ r, slug, onGoCurso }: { r: BenefitRedemption; slug?: string; onGoCurso: (slug: string) => void }) {
+  const titulo = r.descripcion ?? 'Beneficio'
+  const dtoLabel = r.descuento_tipo === 'pct'
+    ? `${r.descuento_valor ?? ''}%`
+    : r.descuento_valor != null ? money(r.descuento_valor) : ''
+
+  let text: React.ReactNode
+  let icon = '🎟️'
+  const isDescuento = r.tipo === 'descuento_pct' || r.tipo === 'descuento_fijo'
+  if (isDescuento) {
+    icon = '🏷️'
+    text = r.estado === 'usado'
+      ? <>{dtoLabel} en <b style={{ color: 'var(--text-1)' }}>{titulo}</b> — usado{r.usado_at ? ` el ${shortDate(r.usado_at)}` : ''}</>
+      : <>{dtoLabel} en <b style={{ color: 'var(--text-1)' }}>{titulo}</b> — pendiente de usar</>
+  } else if (r.tipo === 'curso_gratis') {
+    icon = '🎓'
+    text = <><b style={{ color: 'var(--text-1)' }}>{titulo}</b> — canjeado</>
+  } else if (r.tipo === 'sorteo_vivencial') {
+    if (r.estado === 'ganador') { icon = '🏆'; text = <>¡Ganaste <b style={{ color: 'var(--text-1)' }}>{titulo}</b>!</> }
+    else if (r.estado === 'no_ganador') { icon = '🎫'; text = <><b style={{ color: 'var(--text-1)' }}>{titulo}</b> — no ganaste esta vez</> }
+    else { icon = '🍀'; text = <><b style={{ color: 'var(--text-1)' }}>{titulo}</b> — {r.cantidad_chances ?? 1} chance{(r.cantidad_chances ?? 1) > 1 ? 's' : ''}, participando</> }
+  } else {
+    icon = '🎁'
+    text = r.estado === 'usado'
+      ? <><b style={{ color: 'var(--text-1)' }}>{titulo}</b> — entregado</>
+      : <><b style={{ color: 'var(--text-1)' }}>{titulo}</b> — te contactamos para coordinar</>
+  }
+
+  const linkable = slug && (r.tipo === 'curso_gratis' || isDescuento)
+  return (
+    <div className="flex items-center gap-2.5 py-2.5 border-b last:border-b-0" style={{ borderColor: 'var(--line)' }}>
+      <div className="w-[30px] h-[30px] rounded-[7px] flex items-center justify-center text-[.85rem] shrink-0" style={{ background: 'var(--gold-soft)' }}>{icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[.82rem]" style={{ color: 'var(--text-2)' }}>{text}</div>
+        <div className="font-mono text-[8.5px] mt-0.5" style={{ color: 'var(--text-3)' }}>{r.created_at ? shortDate(r.created_at) : ''}</div>
+      </div>
+      {linkable && (
+        <button onClick={() => onGoCurso(slug!)} className="font-mono text-[9px] tracking-wide uppercase whitespace-nowrap shrink-0" style={{ color: NEON }}>Ver curso →</button>
+      )}
     </div>
   )
 }

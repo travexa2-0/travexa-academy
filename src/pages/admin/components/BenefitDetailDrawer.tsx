@@ -5,7 +5,8 @@ import { benefitTypeMeta, benefitValueLabel } from './benefitMeta'
 import { formatDate } from '../format'
 import {
   useAdminBenefit, useBenefitRedemptions,
-  useToggleBenefitPublish, useArchiveBenefit, useHardDeleteBenefit, useMarkBenefitWinner,
+  useToggleBenefitPublish, useArchiveBenefit, useHardDeleteBenefit,
+  useDrawBenefitWinner, useMarkRedemptionDelivered,
 } from '@/hooks/admin/useAdminBenefits'
 import type { Benefit } from '@/types'
 
@@ -26,22 +27,27 @@ function redemptionName(r: { profile?: { nombre: string | null; apellido: string
 export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: Props) {
   const [tab, setTab] = useState<Tab>('info')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [winnerPick, setWinnerPick] = useState('')
+  const [confirmDraw, setConfirmDraw] = useState(false)
 
   const { data: full } = useAdminBenefit(open && benefit ? benefit.id : undefined)
   const { data: redemptions } = useBenefitRedemptions(open && benefit ? benefit.id : undefined)
   const togglePublish = useToggleBenefitPublish()
   const archive = useArchiveBenefit()
   const hardDelete = useHardDeleteBenefit()
-  const markWinner = useMarkBenefitWinner()
+  const drawWinner = useDrawBenefitWinner()
+  const markDelivered = useMarkRedemptionDelivered()
 
   if (!benefit) return null
   const b = full ?? benefit
   const meta = benefitTypeMeta(b.tipo)
   const valueLabel = benefitValueLabel(b.tipo, b.descuento_valor)
   const isSorteo = b.tipo === 'sorteo_vivencial'
-  const statusLabel = b.archivado ? 'Archivado' : b.publicado ? 'Publicado' : 'Borrador'
+  const desdeCurso = b.origen === 'curso'
+  const sorteoRealizado = !!b.sorteo_realizado_at
+  const statusLabel = b.archivado ? 'Archivado' : sorteoRealizado ? 'Sorteado' : b.publicado ? 'Publicado' : 'Borrador'
   const canjes = redemptions ?? []
+  const totalChances = canjes.reduce((s, r) => s + (r.cantidad_chances ?? (isSorteo ? 1 : 0)), 0)
+  const participantes = new Set(canjes.map(r => r.user_id)).size
 
   const doPublish = async (publicado: boolean) => {
     try { await togglePublish.mutateAsync({ id: b.id, publicado }); toast.success(publicado ? 'Publicado' : 'Despublicado') }
@@ -56,9 +62,13 @@ export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: 
     catch (e) { toast.error((e as Error).message) }
     finally { setConfirmDelete(false) }
   }
-  const doMarkWinner = async () => {
-    if (!winnerPick) { toast.error('Elegí un ganador de la lista.'); return }
-    try { await markWinner.mutateAsync({ id: b.id, userId: winnerPick }); toast.success('Ganador anunciado 🎉') }
+  const doDraw = async () => {
+    try { await drawWinner.mutateAsync(b.id); toast.success('Sorteo realizado 🎉') }
+    catch (e) { toast.error((e as Error).message) }
+    finally { setConfirmDraw(false) }
+  }
+  const doDeliver = async (redemptionId: string) => {
+    try { await markDelivered.mutateAsync({ redemptionId, benefitId: b.id }); toast.success('Marcado como entregado ✓') }
     catch (e) { toast.error((e as Error).message) }
   }
 
@@ -102,6 +112,9 @@ export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: 
                   {b.course && <div>Asociado a: <b>{b.course.titulo}</b></div>}
                   {valueLabel && <div>Descuento: <b>{valueLabel}</b></div>}
                   <div>Vigencia: <b>{b.fecha_inicio ? formatDate(b.fecha_inicio) : 'inmediata'}</b> → <b>{b.fecha_vencimiento ? formatDate(b.fecha_vencimiento) : 'sin vencimiento'}</b></div>
+                  <div>Destacado: <b>{b.destacado ? 'Sí' : 'No'}</b></div>
+                  {desdeCurso && <div>Origen: <b>Desde curso</b> — se administra desde el wizard del curso.</div>}
+                  {isSorteo && b.terminos && <div>Bases: <b>{b.terminos}</b></div>}
                   {isSorteo && ganador && <div>Ganador: <b>{redemptionName(ganador)}</b> · anunciado {formatDate(b.ganador_anunciado_at)}</div>}
                 </div>
               </div>
@@ -109,9 +122,13 @@ export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: 
               <div className="card">
                 <div className="card-head"><h3 style={{ fontSize: 13 }}>Administrar</h3></div>
                 <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '14px 18px' }}>
-                  <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => onEdit(b)}>
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>Editar
-                  </button>
+                  {desdeCurso ? (
+                    <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', padding: '2px 2px' }}>Este beneficio se generó desde un curso. Editá su costo/descuento en el wizard del curso; acá solo podés archivarlo.</div>
+                  ) : (
+                    <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => onEdit(b)}>
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>Editar
+                    </button>
+                  )}
                   {b.publicado
                     ? <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doPublish(false)}>Despublicar</button>
                     : <button className="btn btn-primary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => doPublish(true)} disabled={b.archivado}>Publicar</button>}
@@ -142,17 +159,29 @@ export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: 
                 <div className="card" style={{ marginBottom: 14 }}>
                   <div className="card-head"><h3 style={{ fontSize: 13 }}>Sorteo</h3></div>
                   <div className="card-pad" style={{ padding: '14px 18px' }}>
+                    <div className="stat-mini-grid" style={{ marginBottom: ganador || sorteoRealizado ? 0 : 12 }}>
+                      <div className="stat-mini"><div className="v">{totalChances}</div><div className="l">chances vendidas</div></div>
+                      <div className="stat-mini"><div className="v">{participantes}</div><div className="l">participantes</div></div>
+                    </div>
                     {ganador ? (
-                      <div style={{ fontSize: 13, color: 'var(--ink)' }}>🏆 Ganador: <b>{redemptionName(ganador)}</b><div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2 }}>Anunciado el {formatDate(b.ganador_anunciado_at)}</div></div>
+                      <div style={{ fontSize: 13, color: 'var(--ink)', marginTop: 12, padding: '10px 12px', background: 'var(--gold-soft)', borderRadius: 10 }}>
+                        🏆 Ganador: <b>{redemptionName(ganador)}</b>
+                        {ganador.profile?.email && <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', marginTop: 2 }}>{ganador.profile.email}</div>}
+                        <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 2 }}>Tenía {ganador.cantidad_chances ?? 1} chance(s) · sorteado el {formatDate(b.sorteo_realizado_at ?? b.ganador_anunciado_at)}</div>
+                      </div>
+                    ) : sorteoRealizado ? (
+                      <div style={{ fontSize: 13, color: 'var(--ink-faint)', marginTop: 8 }}>Sorteo realizado.</div>
                     ) : canjes.length === 0 ? (
-                      <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Todavía nadie participó. El ganador se elige entre quienes canjean.</div>
+                      <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Todavía nadie participó. El ganador se elige al azar (ponderado por chances) entre quienes canjean.</div>
+                    ) : !confirmDraw ? (
+                      <button className="btn btn-primary btn-sm" onClick={() => setConfirmDraw(true)}>Realizar sorteo</button>
                     ) : (
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <select className="select" style={{ flex: 1, minWidth: 200 }} value={winnerPick} onChange={e => setWinnerPick(e.target.value)}>
-                          <option value="">Elegir ganador…</option>
-                          {canjes.map(r => <option key={r.id} value={r.user_id}>{redemptionName(r)}</option>)}
-                        </select>
-                        <button className="btn btn-primary btn-sm" onClick={doMarkWinner} disabled={markWinner.isPending}>{markWinner.isPending ? 'Guardando…' : 'Marcar ganador'}</button>
+                      <div style={{ background: 'var(--clay-soft)', borderRadius: 10, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 12.4, color: 'var(--clay-deep)', marginBottom: 8 }}>Vas a realizar el sorteo de <b>{b.titulo}</b>. Se elige un ganador al azar ponderado por chances. <b>Esta acción es definitiva.</b></div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn-primary btn-sm" onClick={doDraw} disabled={drawWinner.isPending}>{drawWinner.isPending ? 'Sorteando…' : 'Sí, sortear'}</button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setConfirmDraw(false)}>Cancelar</button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -160,15 +189,23 @@ export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: 
               )}
               {canjes.length === 0
                 ? <div style={{ fontSize: 13, color: 'var(--ink-faint)' }}>Todavía no hay canjes.</div>
-                : canjes.map(r => (
+                : canjes.map(r => {
+                    const estadoLbl = r.estado === 'ganador' ? '🏆 ganador' : r.estado === 'no_ganador' ? 'no ganó' : r.estado === 'usado' ? 'usado' : 'activo'
+                    return (
                     <div key={r.id} className="row-flex" style={{ padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 7 }}>
                       <div className="tbl-avatar">{redemptionName(r).slice(0, 2).toUpperCase()}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.8 }}>{redemptionName(r)}{b.ganador_user_id === r.user_id ? ' 🏆' : ''}</div>
-                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{r.created_at ? formatDate(r.created_at) : ''} · {r.creditos_consumidos} 🪙</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.8 }}>{redemptionName(r)}</div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+                          {r.created_at ? formatDate(r.created_at) : ''} · {r.creditos_consumidos} 🪙
+                          {isSorteo && ` · ${r.cantidad_chances ?? 1} chance(s)`} · {estadoLbl}
+                        </div>
                       </div>
+                      {b.tipo === 'otro' && r.estado === 'activo' && (
+                        <button className="btn btn-secondary btn-sm" onClick={() => doDeliver(r.id)} disabled={markDelivered.isPending}>Marcar entregado</button>
+                      )}
                     </div>
-                  ))}
+                  )})}
             </div>
           )}
         </div>

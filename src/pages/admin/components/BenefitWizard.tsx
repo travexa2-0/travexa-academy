@@ -26,6 +26,8 @@ interface FormState {
   fecha_inicio: string
   sin_vencimiento: boolean
   fecha_vencimiento: string
+  destacado: boolean
+  terminos: string
 }
 
 const STEPS = ['Beneficio', 'Configuración', 'Reglas']
@@ -48,6 +50,8 @@ function initialState(initial?: Benefit | null): FormState {
     fecha_inicio: toDateInput(initial?.fecha_inicio ?? null),
     sin_vencimiento: initial ? initial.fecha_vencimiento == null : true,
     fecha_vencimiento: toDateInput(initial?.fecha_vencimiento ?? null),
+    destacado: initial?.destacado ?? false,
+    terminos: initial?.terminos ?? '',
   }
 }
 
@@ -76,11 +80,19 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
     if (s === 1 && form.titulo.trim().length < 3) return 'El título es obligatorio (mínimo 3 caracteres).'
     if (s === 2) {
       if (needsCourse(form.tipo) && !form.course_id) return form.tipo === 'sorteo_vivencial' ? 'Elegí el vivencial a sortear.' : 'Elegí el curso o vivencial asociado.'
-      if (isDescuento(form.tipo) && (Number(form.descuento_valor) || 0) <= 0) return 'El valor del descuento debe ser mayor a 0.'
+      if (form.tipo === 'descuento_pct') {
+        const pct = Number(form.descuento_valor) || 0
+        if (pct < 1 || pct > 99) return 'El porcentaje de descuento debe estar entre 1 y 99.'
+      }
+      if (form.tipo === 'descuento_fijo' && (Number(form.descuento_valor) || 0) <= 0) return 'El monto de descuento debe ser mayor a 0.'
     }
     if (s === 3) {
-      if ((Number(form.costo_creditos) || 0) < 0) return 'El costo en créditos no puede ser negativo.'
+      if ((Number(form.costo_creditos) || 0) <= 0) return 'El costo en créditos debe ser mayor a 0.'
       if (!form.cupo_ilimitado && (Number(form.cupo_maximo) || 0) <= 0) return 'Definí un cupo mayor a 0 o marcá "sin límite".'
+      if (form.fecha_inicio && !form.sin_vencimiento && form.fecha_vencimiento &&
+          new Date(form.fecha_inicio) >= new Date(form.fecha_vencimiento)) {
+        return 'La fecha de inicio debe ser anterior a la de vencimiento.'
+      }
     }
     return null
   }
@@ -91,6 +103,8 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
     setStep(s => Math.min(STEPS.length, s + 1))
   }
   const prev = () => setStep(s => Math.max(1, s - 1))
+  // Un paso es clickeable si todos los demás (menos el destino) están completos.
+  const canJumpTo = (target: number) => STEPS.every((_, i) => i + 1 === target || validateStep(i + 1) === null)
 
   const onPickFile = async (file: File) => {
     setUploading(true)
@@ -118,6 +132,8 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
         cupo_maximo: form.cupo_ilimitado ? null : (Number(form.cupo_maximo) || null),
         fecha_inicio: form.fecha_inicio ? new Date(`${form.fecha_inicio}T00:00:00`).toISOString() : null,
         fecha_vencimiento: form.sin_vencimiento || !form.fecha_vencimiento ? null : new Date(`${form.fecha_vencimiento}T23:59:59`).toISOString(),
+        destacado: form.destacado,
+        terminos: form.tipo === 'sorteo_vivencial' ? (form.terminos.trim() || null) : null,
       }
       const benefit = await upsert.mutateAsync(payload)
       toast.success(initial ? 'Beneficio actualizado' : 'Beneficio guardado como borrador')
@@ -144,9 +160,11 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
         <div className="route-stepper">
           {STEPS.map((label, i) => {
             const n = i + 1
+            const jumpable = n !== step && canJumpTo(n)
             return (
               <div key={label} style={{ display: 'contents' }}>
-                <div className={`rs-step${n === step ? ' current' : ''}${n < step ? ' done' : ''}`}>
+                <div className={`rs-step${n === step ? ' current' : ''}${n < step ? ' done' : ''}${jumpable ? ' clickable' : ''}`}
+                  onClick={() => { if (jumpable) setStep(n) }} style={jumpable ? { cursor: 'pointer' } : undefined}>
                   <div className="rs-node">{n}</div><div className="rs-label">{label}</div>
                 </div>
                 {n < STEPS.length && <div className={`rs-track${n < step ? ' done' : ''}${n === step ? ' current-track' : ''}`}><span className="plane">✈</span></div>}
@@ -228,6 +246,12 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
                       </div>
                     </div>
                   )}
+                  {form.tipo === 'sorteo_vivencial' && (
+                    <div className="field">
+                      <label className="f-label">Bases y condiciones <span className="opt">— opcional</span></label>
+                      <textarea className="textarea" placeholder="Fecha del sorteo, cómo se elige el ganador, cómo se entrega el premio…" value={form.terminos} onChange={e => set('terminos', e.target.value)} />
+                    </div>
+                  )}
                 </>
               ) : (
                 <div style={{ padding: 16, border: '1px dashed var(--line-strong)', borderRadius: 12, fontSize: 13, color: 'var(--ink-soft)' }}>
@@ -244,9 +268,9 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
               <div className="wiz-step-sub">Costo, cupo y vigencia. Después vas a poder ver la preview y publicarlo.</div>
               <div className="field-row cols-2">
                 <div className="field">
-                  <label className="f-label">Costo en créditos</label>
+                  <label className="f-label">{form.tipo === 'sorteo_vivencial' ? 'Valor de 1 chance (créditos)' : 'Costo en créditos'}</label>
                   <div className="input-prefix-wrap"><span className="input-prefix">🪙</span><input className="input" type="number" value={form.costo_creditos} onChange={e => set('costo_creditos', e.target.value)} /></div>
-                  <div className="f-hint">Cuántos créditos gasta el alumno para canjearlo. 0 = gratis.</div>
+                  <div className="f-hint">{form.tipo === 'sorteo_vivencial' ? 'Créditos que cuesta cada chance. El alumno elige cuántas comprar.' : 'Cuántos créditos gasta el alumno para canjearlo.'}</div>
                 </div>
                 <div className="field">
                   <label className="f-label">Cupo</label>
@@ -272,6 +296,14 @@ export default function BenefitWizard({ open, onClose, initial, onSaved }: Props
                     <input className="input" type="date" value={form.fecha_vencimiento} onChange={e => set('fecha_vencimiento', e.target.value)} />
                   )}
                 </div>
+              </div>
+
+              <div className="field" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', background: 'var(--gold-soft)', borderRadius: 12, marginTop: 4 }}>
+                <div>
+                  <label className="f-label" style={{ margin: 0 }}>★ Destacado en la tienda</label>
+                  <div className="f-hint" style={{ marginTop: 2 }}>Aparece en el carrusel de "Destacados de la semana"</div>
+                </div>
+                <span className="switch"><input type="checkbox" checked={form.destacado} onChange={e => set('destacado', e.target.checked)} /><span className="track" /><span className="thumb" /></span>
               </div>
 
               <div className="preview-frame" style={{ marginTop: 6 }}>

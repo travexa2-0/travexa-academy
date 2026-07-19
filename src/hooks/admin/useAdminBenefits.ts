@@ -267,6 +267,42 @@ export function useSyncCourseBenefit() {
   })
 }
 
+// ── Realizar sorteo (edge function draw-benefit-winner) ───────────
+export function useDrawBenefitWinner() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (benefitId: string) => {
+      const { data, error } = await supabase.functions.invoke('draw-benefit-winner', { body: { benefitId } })
+      if (error) {
+        let msg = 'No pudimos realizar el sorteo. Intentá de nuevo.'
+        try { const body = await (error as { context?: Response }).context?.json(); if (body?.error) msg = body.error } catch { /* */ }
+        throw new Error(msg)
+      }
+      if (data?.error) throw new Error(data.error)
+      return data as { success: true; ganador_user_id: string; total_chances: number }
+    },
+    onSuccess: (_r, benefitId) => {
+      qc.invalidateQueries({ queryKey: ['admin-benefits'] })
+      qc.invalidateQueries({ queryKey: ['admin-benefit', benefitId] })
+      qc.invalidateQueries({ queryKey: ['admin-benefit-redemptions', benefitId] })
+    },
+  })
+}
+
+// ── Marcar canje 'otro' como entregado (RPC admin-only) ───────────
+export function useMarkRedemptionDelivered() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ redemptionId }: { redemptionId: string; benefitId: string }) => {
+      const { error } = await supabaseWrite.rpc('mark_redemption_delivered', { p_redemption_id: redemptionId })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: (_r, { benefitId }) => {
+      qc.invalidateQueries({ queryKey: ['admin-benefit-redemptions', benefitId] })
+    },
+  })
+}
+
 // ── Opciones de curso/vivencial para el wizard ────────────────────
 export interface CourseOption { id: string; titulo: string; tipo: string; slug: string }
 

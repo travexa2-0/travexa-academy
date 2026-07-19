@@ -1,4 +1,4 @@
-import { useAdminMetrics } from '@/hooks/admin/useAdminMetrics'
+import { useAdminMetrics, useBenefitsMetrics } from '@/hooks/admin/useAdminMetrics'
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings'
 import { useRevenueSeries } from '@/hooks/admin/useAdminSummary'
 import { useAdminUI } from './adminContext'
@@ -26,6 +26,7 @@ export default function Metricas() {
   const { data: settings } = useAdminSettings()
   const { data: metrics } = useAdminMetrics(settings?.comision_mp_pct ?? 5.5)
   const { data: series } = useRevenueSeries()
+  const { data: ben } = useBenefitsMetrics()
 
   const totalVentas = (metrics?.buyers ?? []).reduce((n, b) => n + b.compras, 0)
   const ticket = totalVentas > 0 ? (metrics?.ingresoBrutoArs ?? 0) / totalVentas : 0
@@ -132,8 +133,51 @@ export default function Metricas() {
           </div>
         </div>
       </div>
+
+      {/* ── Beneficios / Créditos ── */}
+      <div className="card" style={{ marginTop: 18 }}>
+        <div className="card-head"><div><h3>Beneficios</h3><div className="sub">Tienda de canjes por créditos</div></div></div>
+        <div className="card-pad">
+          <div className="stat-mini-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+            <div className="stat-mini"><div className="v">{formatNum(ben?.creditos_circulacion ?? 0)} 🪙</div><div className="l">Créditos en circulación</div></div>
+            <div className="stat-mini"><div className="v">{formatNum(ben?.creditos_canjeados ?? 0)} 🪙</div><div className="l">Créditos canjeados</div></div>
+            <div className="stat-mini"><div className="v">{formatNum(ben?.creditos_vencidos ?? 0)} 🪙</div><div className="l">Créditos vencidos</div></div>
+            <div className="stat-mini"><div className="v">{formatNum(ben?.canjes_totales ?? 0)}</div><div className="l">Canjes totales</div></div>
+          </div>
+          <div className="grid-2" style={{ marginTop: 16 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', marginBottom: 8 }}>Canjes por tipo</div>
+              {(ben?.canjes_por_tipo ?? []).length === 0
+                ? <div style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>Sin canjes todavía.</div>
+                : (ben?.canjes_por_tipo ?? []).map(t => (
+                    <div key={t.tipo} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
+                      <span>{TIPO_LABELS[t.tipo] ?? t.tipo}</span><b className="mono">{formatNum(t.count)}</b>
+                    </div>
+                  ))}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', marginBottom: 8 }}>Top 5 beneficios</div>
+              {(ben?.top_beneficios ?? []).length === 0
+                ? <div style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>Sin canjes todavía.</div>
+                : (ben?.top_beneficios ?? []).map((t, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12.5, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.titulo}</span><b className="mono">{formatNum(t.count)}</b>
+                    </div>
+                  ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   )
+}
+
+const TIPO_LABELS: Record<string, string> = {
+  curso_gratis: 'Cursos gratis',
+  descuento_pct: 'Descuentos %',
+  descuento_fijo: 'Descuentos fijos',
+  sorteo_vivencial: 'Sorteos',
+  otro: 'Otros',
 }
 
 function FunnelBar({ label, value, total }: { label: string; value: number; total: number }) {

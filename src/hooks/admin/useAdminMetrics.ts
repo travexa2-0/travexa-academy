@@ -133,3 +133,25 @@ export function useAdminMetrics(comisionMpPct: number) {
     staleTime: 1000 * 60,
   })
 }
+
+// ── Métricas de beneficios (RPC admin-only) ───────────────────────
+export interface BenefitsMetrics {
+  creditos_circulacion: number
+  creditos_canjeados: number
+  creditos_vencidos: number
+  canjes_totales: number
+  canjes_por_tipo: { tipo: string; count: number }[]
+  top_beneficios: { titulo: string; count: number }[]
+}
+
+export function useBenefitsMetrics() {
+  return useQuery({
+    queryKey: ['admin-benefits-metrics'],
+    queryFn: async (): Promise<BenefitsMetrics> => {
+      const { data, error } = await supabase.rpc('academy_benefits_metrics')
+      if (error) throw new Error(error.message)
+      return data as unknown as BenefitsMetrics
+    },
+    staleTime: 1000 * 60,
+  })
+}

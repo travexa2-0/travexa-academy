@@ -6,6 +6,7 @@ interface Props { benefit: Benefit; onClick: () => void }
 
 function statusBadge(b: Benefit) {
   if (b.archivado) return <span className="badge badge-archived">Archivado</span>
+  if (b.sorteo_realizado_at) return <span className="badge badge-featured">Sorteado</span>
   if (b.publicado) return <span className="badge badge-published">Publicado</span>
   return <span className="badge badge-draft">Borrador</span>
 }
@@ -25,7 +26,10 @@ export default function BenefitCard({ benefit, onClick }: Props) {
               {meta.icon}
             </div>}
         <div className="item-thumb-badges">
-          {valueLabel ? <span className="badge badge-featured">{valueLabel}</span> : <span />}
+          <span style={{ display: 'inline-flex', gap: 5 }}>
+            {benefit.destacado && <span className="badge badge-featured" title="Destacado en la tienda">★</span>}
+            {valueLabel && <span className="badge badge-featured">{valueLabel}</span>}
+          </span>
           <span className="item-thumb-tag" style={{ background: meta.deep, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <span style={{ display: 'inline-flex', fontSize: 12 }}>{meta.icon}</span>{meta.label}
           </span>
@@ -44,8 +48,9 @@ export default function BenefitCard({ benefit, onClick }: Props) {
       </div>
       <div className="item-foot">
         {statusBadge(benefit)}
-        <span style={{ fontSize: 11, color: benefit.publicado ? 'var(--ink-faint)' : 'var(--gold-deep)', fontWeight: benefit.publicado ? 400 : 600 }}>
-          {benefit.publicado ? (benefit.course?.titulo ?? '') : 'Listo para preview →'}
+        <span style={{ fontSize: 11, color: 'var(--ink-faint)', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+          {benefit.origen === 'curso' && <span className="badge badge-draft" title="Generado desde un curso">Desde curso</span>}
+          {benefit.publicado ? (benefit.course?.titulo ?? '') : (benefit.origen === 'curso' ? '' : 'Listo para preview →')}
         </span>
       </div>
     </article>

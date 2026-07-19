@@ -159,6 +159,46 @@ async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: 
   }
 }
 
+// Marca la redemption de descuento como `usado` cuando la compra queda aprobada.
+// Idempotente (guard estado='activo'); nunca revierte un canje ya usado.
+async function markRedemptionUsed(admin: Admin, userId: string, courseId: string, ref: string) {
+  try {
+    const { data: attempt } = await admin
+      .from('academy_payment_attempts')
+      .select('redemption_id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .not('redemption_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let redemptionId: string | null = attempt?.redemption_id ?? null
+    if (!redemptionId) {
+      const { data: red } = await admin
+        .from('academy_credit_redemptions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .eq('estado', 'activo')
+        .in('tipo', ['descuento_pct', 'descuento_fijo'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      redemptionId = red?.id ?? null
+    }
+    if (!redemptionId) return
+
+    await admin
+      .from('academy_credit_redemptions')
+      .update({ estado: 'usado', usado_at: new Date().toISOString(), mp_external_reference: ref })
+      .eq('id', redemptionId)
+      .eq('estado', 'activo')
+  } catch (e) {
+    console.error('markRedemptionUsed error:', e)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -238,6 +278,7 @@ Deno.serve(async (req) => {
       // duplican ni inflan el contador de alumnos, ni re-otorgan puntos.
       if (estado === 'aprobado') {
         await ensureEnrollment(supabaseAdmin, userId, courseId)
+        await markRedemptionUsed(supabaseAdmin, userId, courseId, ref)
         await awardCursoComprado(userId, courseId)
       }
 

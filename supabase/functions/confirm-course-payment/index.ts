@@ -124,6 +124,48 @@ async function awardCursoComprado(userId: string, courseId: string) {
   } catch (_) { /* el pago y la inscripción ya están hechos; los puntos no son críticos */ }
 }
 
+// Si esta compra usó un descuento por créditos, marca la redemption como `usado`.
+// Idempotente: el guard estado='activo' evita pisar un canje ya usado y nunca lo
+// revierte. Prioriza la redemption vinculada al attempt de esta preferencia; si no
+// hay, cae al canje de descuento activo del par (user, course).
+async function markRedemptionUsed(admin: Admin, userId: string, courseId: string, ref: string) {
+  try {
+    const { data: attempt } = await admin
+      .from('academy_payment_attempts')
+      .select('redemption_id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .not('redemption_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let redemptionId: string | null = attempt?.redemption_id ?? null
+    if (!redemptionId) {
+      const { data: red } = await admin
+        .from('academy_credit_redemptions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .eq('estado', 'activo')
+        .in('tipo', ['descuento_pct', 'descuento_fijo'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      redemptionId = red?.id ?? null
+    }
+    if (!redemptionId) return
+
+    await admin
+      .from('academy_credit_redemptions')
+      .update({ estado: 'usado', usado_at: new Date().toISOString(), mp_external_reference: ref })
+      .eq('id', redemptionId)
+      .eq('estado', 'activo')
+  } catch (e) {
+    console.error('markRedemptionUsed error:', e)
+  }
+}
+
 Deno.serve(async (req) => {
   const corsResult = handleCors(req)
   if (corsResult) return corsResult
@@ -175,6 +217,7 @@ Deno.serve(async (req) => {
       ref, userId, courseId, paymentId: String(payment_id), mpData,
     })
     await ensureEnrollment(supabaseAdmin, userId, courseId)
+    await markRedemptionUsed(supabaseAdmin, userId, courseId, ref)
     await awardCursoComprado(userId, courseId)
 
     return jsonResponse({ success: true, status: 'approved' })

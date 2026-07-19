@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -11,6 +11,7 @@ import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments, useR
 import { useAuth } from '@/contexts/AuthContext'
 import { useCoursePayment, type MetodoPago } from '@/hooks/usePayment'
 import { usePricingConfig } from '@/hooks/usePricing'
+import { useMyRedemptions } from '@/hooks/useBenefitsStore'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { courseLiveState } from '@/lib/liveState'
 import { displayName, loginRedirect } from '@/lib/utils'
@@ -373,6 +374,26 @@ function Reviews({ course }: { course: Course }) {
 
 // ── CTA Card ──────────────────────────────────────────────────────
 
+// Descuento por créditos aplicable a un curso (canje de descuento activo).
+export interface CourseDiscount {
+  pct: boolean
+  valor: number
+  label: string                     // "25%" | "$10.000"
+  apply: (base: number) => number   // precio final para una base dada
+}
+
+// Badge dorado reutilizable ("Descuento por créditos aplicado (X%)").
+function DiscountBadge({ d }: { d: CourseDiscount }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 font-mono text-[10px] px-2 py-[3px] rounded-full mt-1"
+      style={{ background: 'var(--gold-soft)', color: 'var(--gold)', border: '1px solid rgba(201,154,58,.35)' }}
+    >
+      🪙 Descuento por créditos aplicado ({d.label})
+    </span>
+  )
+}
+
 interface CTACardProps {
   course:         Course
   enrolled:       boolean
@@ -380,13 +401,14 @@ interface CTACardProps {
   paymentError:   string | null
   wishlisted:     boolean
   cuotasMax:      number
+  descuento:      CourseDiscount | null
   onEnroll:       () => void
   onWishlist:     () => void
   onGift:         () => void
   onFAQ:          () => void
 }
 
-function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, cuotasMax, onEnroll, onWishlist, onGift, onFAQ }: CTACardProps) {
+function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, cuotasMax, descuento, onEnroll, onWishlist, onGift, onFAQ }: CTACardProps) {
   const isVivencial = course.tipo === 'vivencial'
   const liveState   = courseLiveState(course)
   const isLive      = liveState === 'upcoming' || liveState === 'live'  // en vivo real; ya grabado = curso normal
@@ -428,19 +450,39 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, c
         </div>
       ) : (
         <div className="mb-3">
-          {precioTarjeta > precioTransf && (
-            <div className="font-mono text-sm" style={{ color: 'var(--text-3)', textDecoration: 'line-through' }}>
-              {formatARS(precioTarjeta)}
-            </div>
-          )}
-          <div className="font-display font-bold" style={{ fontSize: '1.95rem', color: 'var(--text-1)', letterSpacing: '-.02em', lineHeight: 1.1 }}>
-            {formatARS(precioTransf || precioTarjeta)}
-          </div>
-          <p className="text-xs mt-[3px]" style={{ color: 'var(--primary-l)' }}>Pagando por transferencia</p>
-          {cuotaValor > 0 && (
-            <p className="text-xs mt-[2px]" style={{ color: 'var(--text-3)' }}>
-              o en {cuotasMax} cuotas de {formatARS(cuotaValor)} sin interés
-            </p>
+          {descuento ? (
+            <>
+              <div className="font-mono text-sm" style={{ color: 'var(--text-3)', textDecoration: 'line-through' }}>
+                {formatARS(precioTransf || precioTarjeta)}
+              </div>
+              <div className="font-display font-bold" style={{ fontSize: '1.95rem', color: 'var(--text-1)', letterSpacing: '-.02em', lineHeight: 1.1 }}>
+                {formatARS(descuento.apply(precioTransf || precioTarjeta))}
+              </div>
+              <div><DiscountBadge d={descuento} /></div>
+              <p className="text-xs mt-[3px]" style={{ color: 'var(--primary-l)' }}>Pagando por transferencia · descuento ya aplicado</p>
+              {cuotaValor > 0 && (
+                <p className="text-xs mt-[2px]" style={{ color: 'var(--text-3)' }}>
+                  o en {cuotasMax} cuotas de {formatARS(Math.round(descuento.apply(precioTarjeta) / cuotasMax))} sin interés
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              {precioTarjeta > precioTransf && (
+                <div className="font-mono text-sm" style={{ color: 'var(--text-3)', textDecoration: 'line-through' }}>
+                  {formatARS(precioTarjeta)}
+                </div>
+              )}
+              <div className="font-display font-bold" style={{ fontSize: '1.95rem', color: 'var(--text-1)', letterSpacing: '-.02em', lineHeight: 1.1 }}>
+                {formatARS(precioTransf || precioTarjeta)}
+              </div>
+              <p className="text-xs mt-[3px]" style={{ color: 'var(--primary-l)' }}>Pagando por transferencia</p>
+              {cuotaValor > 0 && (
+                <p className="text-xs mt-[2px]" style={{ color: 'var(--text-3)' }}>
+                  o en {cuotasMax} cuotas de {formatARS(cuotaValor)} sin interés
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -526,15 +568,18 @@ function CTACard({ course, enrolled, paymentLoading, paymentError, wishlisted, c
 
 // ── Payment method modal ──────────────────────────────────────────
 
-function PaymentMethodModal({ course, cuotasMax, loading, onSelect, onClose }: {
+function PaymentMethodModal({ course, cuotasMax, loading, descuento, onSelect, onClose }: {
   course: Course
   cuotasMax: number
   loading: boolean
+  descuento: CourseDiscount | null
   onSelect: (metodo: MetodoPago) => void
   onClose: () => void
 }) {
-  const precioTarjeta = Number(course.precio_ars) || 0
-  const precioTransf  = Number(course.precio_transferencia_ars) || 0
+  const baseTarjeta = Number(course.precio_ars) || 0
+  const baseTransf  = Number(course.precio_transferencia_ars) || 0
+  const precioTarjeta = descuento ? descuento.apply(baseTarjeta) : baseTarjeta
+  const precioTransf  = descuento ? descuento.apply(baseTransf) : baseTransf
   const cuotaValor    = cuotasMax > 0 ? Math.round(precioTarjeta / cuotasMax) : 0
 
   useEffect(() => {
@@ -567,6 +612,10 @@ function PaymentMethodModal({ course, cuotasMax, loading, onSelect, onClose }: {
           </button>
         </div>
         <p className="text-sm mb-5" style={{ color: 'var(--text-3)' }}>{course.titulo}</p>
+
+        {descuento && (
+          <div className="mb-4"><DiscountBadge d={descuento} /></div>
+        )}
 
         <div className="space-y-3">
           {/* Transferencia */}
@@ -627,10 +676,29 @@ export default function CourseDetail() {
   const { mutate: toggleWishlist }         = useToggleWishlist(user?.id)
   const { data: enrollments = [] }         = useMyEnrollments(user?.id)
   const { data: pricing }                  = usePricingConfig()
+  const { data: redemptions = [] }         = useMyRedemptions(user?.id)
   const { initiate, loading: paymentLoading, error: paymentError } = useCoursePayment()
 
   const [showPayModal, setShowPayModal] = useState(false)
   const cuotasMax = pricing?.cuotasMax ?? 6
+
+  // Descuento por créditos: canje de descuento ACTIVO del usuario para este curso.
+  // Se aplica automáticamente en el pago (el monto que viaja a MP ya es el final);
+  // acá solo lo mostramos (precio tachado + final + badge). Usa el valor copiado.
+  const descuento = useMemo<CourseDiscount | null>(() => {
+    if (!course) return null
+    const r = redemptions.find(x =>
+      x.course_id === course.id && x.estado === 'activo' &&
+      (x.tipo === 'descuento_pct' || x.tipo === 'descuento_fijo'))
+    if (!r) return null
+    const pct = r.descuento_tipo === 'pct'
+    const valor = Number(r.descuento_valor) || 0
+    return {
+      pct, valor,
+      label: pct ? `${valor}%` : formatARS(valor),
+      apply: (base: number) => Math.max(0, Math.round(base - (pct ? (base * valor) / 100 : valor))),
+    }
+  }, [course, redemptions])
 
   const wishlisted = course ? wishlist.includes(course.id) : false
   const enrolled   = course ? enrollments.some(e => e.course_id === course.id && e.activo) : false
@@ -746,6 +814,7 @@ export default function CourseDetail() {
     paymentError,
     wishlisted,
     cuotasMax,
+    descuento,
     onEnroll:  handleEnroll,
     onWishlist: handleWishlist,
     onGift:    handleGift,
@@ -1289,10 +1358,11 @@ export default function CourseDetail() {
       >
         <div>
           <div className="font-display font-bold" style={{ fontSize: '1.25rem', color: 'var(--text-1)' }}>
-            {isFree ? 'GRATIS' : isVivencial && course.vivencial_precio_seña_ars ? formatARS(course.vivencial_precio_seña_ars) : formatARS(precioTransf || precioTarjeta)}
+            {isFree ? 'GRATIS' : isVivencial && course.vivencial_precio_seña_ars ? formatARS(course.vivencial_precio_seña_ars)
+              : formatARS(descuento ? descuento.apply(precioTransf || precioTarjeta) : (precioTransf || precioTarjeta))}
           </div>
-          <div className="text-xs font-mono" style={{ color: 'var(--text-3)' }}>
-            {isFree ? 'Sin costo' : isVivencial ? 'Seña' : 'Transferencia'}
+          <div className="text-xs font-mono" style={{ color: descuento && !isFree && !isVivencial ? 'var(--gold)' : 'var(--text-3)' }}>
+            {isFree ? 'Sin costo' : isVivencial ? 'Seña' : descuento ? `Transferencia · −${descuento.label}` : 'Transferencia'}
           </div>
         </div>
         <div className="flex gap-2">
@@ -1328,6 +1398,7 @@ export default function CourseDetail() {
             course={course}
             cuotasMax={cuotasMax}
             loading={paymentLoading}
+            descuento={descuento}
             onSelect={(metodo) => { void startPayment(metodo) }}
             onClose={() => setShowPayModal(false)}
           />

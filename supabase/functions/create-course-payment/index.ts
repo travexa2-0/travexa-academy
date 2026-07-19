@@ -57,9 +57,40 @@ Deno.serve(async (req: Request) => {
 
     // Nunca confiar en un precio que venga del frontend: se recalcula acá según
     // el método elegido, a partir de lo que el admin guardó en el curso.
-    const monto = metodo_pago === 'transferencia' ? course.precio_transferencia_ars : course.precio_ars;
-    if (!monto || Number(monto) <= 0) {
+    const precioOriginal = metodo_pago === 'transferencia' ? course.precio_transferencia_ars : course.precio_ars;
+    if (!precioOriginal || Number(precioOriginal) <= 0) {
       throw new Error(`El curso no tiene precio configurado para el método ${metodo_pago}`);
+    }
+
+    // Descuento por créditos: si el usuario tiene un canje de descuento ACTIVO para
+    // este curso, se aplica automáticamente (sin cupones ni pasos extra). Se usa el
+    // valor COPIADO en la redemption (no el del beneficio, que Yesica pudo editar).
+    const { data: redemption } = await supabase
+      .from('academy_credit_redemptions')
+      .select('id, descuento_tipo, descuento_valor')
+      .eq('user_id', user_id)
+      .eq('course_id', course_id)
+      .eq('estado', 'activo')
+      .in('tipo', ['descuento_pct', 'descuento_fijo'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let monto = Number(precioOriginal);
+    let descuentoAplicado = 0;
+    let redemptionId: string | null = null;
+    if (redemption) {
+      const val = Number(redemption.descuento_valor) || 0;
+      descuentoAplicado = redemption.descuento_tipo === 'pct'
+        ? Math.round((monto * val) / 100)
+        : Math.round(val);
+      monto = monto - descuentoAplicado;
+      redemptionId = redemption.id;
+      // El 100% debe publicarse como curso_gratis, no como descuento: si el monto
+      // final queda en cero o negativo hay un error de configuración del beneficio.
+      if (monto <= 0) {
+        throw new Error('El descuento cubre el total del curso. Ese beneficio debe publicarse como "curso gratis", no como descuento.');
+      }
     }
 
     // Techo de cuotas configurado globalmente (solo aplica a tarjeta)
@@ -139,10 +170,18 @@ Deno.serve(async (req: Request) => {
       course_id,
       metodo_pago,
       mp_preference_id: mpData.id,
+      redemption_id: redemptionId,
     });
 
     return new Response(
-      JSON.stringify({ init_point: mpData.init_point, preference_id: mpData.id }),
+      JSON.stringify({
+        init_point: mpData.init_point,
+        preference_id: mpData.id,
+        precio_original: Number(precioOriginal),
+        descuento_aplicado: descuentoAplicado,
+        monto_final: monto,
+        redemption_id: redemptionId,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error) {

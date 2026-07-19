@@ -171,6 +171,102 @@ export function useMarkBenefitWinner() {
   })
 }
 
+// ── Sync curso → beneficio (CourseWizard) ─────────────────────────
+// Un curso canjeable mantiene UNA fila en academy_benefits con origen='curso'.
+// El índice único uq_benefit_curso_activo garantiza una sola activa por (curso,
+// tipo); acá archivamos la de otro tipo antes de crear/actualizar. Nunca se borra.
+export interface CourseBenefitRow { id: string; tipo: string; costo_creditos: number; descuento_valor: number | null }
+
+async function fetchCourseBenefits(courseId: string): Promise<CourseBenefitRow[]> {
+  const { data, error } = await supabase
+    .from('academy_benefits')
+    .select('id, tipo, costo_creditos, descuento_valor')
+    .eq('course_id', courseId)
+    .eq('origen', 'curso')
+    .eq('archivado', false)
+  if (error) throw new Error(error.message)
+  return (data ?? []) as CourseBenefitRow[]
+}
+
+export function useCourseBenefits(courseId: string | undefined) {
+  return useQuery({
+    queryKey: ['course-benefits', courseId],
+    queryFn: () => fetchCourseBenefits(courseId!),
+    enabled: !!courseId,
+    staleTime: 1000 * 30,
+  })
+}
+
+export interface CourseBenefitSync {
+  courseId: string
+  titulo: string
+  thumbnailUrl: string | null
+  publicado: boolean
+  canjeable: boolean
+  tipo: 'curso_gratis' | 'descuento_pct' | null
+  costoCreditos: number
+  descuentoPct: number | null
+}
+
+async function syncCourseBenefit(input: CourseBenefitSync): Promise<void> {
+  const { data, error } = await supabase
+    .from('academy_benefits')
+    .select('id, tipo')
+    .eq('course_id', input.courseId)
+    .eq('origen', 'curso')
+    .eq('archivado', false)
+  if (error) throw new Error(error.message)
+  const rows = (data ?? []) as { id: string; tipo: string }[]
+  const now = new Date().toISOString()
+  const archive = (id: string) =>
+    supabaseWrite.from('academy_benefits').update({ archivado: true, publicado: false, updated_at: now }).eq('id', id)
+
+  // Curso ya no canjeable → archivar todo lo activo (nunca delete).
+  if (!input.canjeable || !input.tipo) {
+    for (const r of rows) await archive(r.id)
+    return
+  }
+
+  // Archivar la fila del OTRO tipo (ej. cambió de total a parcial).
+  for (const r of rows) if (r.tipo !== input.tipo) await archive(r.id)
+
+  const titulo = input.tipo === 'descuento_pct'
+    ? `${input.descuentoPct ?? 0}% OFF en ${input.titulo}`
+    : input.titulo
+  const payload = {
+    titulo,
+    tipo: input.tipo,
+    origen: 'curso',
+    course_id: input.courseId,
+    costo_creditos: input.costoCreditos,
+    descuento_valor: input.tipo === 'descuento_pct' ? input.descuentoPct : null,
+    imagen_url: input.thumbnailUrl,
+    publicado: input.publicado,
+    archivado: false,
+    updated_at: now,
+  }
+  const same = rows.find(r => r.tipo === input.tipo)
+  if (same) {
+    const { error: e } = await supabaseWrite.from('academy_benefits').update(payload).eq('id', same.id)
+    if (e) throw new Error(e.message)
+  } else {
+    const { error: e } = await supabaseWrite.from('academy_benefits').insert({ ...payload, descripcion: null })
+    if (e) throw new Error(e.message)
+  }
+}
+
+export function useSyncCourseBenefit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: syncCourseBenefit,
+    onSuccess: (_r, input) => {
+      qc.invalidateQueries({ queryKey: ['admin-benefits'] })
+      qc.invalidateQueries({ queryKey: ['public-benefits'] })
+      qc.invalidateQueries({ queryKey: ['course-benefits', input.courseId] })
+    },
+  })
+}
+
 // ── Opciones de curso/vivencial para el wizard ────────────────────
 export interface CourseOption { id: string; titulo: string; tipo: string; slug: string }
 

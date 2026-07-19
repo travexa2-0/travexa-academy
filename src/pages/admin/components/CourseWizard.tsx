@@ -9,6 +9,7 @@ import { useAdminUI } from '../adminContext'
 import { formatArs } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useAdminInstructors, useUpsertCourse, useSaveCurriculum, uploadMedia, slugify, type ModuleInput, type CourseWrite } from '@/hooks/admin/useAdminCourses'
+import { useCourseBenefits, useSyncCourseBenefit } from '@/hooks/admin/useAdminBenefits'
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings'
 import { grossFromNet } from '@/hooks/usePricing'
 import type { Course, Module } from '@/types'
@@ -42,6 +43,11 @@ interface FormState {
   incluye: string
   no_incluye: string
   modules: ModuleInput[]
+  // Canje por créditos (sincroniza una fila origen='curso' en academy_benefits)
+  canjeable: boolean
+  canjeTipo: 'total' | 'parcial'
+  canjeCreditos: string
+  canjeDescuentoPct: string
 }
 
 const STEPS = ['General', 'Precio', 'Programa', 'Incluye', 'Revisión']
@@ -81,6 +87,11 @@ function initialState(initial?: (Course & { modules?: Module[] }) | null): FormS
     incluye: initial?.incluye ?? '',
     no_incluye: initial?.no_incluye ?? '',
     modules: toModuleInputs(initial?.modules),
+    // Se hidratan desde el beneficio vinculado (useCourseBenefits) al abrir en edición.
+    canjeable: false,
+    canjeTipo: 'total',
+    canjeCreditos: '',
+    canjeDescuentoPct: '',
   }
 }
 
@@ -91,6 +102,8 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
   const { data: settings } = useAdminSettings()
   const upsert = useUpsertCourse()
   const saveCurriculum = useSaveCurriculum()
+  const { data: courseBenefits } = useCourseBenefits(initial?.id)
+  const syncBenefit = useSyncCourseBenefit()
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [step, setStep] = useState(1)
@@ -118,6 +131,31 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
     wasOpen.current = open
   }, [open, initial])
 
+  // Hidratación del canje desde el beneficio vinculado (origen='curso'). Corre una
+  // vez por apertura, cuando la query ya resolvió, y rebasea el snapshot original
+  // para que la hidratación no cuente como cambio sin guardar.
+  const hydratedBenefitRef = useRef(false)
+  useEffect(() => {
+    if (!open) { hydratedBenefitRef.current = false; return }
+    if (hydratedBenefitRef.current || courseBenefits === undefined) return
+    hydratedBenefitRef.current = true
+    const cg = courseBenefits.find(b => b.tipo === 'curso_gratis')
+    const dp = courseBenefits.find(b => b.tipo === 'descuento_pct')
+    const active = cg ?? dp
+    if (!active) return
+    setForm(f => {
+      const nf: FormState = {
+        ...f,
+        canjeable: true,
+        canjeTipo: cg ? 'total' : 'parcial',
+        canjeCreditos: String(active.costo_creditos ?? ''),
+        canjeDescuentoPct: dp?.descuento_valor != null ? String(dp.descuento_valor) : '',
+      }
+      originalRef.current = JSON.stringify(nf)
+      return nf
+    })
+  }, [open, courseBenefits])
+
   const dirty = useMemo(() => JSON.stringify(form) !== originalRef.current, [form])
   const requestClose = () => { if (dirty) setConfirmCancel(true); else onClose() }
   const discardAndClose = () => { setConfirmCancel(false); onClose() }
@@ -137,6 +175,14 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
     }
     if (s === 2) {
       if (form.tipo_acceso === 'pago' && neto <= 0) return 'El precio neto debe ser mayor a 0.'
+      if (form.canjeable) {
+        const cred = Number(form.canjeCreditos) || 0
+        if (cred <= 0) return 'El costo del canje en créditos debe ser mayor a 0.'
+        if (form.canjeTipo === 'parcial') {
+          const pct = Number(form.canjeDescuentoPct) || 0
+          if (pct < 1 || pct > 99) return 'El descuento debe estar entre 1% y 99%.'
+        }
+      }
     }
     return null
   }
@@ -208,6 +254,18 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
       }
       const course = await upsert.mutateAsync(payload)
       await saveCurriculum.mutateAsync({ courseId: course.id, modules: form.modules })
+      // Sincroniza la fila origen='curso' en academy_benefits (crea/actualiza/archiva).
+      // El beneficio se publica junto con el curso (publicado espeja el del curso).
+      await syncBenefit.mutateAsync({
+        courseId: course.id,
+        titulo: course.titulo,
+        thumbnailUrl: course.thumbnail_url ?? form.thumbnail_url,
+        publicado: course.publicado ?? false,
+        canjeable: form.canjeable,
+        tipo: form.canjeable ? (form.canjeTipo === 'total' ? 'curso_gratis' : 'descuento_pct') : null,
+        costoCreditos: Number(form.canjeCreditos) || 0,
+        descuentoPct: form.canjeTipo === 'parcial' ? (Number(form.canjeDescuentoPct) || 0) : null,
+      })
       toast.success(initial ? 'Curso actualizado' : 'Curso guardado como borrador')
       onSaved?.(course)
       if (keepOpen) originalRef.current = JSON.stringify(form) // rebasea el baseline: ya no hay cambios pendientes
@@ -382,6 +440,44 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 </div>
                 <span className="switch"><input type="checkbox" checked={form.destacado} onChange={e => set('destacado', e.target.checked)} /><span className="track" /><span className="thumb" /></span>
               </div>
+
+              {/* Canje por créditos → sincroniza una fila en la tienda de Beneficios */}
+              <div style={{ borderTop: '1px solid var(--line)', margin: '20px 0 16px' }} />
+              <div className="field" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', background: 'var(--gold-soft)', borderRadius: 12 }}>
+                <div>
+                  <label className="f-label" style={{ margin: 0 }}>🪙 Este curso se puede canjear por créditos</label>
+                  <div className="f-hint" style={{ marginTop: 2 }}>Aparece en la tienda de Beneficios</div>
+                </div>
+                <span className="switch"><input type="checkbox" checked={form.canjeable} onChange={e => set('canjeable', e.target.checked)} /><span className="track" /><span className="thumb" /></span>
+              </div>
+              {form.canjeable && (
+                <div className="field">
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                    <span className={`chip${form.canjeTipo === 'total' ? ' chip-active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => set('canjeTipo', 'total')}>Canje total</span>
+                    <span className={`chip${form.canjeTipo === 'parcial' ? ' chip-active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => set('canjeTipo', 'parcial')}>Descuento parcial</span>
+                  </div>
+                  {form.canjeTipo === 'total' ? (
+                    <div className="field">
+                      <label className="f-label">Costo en créditos del curso completo</label>
+                      <div className="input-prefix-wrap" style={{ maxWidth: 260 }}><span className="input-prefix">🪙</span><input className="input" type="number" min={1} value={form.canjeCreditos} onChange={e => set('canjeCreditos', e.target.value)} placeholder="500" /></div>
+                      <div className="f-hint" style={{ marginTop: 6 }}>El alumno canjea sus créditos y accede al curso completo al instante.</div>
+                    </div>
+                  ) : (
+                    <div className="field-row cols-2">
+                      <div className="field">
+                        <label className="f-label">% de descuento <span className="opt">— 1 a 99</span></label>
+                        <input className="input" type="number" min={1} max={99} value={form.canjeDescuentoPct} onChange={e => set('canjeDescuentoPct', e.target.value)} placeholder="20" />
+                      </div>
+                      <div className="field">
+                        <label className="f-label">Costo del canje en créditos</label>
+                        <div className="input-prefix-wrap"><span className="input-prefix">🪙</span><input className="input" type="number" min={1} value={form.canjeCreditos} onChange={e => set('canjeCreditos', e.target.value)} placeholder="150" /></div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="f-hint" style={{ marginTop: 6 }}>Editar estos valores solo afecta canjes futuros. Los canjes ya hechos conservan su valor.</div>
+                </div>
+              )}
+
               {form.tipo === 'en_vivo' && (
                 <div className="f-hint" style={{ marginTop: 10, padding: '10px 12px', background: 'var(--gold-soft)', borderRadius: 10 }}>
                   Las fechas y horarios de las clases en vivo se cargan en el paso <b>Programa</b>, una por lección.
@@ -450,6 +546,13 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
             <div className="wiz-step-panel active">
               <div className="wiz-step-title">Revisión final</div>
               <div className="wiz-step-sub">Así va a quedar guardado. Vas a poder ver la preview y publicarlo desde el detalle.</div>
+              <div className="f-hint" style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--gold-soft)', borderRadius: 10 }}>
+                {form.canjeable
+                  ? `🪙 Canjeable: ${form.canjeTipo === 'total'
+                      ? `total por ${Number(form.canjeCreditos) || 0} créditos`
+                      : `${Number(form.canjeDescuentoPct) || 0}% off por ${Number(form.canjeCreditos) || 0} créditos`}`
+                  : '🪙 No canjeable por créditos'}
+              </div>
               <div className="preview-frame">
                 <div className="preview-hero" style={{ backgroundImage: form.thumbnail_url ? `url('${form.thumbnail_url}')` : 'linear-gradient(135deg,#0A1E29,#16323F)' }}>
                   <div className="preview-hero-content">

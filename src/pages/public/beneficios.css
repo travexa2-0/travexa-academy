@@ -1,0 +1,237 @@
+/* ============================================================
+   TRAVEXA POINTS — tienda /beneficios
+   Réplica del prototipo (prototipo_beneficios.html) scopeada bajo .bene-store.
+   Superficies y texto usan tokens de la app; teal/dorado de "Points" son los
+   del prototipo (sub-identidad de créditos). El carrusel 3D lo anima Framer
+   Motion (springs); acá va solo su estética.
+   ============================================================ */
+.bene-store {
+  --b-teal: #4ee0b5;
+  --b-teal-soft: #2aa989;
+  --b-teal-dim: rgba(78, 224, 181, .14);
+  --b-gold: #dfae52;
+  --b-gold-soft: #c3903a;
+  --b-glass: rgba(255, 255, 255, .055);
+  --b-glass-hi: rgba(255, 255, 255, .12);
+  --b-line: rgba(255, 255, 255, .09);
+  --b-muted: var(--text-3);
+  --b-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --b-ease-inout: cubic-bezier(0.77, 0, 0.175, 1);
+  --b-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --b-radius: 22px;
+  position: relative;
+  min-height: 100vh;
+  color: var(--text-1);
+  overflow-x: hidden;
+}
+.bene-store ::selection { background: var(--b-teal-dim); color: var(--b-teal); }
+
+/* Fondo ambiental: glows + partículas de monedas */
+.bene-store .ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bene-store .ambient .glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; }
+.bene-store .g1 { width: 640px; height: 640px; background: radial-gradient(circle, rgba(47, 214, 177, .16), transparent 65%); top: -220px; left: -160px; }
+.bene-store .g2 { width: 560px; height: 560px; background: radial-gradient(circle, rgba(230, 185, 92, .10), transparent 65%); top: 8%; right: -200px; }
+.bene-store .g3 { width: 700px; height: 700px; background: radial-gradient(circle, rgba(47, 214, 177, .07), transparent 65%); bottom: -260px; left: 30%; }
+.bene-store .coin { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f4d489, var(--b-gold-soft)); opacity: 0; animation: bFloatCoin 11s linear infinite; }
+@keyframes bFloatCoin {
+  0% { transform: translateY(30px) scale(.5); opacity: 0; }
+  12% { opacity: .5; }
+  85% { opacity: .35; }
+  100% { transform: translateY(-92vh) scale(1); opacity: 0; }
+}
+.bene-store .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ================= HERO ================= */
+.bene-store .hero { padding: 40px 0 12px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+.bene-store .hero-left { max-width: 640px; }
+.bene-store .brand-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.5rem, 6.4vw, 4.8rem); line-height: 1.04; letter-spacing: -.01em; color: #fff; margin: 0 0 14px; }
+.bene-store .brand-title span { color: var(--b-gold); }
+.bene-store .hero-sub { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.1rem, 2.3vw, 1.6rem); line-height: 1.35; color: #e2efec; margin: 0 0 16px; }
+.bene-store .hero-sub em { font-style: normal; color: var(--b-teal); }
+.bene-store .hero p { color: var(--b-muted); font-size: 1.05rem; max-width: 640px; line-height: 1.7; }
+
+/* ================= PANEL DE PUNTOS ================= */
+.bene-store .points-zone { display: flex; width: 100%; }
+.bene-store .points-card { position: relative; width: 100%; border-radius: var(--b-radius); padding: 26px 30px; background: linear-gradient(135deg, rgba(230, 185, 92, .10), rgba(255, 255, 255, .04) 45%, rgba(47, 214, 177, .06)); border: 1px solid rgba(230, 185, 92, .32); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); box-shadow: 0 24px 60px -22px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 1px rgba(0, 0, 0, .2); overflow: hidden; }
+.bene-store .points-card::before { content: ''; position: absolute; top: 0; left: -70%; width: 45%; height: 100%; background: linear-gradient(105deg, transparent, rgba(255, 235, 190, .14), transparent); transform: skewX(-18deg); animation: bSheen 5.5s var(--b-ease-inout) 1.4s infinite; }
+@keyframes bSheen { 0% { left: -70%; } 42% { left: 130%; } 100% { left: 130%; } }
+.bene-store .points-card::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 44px -6px rgba(230, 185, 92, .35); opacity: .55; animation: bPulseHalo 3.6s ease-in-out infinite; }
+@keyframes bPulseHalo { 50% { opacity: .95; } }
+.bene-store .points-inner { position: relative; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.bene-store .coin-badge { width: 64px; height: 64px; flex: none; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 32% 30%, #f6d78e, #caa04a 58%, #8f6b26); box-shadow: 0 10px 26px -8px rgba(230, 185, 92, .6), inset 0 2px 4px rgba(255, 255, 255, .55), inset 0 -3px 6px rgba(0, 0, 0, .3); animation: bCoinFloat 4.5s ease-in-out infinite; }
+@keyframes bCoinFloat { 50% { transform: translateY(-5px) rotate(-4deg); } }
+.bene-store .coin-badge svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .3)); }
+.bene-store .points-main { flex: 1; min-width: 200px; }
+.bene-store .points-label { font-size: .72rem; font-weight: 700; letter-spacing: .22em; color: var(--b-muted); text-transform: uppercase; }
+.bene-store .points-value { font-family: var(--font-display); font-size: 2.9rem; font-weight: 800; line-height: 1.05; display: flex; align-items: baseline; gap: 8px; background: linear-gradient(120deg, #f7e0a8, var(--b-gold) 45%, #b8873a); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.bene-store .points-value small { font-size: 1.05rem; -webkit-text-fill-color: var(--b-muted); font-family: var(--font-body); font-weight: 600; letter-spacing: .04em; }
+.bene-store .points-meta { font-size: .82rem; color: var(--b-muted); margin-top: 4px; }
+.bene-store .points-meta .lvl { color: var(--b-gold); }
+.bene-store .points-cta { display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 14px; }
+.bene-store .points-cta .btn { justify-content: center; white-space: nowrap; flex: 1; }
+.bene-store .btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .86rem; border-radius: 14px; padding: 11px 18px; transition: transform .16s var(--b-ease-out), box-shadow .2s ease, background .2s ease; }
+.bene-store .btn:active { transform: scale(.97); }
+.bene-store .btn-gold { background: linear-gradient(120deg, #f0cd80, var(--b-gold) 55%, #c8963c); color: #241a05; box-shadow: 0 12px 26px -10px rgba(230, 185, 92, .55); }
+.bene-store .btn-ghost { background: var(--b-glass); border: 1px solid var(--b-line); color: var(--text-1); }
+.bene-store .btn-teal { background: linear-gradient(120deg, #4ce4c0, var(--b-teal) 55%, #1d8f76); color: #04231c; box-shadow: 0 12px 26px -10px rgba(47, 214, 177, .5); }
+@media (hover: hover) and (pointer: fine) {
+  .bene-store .btn-gold:hover { box-shadow: 0 16px 34px -10px rgba(230, 185, 92, .75); transform: translateY(-1px); }
+  .bene-store .btn-teal:hover { transform: translateY(-1px); }
+  .bene-store .btn-ghost:hover { background: var(--b-glass-hi); }
+}
+.bene-store .points-card.guest { border-color: rgba(47, 214, 177, .35); }
+.bene-store .points-card.guest::after { box-shadow: 0 0 44px -6px rgba(47, 214, 177, .3); }
+.bene-store .guest-title { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; line-height: 1.3; }
+.bene-store .guest-title em { font-style: normal; color: var(--b-teal); }
+
+/* ================= CARRUSEL DESTACADOS ================= */
+.bene-store .featured { padding: 56px 0 30px; }
+.bene-store .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 6px; }
+.bene-store .section-head h2 { font-size: 1.35rem; font-weight: 700; font-family: var(--font-display); }
+.bene-store .section-head h2 span { color: var(--b-gold); }
+.bene-store .section-head .hint { font-size: .78rem; color: var(--b-muted); }
+.bene-store .section-head.center { justify-content: center; text-align: center; margin-bottom: 14px; }
+.bene-store .section-head.center h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; text-shadow: 0 0 40px rgba(230, 185, 92, .2); }
+.bene-store .stage { position: relative; height: 420px; perspective: 1500px; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
+.bene-store .fcard { position: absolute; top: 50%; left: 50%; width: min(780px, 92%); height: 320px; border-radius: 26px; overflow: hidden; cursor: pointer; background: var(--b-glass); border: 1px solid var(--b-glass-hi); backdrop-filter: blur(26px) saturate(1.3); -webkit-backdrop-filter: blur(26px) saturate(1.3); box-shadow: 0 34px 80px -26px rgba(0, 0, 0, .75), inset 0 1px 0 rgba(255, 255, 255, .16); will-change: transform, opacity; }
+.bene-store .fcard .art { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.bene-store .fcard .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(7, 20, 23, .2) 0%, rgba(7, 20, 23, .86) 46%, rgba(7, 20, 23, .96) 100%); }
+.bene-store .fcard .glass-edge { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(160deg, rgba(255, 255, 255, .16), transparent 28%, transparent 70%, rgba(255, 255, 255, .05)); mix-blend-mode: screen; }
+.bene-store .fcard .content { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 28px 32px; gap: 8px; }
+.bene-store .badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 6px 12px; border-radius: 99px; backdrop-filter: blur(8px); }
+.bene-store .badge.curso { background: rgba(47, 214, 177, .16); color: var(--b-teal); border: 1px solid rgba(47, 214, 177, .4); }
+.bene-store .badge.descuento { background: rgba(122, 162, 255, .14); color: #9db8ff; border: 1px solid rgba(122, 162, 255, .4); }
+.bene-store .badge.sorteo { background: rgba(230, 185, 92, .15); color: var(--b-gold); border: 1px solid rgba(230, 185, 92, .45); }
+.bene-store .badge.otro { background: rgba(255, 255, 255, .1); color: #d6e4e2; border: 1px solid var(--b-line); }
+.bene-store .fcard h3 { font-size: clamp(1.15rem, 2.4vw, 1.7rem); font-weight: 700; font-family: var(--font-display); line-height: 1.22; max-width: 70%; }
+.bene-store .fcard .desc { font-size: .86rem; color: #b9cecb; max-width: 62%; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bene-store .fcard .price-tag { position: absolute; right: 30px; bottom: 26px; text-align: right; }
+.bene-store .pt-big { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 3.6vw, 2.7rem); line-height: 1; background: linear-gradient(120deg, #f7e0a8, var(--b-gold) 50%, #bd8c37); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 14px rgba(230, 185, 92, .35)); }
+.bene-store .pt-lbl { font-size: .7rem; font-weight: 700; letter-spacing: .18em; color: var(--b-muted); text-transform: uppercase; margin-top: 4px; }
+.bene-store .pt-extra { font-size: .78rem; color: #b9cecb; margin-top: 6px; }
+.bene-store .stage-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 30; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(7, 20, 23, .62); border: 1px solid var(--b-line); backdrop-filter: blur(10px); color: var(--text-1); transition: background .2s ease, transform .16s var(--b-ease-out); }
+.bene-store .stage-nav:active { transform: translateY(-50%) scale(.94); }
+@media (hover: hover) and (pointer: fine) { .bene-store .stage-nav:hover { background: rgba(47, 214, 177, .16); color: var(--b-teal); } }
+.bene-store .stage-nav.prev { left: -6px; }
+.bene-store .stage-nav.next { right: -6px; }
+.bene-store .dots { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
+.bene-store .dots button { width: 8px; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .18); transition: width .35s var(--b-ease-out), background .35s ease; }
+.bene-store .dots button.on { width: 26px; background: var(--b-gold); }
+.bene-store .art-topo { position: absolute; inset: 0; opacity: .16; background-image: radial-gradient(circle at 78% 30%, rgba(255, 255, 255, .5) 0 2px, transparent 2px), radial-gradient(circle at 22% 68%, rgba(255, 255, 255, .4) 0 1.6px, transparent 1.6px), radial-gradient(circle at 55% 85%, rgba(255, 255, 255, .35) 0 1.4px, transparent 1.4px); background-size: 190px 190px, 150px 150px, 120px 120px; }
+
+/* ================= FILTROS ================= */
+.bene-store .filters { position: sticky; top: 56px; z-index: 40; padding: 16px 0 14px; margin-top: 26px; background: linear-gradient(180deg, var(--bg) 78%, transparent); backdrop-filter: blur(6px); }
+.bene-store .filters-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bene-store .chip { font-size: .8rem; font-weight: 600; color: var(--b-muted); padding: 9px 16px; border-radius: 99px; background: var(--b-glass); border: 1px solid var(--b-line); transition: color .18s ease, background .25s var(--b-ease-out), border-color .2s ease, transform .16s var(--b-ease-out); }
+.bene-store .chip:active { transform: scale(.96); }
+.bene-store .chip.on { color: #05231c; background: linear-gradient(120deg, #4ce4c0, var(--b-teal)); border-color: transparent; box-shadow: 0 8px 20px -8px rgba(47, 214, 177, .55); }
+@media (hover: hover) and (pointer: fine) { .bene-store .chip:not(.on):hover { color: var(--text-1); background: var(--b-glass-hi); } }
+.bene-store .chip.toggle.on { color: #241a05; background: linear-gradient(120deg, #f0cd80, var(--b-gold)); box-shadow: 0 8px 20px -8px rgba(230, 185, 92, .55); }
+.bene-store .range-select { font-size: .8rem; font-weight: 600; color: var(--b-muted); padding: 9px 34px 9px 16px; border-radius: 99px; background: var(--b-glass) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238aa5a4' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; border: 1px solid var(--b-line); appearance: none; -webkit-appearance: none; cursor: pointer; font-family: inherit; }
+.bene-store .range-select:focus { outline: 2px solid var(--b-teal); outline-offset: 2px; }
+.bene-store .spacer { flex: 1; }
+.bene-store .btn-how { position: relative; overflow: hidden; background: linear-gradient(120deg, #f0cd80, var(--b-gold) 55%, #c8963c); color: #241a05; font-weight: 800; font-size: .84rem; padding: 12px 20px; border-radius: 14px; box-shadow: 0 12px 30px -10px rgba(230, 185, 92, .6); transition: transform .16s var(--b-ease-out), box-shadow .2s ease; }
+.bene-store .btn-how::after { content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .5), transparent); transform: skewX(-18deg); animation: bSheen 4s var(--b-ease-inout) 2s infinite; }
+.bene-store .btn-how:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) { .bene-store .btn-how:hover { transform: translateY(-1px); box-shadow: 0 16px 38px -10px rgba(230, 185, 92, .8); } }
+
+/* ================= GRILLA ================= */
+.bene-store .grid-zone { padding: 10px 0 90px; }
+.bene-store .bgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; margin-top: 16px; }
+.bene-store .bcard { position: relative; border-radius: var(--b-radius); overflow: hidden; cursor: pointer; background: var(--b-glass); border: 1px solid var(--b-line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 18px 44px -18px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .1); transition: transform .35s var(--b-ease-out), box-shadow .35s ease, border-color .3s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .bene-store .bcard:hover { transform: translateY(-6px); border-color: rgba(47, 214, 177, .35); box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(47, 214, 177, .18); }
+  .bene-store .bcard:hover .bart { transform: scale(1.05); }
+}
+.bene-store .bcard:active { transform: scale(.985); }
+.bene-store .bart { height: 132px; position: relative; background-size: cover; background-position: center; transition: transform .8s var(--b-ease-inout); }
+.bene-store .bart::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(7, 20, 23, .9)); }
+.bene-store .bbody { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 9px; }
+.bene-store .bbody h3 { font-size: 1rem; font-weight: 700; font-family: var(--font-display); line-height: 1.3; }
+.bene-store .bbody .bdesc { font-size: .8rem; color: var(--b-muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bene-store .bfoot { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4px; gap: 10px; }
+.bene-store .bpts { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; background: linear-gradient(120deg, #f7e0a8, var(--b-gold) 55%, #bd8c37); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.bene-store .bpts small { font-size: .66rem; -webkit-text-fill-color: var(--b-muted); font-family: var(--font-body); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; display: block; margin-top: 2px; }
+.bene-store .bstate { font-size: .72rem; font-weight: 700; padding: 6px 11px; border-radius: 99px; white-space: nowrap; }
+.bene-store .bstate.ok { color: var(--b-teal); background: var(--b-teal-dim); }
+.bene-store .bstate.no { color: #e8927c; background: rgba(232, 146, 124, .12); }
+.bene-store .bstate.owned { color: var(--b-muted); background: rgba(255, 255, 255, .07); }
+.bene-store .bcard .badge { position: absolute; top: 12px; left: 12px; z-index: 2; }
+.bene-store .cupo-pill { position: absolute; top: 12px; right: 12px; z-index: 2; font-size: .66rem; font-weight: 700; color: #ffd9a3; background: rgba(7, 20, 23, .6); border: 1px solid rgba(230, 185, 92, .35); padding: 5px 10px; border-radius: 99px; backdrop-filter: blur(8px); }
+.bene-store .empty { grid-column: 1/-1; text-align: center; color: var(--b-muted); padding: 60px 0; font-size: .95rem; }
+
+/* ================= MODAL CANJE / EARN ================= */
+.bene-store-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(4, 12, 14, .6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.bene-modal { width: min(560px, 100%); max-height: 88vh; overflow-y: auto; border-radius: 26px; position: relative; background: linear-gradient(160deg, rgba(20, 42, 47, .92), rgba(10, 24, 28, .95)); border: 1px solid rgba(255, 255, 255, .12); backdrop-filter: blur(30px); box-shadow: 0 50px 120px -30px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .14); color: var(--text-1); }
+.bene-modal .modal-close { position: absolute; top: 14px; right: 14px; z-index: 5; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(7, 20, 23, .55); border: 1px solid var(--b-line); color: var(--b-muted); transition: color .18s ease, background .2s ease, transform .16s var(--b-ease-out); }
+.bene-modal .modal-close:active { transform: scale(.92); }
+@media (hover: hover) and (pointer: fine) { .bene-modal .modal-close:hover { color: var(--text-1); background: rgba(255, 255, 255, .1); } }
+.bene-modal .m-art { height: 170px; position: relative; background-size: cover; background-position: center; }
+.bene-modal .m-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, rgba(10, 24, 28, .96)); }
+.bene-modal .m-art .badge { position: absolute; bottom: 14px; left: 24px; }
+.bene-modal .m-body { padding: 20px 26px 26px; }
+.bene-modal .m-body h3 { font-size: 1.35rem; font-weight: 700; font-family: var(--font-display); line-height: 1.3; margin-bottom: 8px; }
+.bene-modal .m-desc { font-size: .88rem; color: var(--b-muted); line-height: 1.55; }
+.bene-modal .m-benefit-box { margin-top: 16px; padding: 15px 18px; border-radius: 16px; background: var(--b-teal-dim); border: 1px solid rgba(47, 214, 177, .3); font-size: .86rem; line-height: 1.5; }
+.bene-modal .m-benefit-box b { color: var(--b-teal); }
+.bene-modal .m-benefit-box a { color: var(--b-teal); text-decoration: underline; }
+.bene-modal .m-cost { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 18px; border-radius: 16px; background: rgba(230, 185, 92, .07); border: 1px solid rgba(230, 185, 92, .25); }
+.bene-modal .m-cost .cost-num { font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; background: linear-gradient(120deg, #f7e0a8, var(--b-gold)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.bene-modal .m-cost .cost-lbl { font-size: .7rem; color: var(--b-muted); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.bene-modal .m-cost .after { text-align: right; font-size: .8rem; color: var(--b-muted); }
+.bene-modal .m-cost .after b { color: var(--text-1); }
+.bene-modal .m-cost .after.negative b { color: #e8927c; }
+.bene-modal .stepper { display: flex; align-items: center; gap: 12px; margin-top: 16px; justify-content: center; }
+.bene-modal .stepper button { width: 42px; height: 42px; border-radius: 12px; background: var(--b-glass); border: 1px solid var(--b-line); font-size: 1.2rem; font-weight: 700; color: var(--text-1); transition: background .2s ease, transform .15s var(--b-ease-out); }
+.bene-modal .stepper button:active { transform: scale(.93); }
+@media (hover: hover) and (pointer: fine) { .bene-modal .stepper button:hover { background: var(--b-glass-hi); } }
+.bene-modal .stepper .qty { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; min-width: 56px; text-align: center; }
+.bene-modal .stepper .qty small { display: block; font-family: var(--font-body); font-weight: 600; font-size: .64rem; color: var(--b-muted); letter-spacing: .14em; text-transform: uppercase; }
+.bene-modal .m-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.bene-modal .btn-redeem { justify-content: center; width: 100%; padding: 15px; font-size: .95rem; border-radius: 16px; }
+.bene-modal .btn-redeem:disabled { background: rgba(255, 255, 255, .07); color: var(--b-muted); box-shadow: none; cursor: not-allowed; transform: none; }
+.bene-modal .m-note { font-size: .72rem; color: var(--b-muted); text-align: center; line-height: 1.5; }
+.bene-modal .m-note a { color: var(--b-teal); }
+.bene-modal .m-error { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(232, 146, 124, .12); border: 1px solid rgba(232, 146, 124, .35); color: #f0b4a3; font-size: .82rem; text-align: center; }
+/* éxito */
+.bene-modal .m-success { padding: 44px 30px 40px; text-align: center; position: relative; }
+.bene-modal .check-ring { width: 90px; height: 90px; margin: 0 auto 18px; border-radius: 50%; display: grid; place-items: center; background: var(--b-teal-dim); border: 1px solid rgba(47, 214, 177, .4); animation: bPopIn .5s var(--b-ease-out); }
+@keyframes bPopIn { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+.bene-modal .check-ring svg path { stroke-dasharray: 60; stroke-dashoffset: 60; animation: bDraw .6s var(--b-ease-out) .25s forwards; }
+@keyframes bDraw { to { stroke-dashoffset: 0; } }
+.bene-modal .m-success h3 { font-size: 1.4rem; font-family: var(--font-display); margin-bottom: 8px; }
+.bene-modal .m-success p { color: var(--b-muted); font-size: .88rem; line-height: 1.55; max-width: 380px; margin: 0 auto 20px; }
+.bene-confetti { position: absolute; width: 8px; height: 8px; top: 40%; left: 50%; border-radius: 2px; opacity: 0; pointer-events: none; }
+/* modal cómo ganar */
+.bene-modal .earn-list { margin-top: 16px; display: flex; flex-direction: column; gap: 4px; }
+.bene-modal .earn-item { display: flex; align-items: center; gap: 14px; padding: 11px 12px; border-radius: 14px; transition: background .2s ease; }
+@media (hover: hover) and (pointer: fine) { .bene-modal .earn-item:hover { background: rgba(255, 255, 255, .05); } }
+.bene-modal .earn-ico { width: 38px; height: 38px; flex: none; border-radius: 11px; display: grid; place-items: center; background: var(--b-teal-dim); color: var(--b-teal); font-size: 1.05rem; }
+.bene-modal .earn-item .t { flex: 1; font-size: .86rem; font-weight: 600; }
+.bene-modal .earn-item .t small { display: block; font-weight: 400; color: var(--b-muted); font-size: .74rem; margin-top: 1px; }
+.bene-modal .earn-pts { font-family: var(--font-display); font-weight: 800; color: var(--b-gold); font-size: .95rem; white-space: nowrap; }
+
+/* toast */
+.bene-toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; align-items: center; gap: 10px; padding: 13px 20px; border-radius: 99px; font-size: .85rem; font-weight: 600; background: rgba(12, 30, 34, .92); border: 1px solid rgba(47, 214, 177, .4); color: var(--text-1); backdrop-filter: blur(16px); box-shadow: 0 20px 50px -14px rgba(0, 0, 0, .8); }
+.bene-toast .gold { color: var(--b-gold); font-family: var(--font-display); font-weight: 800; }
+
+/* responsive */
+@media (max-width: 900px) {
+  .bene-store .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 24px; text-align: center; }
+  .bene-store .hero-left { max-width: 100%; text-align: center; }
+  .bene-store .hero-left p { margin: 0 auto; }
+}
+@media (max-width: 760px) {
+  .bene-store .stage { height: 470px; }
+  .bene-store .fcard { height: 400px; }
+  .bene-store .fcard h3, .bene-store .fcard .desc { max-width: 100%; }
+  .bene-store .fcard .price-tag { position: static; text-align: left; margin-top: 10px; }
+  .bene-store .stage-nav { display: none; }
+  .bene-store .points-inner { gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bene-store *, .bene-store *::before, .bene-store *::after,
+  .bene-modal *, .bene-modal *::before, .bene-modal *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+  }
+}

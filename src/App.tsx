@@ -21,6 +21,7 @@ const CourseDetail        = lazy(() => import('@/pages/public/CourseDetail'))
 const VivencialCatalog    = lazy(() => import('@/pages/public/VivencialCatalog'))
 const VivencialDetail     = lazy(() => import('@/pages/public/VivencialDetail'))
 const Instructores        = lazy(() => import('@/pages/public/Instructores'))
+const Beneficios          = lazy(() => import('@/pages/public/Beneficios'))
 const PerfilPublico     = lazy(() => import('@/pages/public/PerfilPublico'))
 const Privacidad        = lazy(() => import('@/pages/public/Privacidad'))
 const Terminos          = lazy(() => import('@/pages/public/Terminos'))
@@ -145,6 +146,7 @@ export default function App() {
               <Route path="/cursos/:slug" element={<CourseDetail />} />
               <Route path="/vivencial" element={<VivencialCatalog />} />
               <Route path="/vivencial/:slug" element={<VivencialDetail />} />
+              <Route path="/beneficios" element={<Beneficios />} />
               <Route path="/instructores" element={<Instructores />} />
               <Route path="/u/:username" element={<PerfilPublico />} />
               <Route path="/privacidad" element={<Privacidad />} />

@@ -148,6 +148,8 @@ export interface Instructor {
 // ── academy_benefits ──
 export type BenefitTipo = 'curso_gratis' | 'descuento_pct' | 'descuento_fijo' | 'sorteo_vivencial' | 'otro'
 
+export type BenefitOrigen = 'standalone' | 'curso'
+
 export interface Benefit {
   id: string
   titulo: string
@@ -167,9 +169,16 @@ export interface Benefit {
   ganador_anunciado_at: string | null
   created_at: string
   updated_at: string
+  // nuevos (beneficios v1)
+  origen: BenefitOrigen
+  destacado: boolean
+  sorteo_realizado_at: string | null
+  terminos: string | null
   // join opcional
-  course?: { id: string; titulo: string; slug: string; tipo: string } | null
+  course?: { id: string; titulo: string; slug: string; tipo: string; thumbnail_url?: string | null; precio_ars?: number | null } | null
 }
+
+export type RedemptionEstado = 'activo' | 'usado' | 'ganador' | 'no_ganador'
 
 // ── academy_credit_redemptions (canje de un beneficio) ──
 export interface BenefitRedemption {
@@ -181,7 +190,26 @@ export interface BenefitRedemption {
   referencia_id: string | null
   descripcion: string | null
   created_at: string | null
+  // nuevos (beneficios v1)
+  course_id: string | null
+  cantidad_chances: number | null
+  descuento_tipo: 'pct' | 'fijo' | null
+  descuento_valor: number | null
+  estado: RedemptionEstado
+  usado_at: string | null
+  enrollment_id: string | null
+  mp_external_reference: string | null
   profile?: { id: string; nombre: string | null; apellido: string | null; email: string | null; avatar_url: string | null }
+}
+
+// Respuesta de la edge function redeem-benefit (éxito).
+export interface RedeemResult {
+  success: true
+  redemption_id: string
+  estado: RedemptionEstado
+  enrollment_id: string | null
+  creditos_gastados: number
+  saldo_nuevo: number
 }
 
 // ── Itinerario day (vivencial) ──

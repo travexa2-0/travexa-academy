@@ -21,6 +21,8 @@ const TIPO_META: Record<string, { emoji: string; color: string; bg: string }> = 
   referido_registrado:{ emoji: '👥', color: 'var(--primary-l)', bg: 'var(--primary-s)' },
   nuevo_curso:        { emoji: '⭐', color: 'var(--gold)',     bg: 'var(--gold-soft)' },
   puntos_ganados:     { emoji: '🪙', color: 'var(--gold)',     bg: 'var(--gold-soft)' },
+  canje_beneficio:    { emoji: '🎁', color: 'var(--gold)',     bg: 'var(--gold-soft)' },
+  sorteo_resultado:   { emoji: '🏆', color: 'var(--gold)',     bg: 'var(--gold-soft)' },
 }
 
 function getMeta(tipo: string) {

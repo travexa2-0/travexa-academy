@@ -199,6 +199,7 @@ export interface BenefitRedemption {
   usado_at: string | null
   enrollment_id: string | null
   mp_external_reference: string | null
+  terminos_aceptados_at: string | null
   profile?: { id: string; nombre: string | null; apellido: string | null; email: string | null; avatar_url: string | null }
 }
 

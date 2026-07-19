@@ -4,6 +4,7 @@ import StoreModal, { ModalClose } from './StoreModal'
 import { RedeemError } from '@/hooks/useBenefitsStore'
 import { loginRedirect } from '@/lib/utils'
 import { badgeInfo, artStyle, fmt, fmtArs, sorteoDate, type BenefitUserState } from './benefitStoreMeta'
+import { BASES_Y_CONDICIONES_SORTEOS } from '@/content/basesYCondicionesSorteos'
 import type { Benefit, RedeemResult, RedemptionEstado } from '@/types'
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
   userState: BenefitUserState | null
   onEarnClick: () => void
   onRedeemed: (creditosGastados: number) => void
-  redeem: (args: { benefitId: string; cantidadChances?: number }) => Promise<RedeemResult>
+  redeem: (args: { benefitId: string; cantidadChances?: number; aceptaTerminos?: boolean }) => Promise<RedeemResult>
 }
 
 const CONFETTI_COLORS = ['#2fd6b1', '#e6b95c', '#9db8ff', '#f7e0a8']
@@ -46,11 +47,13 @@ export default function RedeemModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<{ estado: RedemptionEstado; chances: number } | null>(null)
+  const [acepta, setAcepta] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
   const successRef = useRef<HTMLDivElement>(null)
 
-  // Reset al abrir / cambiar de beneficio
+  // Reset al abrir / cambiar de beneficio (el checkbox nunca se persiste)
   useEffect(() => {
-    if (open) { setQty(1); setPhase('form'); setError(null); setSuccess(null); setLoading(false) }
+    if (open) { setQty(1); setPhase('form'); setError(null); setSuccess(null); setLoading(false); setAcepta(false); setShowTerms(false) }
   }, [open, benefit?.id])
 
   // Confetti cuando entra la pantalla de éxito
@@ -62,6 +65,7 @@ export default function RedeemModal({
 
   const isSorteo = benefit.tipo === 'sorteo_vivencial'
   const isDescuento = benefit.tipo === 'descuento_pct' || benefit.tipo === 'descuento_fijo'
+  const hasTerminos = !!benefit.terminos && benefit.terminos.trim().length > 0
   const bg = badgeInfo(benefit.tipo)
   const chances = isSorteo ? Math.max(1, qty) : 1
   const cost = benefit.costo_creditos * chances
@@ -97,7 +101,7 @@ export default function RedeemModal({
     setLoading(true)
     setError(null)
     try {
-      const res = await redeem({ benefitId: benefit.id, cantidadChances: chances })
+      const res = await redeem({ benefitId: benefit.id, cantidadChances: chances, aceptaTerminos: acepta })
       setSuccess({ estado: res.estado, chances })
       setPhase('success')
       onRedeemed(res.creditos_gastados)
@@ -126,6 +130,8 @@ export default function RedeemModal({
     btnLabel = `Te faltan ${fmt(Math.abs(after))} créditos`; btnDisabled = true
     note = <a href="#earn" onClick={(e) => { e.preventDefault(); onEarnClick() }}>Mirá cómo conseguir más créditos →</a>
   }
+  // Gate de bases y condiciones: sin tildar no se puede confirmar (mismo :disabled).
+  if (logged && hasTerminos && !acepta && !btnDisabled) btnDisabled = true
 
   // Pantalla de éxito
   const successView = (() => {
@@ -188,6 +194,25 @@ export default function RedeemModal({
                   : 'Ingresá para ver tu saldo'}
               </div>
             </div>
+
+            {hasTerminos && logged && (
+              <div className="m-terms">
+                <label className="terms-check">
+                  <input type="checkbox" checked={acepta} onChange={e => setAcepta(e.target.checked)} />
+                  <span>Leí y acepto las bases y condiciones de este {isSorteo ? 'sorteo' : 'beneficio'}</span>
+                </label>
+                <button type="button" className="terms-link" aria-expanded={showTerms} onClick={() => setShowTerms(v => !v)}>
+                  {showTerms ? 'Ocultar bases y condiciones' : 'Ver bases y condiciones completas'}
+                </button>
+                {showTerms && (
+                  <div className="terms-full">
+                    <pre className="terms-text">{BASES_Y_CONDICIONES_SORTEOS}</pre>
+                    <div className="terms-sub">Condiciones específicas de este beneficio</div>
+                    <pre className="terms-text">{benefit.terminos}</pre>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="m-actions">
               <button className="btn btn-gold btn-redeem" disabled={btnDisabled || loading} onClick={doRedeem}>

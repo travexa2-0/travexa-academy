@@ -77,9 +77,15 @@ export class RedeemError extends Error {
   }
 }
 
-async function invokeRedeem(benefitId: string, cantidadChances = 1): Promise<RedeemResult> {
+// Mensajes que el front garantiza legibles por código, además de los que ya
+// manda la edge function (por si alguno no está mapeado del lado server).
+const FRONT_REDEEM_MESSAGES: Record<string, string> = {
+  TERMINOS_NO_ACEPTADOS: 'Tenés que aceptar las bases y condiciones para continuar.',
+}
+
+async function invokeRedeem(benefitId: string, cantidadChances = 1, aceptaTerminos = false): Promise<RedeemResult> {
   const { data, error } = await supabase.functions.invoke('redeem-benefit', {
-    body: { benefitId, cantidadChances },
+    body: { benefitId, cantidadChances, aceptaTerminos },
   })
   // La edge function devuelve 400 con { error, code } en fallo de negocio;
   // supabase-js lo entrega como FunctionsHttpError con el body en context.
@@ -91,17 +97,18 @@ async function invokeRedeem(benefitId: string, cantidadChances = 1): Promise<Red
       if (body?.error) msg = body.error
       if (body?.code) code = body.code
     } catch { /* sin body legible */ }
+    if (code && FRONT_REDEEM_MESSAGES[code]) msg = FRONT_REDEEM_MESSAGES[code]
     throw new RedeemError(msg, code)
   }
-  if (data?.error) throw new RedeemError(data.error, data.code)
+  if (data?.error) throw new RedeemError(FRONT_REDEEM_MESSAGES[data.code] ?? data.error, data.code)
   return data as RedeemResult
 }
 
 export function useRedeemBenefit(userId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ benefitId, cantidadChances }: { benefitId: string; cantidadChances?: number }) =>
-      invokeRedeem(benefitId, cantidadChances && cantidadChances > 0 ? cantidadChances : 1),
+    mutationFn: ({ benefitId, cantidadChances, aceptaTerminos }: { benefitId: string; cantidadChances?: number; aceptaTerminos?: boolean }) =>
+      invokeRedeem(benefitId, cantidadChances && cantidadChances > 0 ? cantidadChances : 1, !!aceptaTerminos),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['public-benefits'] })
       qc.invalidateQueries({ queryKey: ['my-redemptions', userId] })

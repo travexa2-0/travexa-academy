@@ -200,6 +200,9 @@ export default function BenefitDetailDrawer({ benefit, open, onClose, onEdit }: 
                           {r.created_at ? formatDate(r.created_at) : ''} · {r.creditos_consumidos} 🪙
                           {isSorteo && ` · ${r.cantidad_chances ?? 1} chance(s)`} · {estadoLbl}
                         </div>
+                        {r.terminos_aceptados_at && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 1 }}>Bases aceptadas el {formatDate(r.terminos_aceptados_at)}</div>
+                        )}
                       </div>
                       {b.tipo === 'otro' && r.estado === 'activo' && (
                         <button className="btn btn-secondary btn-sm" onClick={() => doDeliver(r.id)} disabled={markDelivered.isPending}>Marcar entregado</button>

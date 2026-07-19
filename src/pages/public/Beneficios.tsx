@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import NumberFlow from '@number-flow/react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { useAuth } from '@/contexts/AuthContext'
@@ -43,14 +42,47 @@ const COINS = Array.from({ length: 14 }, () => ({
   dur: 9 + Math.random() * 7,
 }))
 
+// Contador con count-up en un <span> normal (el gradiente `background-clip:text`
+// del panel no funciona sobre el web-component de NumberFlow: el relleno
+// transparente se hereda al shadow DOM pero el fondo no, y los dígitos quedan
+// invisibles). Re-anima cada vez que cambia el saldo (p.ej. tras un canje) y
+// nunca queda vacío: si `target` es null (perfil cargando) devuelve null.
+function useCountUp(target: number | null, duration = 900): number | null {
+  const [display, setDisplay] = useState<number | null>(target)
+  const fromRef = useRef(0)
+  useEffect(() => {
+    if (target == null) { setDisplay(null); return }
+    const from = fromRef.current
+    if (from === target) { setDisplay(target); return }
+    const t0 = performance.now()
+    const ease = (t: number) => 1 - Math.pow(1 - t, 4)
+    let raf = 0
+    const tick = (now: number) => {
+      const p = Math.min((now - t0) / duration, 1)
+      setDisplay(Math.round(from + (target - from) * ease(p)))
+      if (p < 1) raf = requestAnimationFrame(tick)
+      else fromRef.current = target
+    }
+    setDisplay(from)
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return display
+}
+
 export default function Beneficios() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const logged = !!user
-  const { data: profile } = useAcademyProfile(user?.id)
+  const { data: profile, isLoading: profileLoading } = useAcademyProfile(user?.id)
   const creditos = profile?.creditos ?? 0
   const puntos = profile?.puntos ?? 0
   const nInfo = nivelInfo(puntos)
+  // target null mientras el perfil del usuario logueado todavía no llegó.
+  const creditsTarget = logged && profile === undefined ? null : creditos
+  const creditsAnimated = useCountUp(creditsTarget)
+  // Nunca vacío: si la animación aún no arrancó pero ya tenemos el saldo, mostralo directo.
+  const creditsShown = creditsAnimated ?? (profile !== undefined ? creditos : null)
 
   const { data: benefits = [] } = usePublicBenefits()
   const { data: redemptions = [] } = useMyRedemptions(user?.id)
@@ -134,7 +166,10 @@ export default function Beneficios() {
                   </div>
                   <div className="points-main">
                     <div className="points-label">Tus créditos</div>
-                    <div className="points-value"><NumberFlow value={creditos} locales="es-AR" /><small>disponibles</small></div>
+                    <div className="points-value">
+                      <span>{creditsShown != null ? fmt(creditsShown) : (profileLoading ? '—' : fmt(creditos))}</span>
+                      <small>disponibles</small>
+                    </div>
                     <div className="points-meta">Los créditos vencen al año de obtenidos · <span className="lvl">Nivel {nInfo.actual.n} · {nInfo.actual.nombre}</span></div>
                     <div className="points-cta">
                       <button className="btn btn-gold" onClick={() => setEarnOpen(true)}>+ Ganar más créditos</button>

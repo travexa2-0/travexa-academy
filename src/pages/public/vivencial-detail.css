@@ -227,6 +227,80 @@
 .vv-dep h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .vv-dep p { font-size: 13px; color: var(--vv-ink-soft); font-weight: 500; line-height: 1.6; }
 
+/* ============ INSTRUCTORES ============ */
+/* Sobre el fondo claro del theme (como Puntos de salida), cierra la narrativa de
+   confianza justo antes del CTA de reserva. */
+.vv-instructors { padding: 20px 0 100px; }
+.vv-instructors-head { margin-bottom: 44px; max-width: 640px; }
+.vv-instructors-head h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; margin-top: 16px; letter-spacing: -.01em; }
+/* Flex centrado con wrap: equilibrado con 1, 2 o N cards (no grid de columnas fijas). */
+.vv-ins-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; }
+.vv-ins-card {
+  --mx: 50%; --my: 0%;
+  position: relative; overflow: hidden;
+  flex: 1 1 300px; max-width: 360px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 34px 28px 30px;
+  border-radius: var(--vv-radius);
+  /* Liquid glass claro (variante blanca, como la barra flotante) sobre fondo claro. */
+  background: rgba(255, 255, 255, .55);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, .8);
+  box-shadow: 0 12px 40px rgba(20, 33, 61, .08);
+  transition: border-color .3s var(--vv-ease-out), box-shadow .3s var(--vv-ease-out), transform .3s var(--vv-ease-out);
+}
+/* 1 instructor: card contenida y centrada (no estirada). */
+.vv-ins-solo .vv-ins-card { flex: 0 1 460px; max-width: 460px; }
+/* Spotlight dorado que sigue al cursor. Posicionado con custom props (--mx/--my)
+   actualizadas en mousemove: sin layout shift, solo opacity/gradiente. */
+.vv-ins-card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(340px circle at var(--mx) var(--my), rgba(199, 154, 75, .16), transparent 62%);
+  opacity: 0; transition: opacity .4s var(--vv-ease-out);
+}
+.vv-ins-card > * { position: relative; z-index: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .vv-ins-card:hover { border-color: rgba(199, 154, 75, .55); box-shadow: 0 18px 50px rgba(20, 33, 61, .14); transform: translateY(-4px); }
+  .vv-ins-card:hover::before { opacity: 1; }
+}
+/* Sin efecto animado con reduced-motion (solo estado estático). */
+@media (prefers-reduced-motion: reduce) {
+  .vv-ins-card::before { display: none; }
+  .vv-ins-card { transition: none; }
+}
+.vv-ins-avatar {
+  width: 108px; height: 108px; border-radius: 50%; overflow: hidden;
+  margin-bottom: 18px; flex-shrink: 0;
+  border: 2px solid var(--vv-gold);           /* anillo dorado fino */
+  box-shadow: 0 0 0 5px var(--vv-gold-soft);
+  background: var(--vv-mist);
+  display: flex; align-items: center; justify-content: center;
+}
+.vv-ins-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.vv-ins-initials { font-size: 34px; font-weight: 800; color: var(--vv-gold-deep); }
+.vv-ins-name { font-size: 20px; font-weight: 800; letter-spacing: -.01em; margin-bottom: 5px; }
+.vv-ins-spec {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--vv-gold); margin-bottom: 14px;
+}
+.vv-ins-bio {
+  font-size: 13.5px; color: var(--vv-ink-soft); font-weight: 500; line-height: 1.65;
+  display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.vv-ins-social { display: flex; gap: 10px; margin-top: 18px; }
+.vv-ins-social a {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--vv-ink-soft); background: rgba(255, 255, 255, .6); border: 1px solid var(--vv-line);
+  transition: color .2s, border-color .2s, background .2s, transform .15s var(--vv-ease-out);
+}
+.vv-ins-social a:hover { color: var(--vv-gold-deep); border-color: var(--vv-gold); transform: translateY(-2px); }
+@media (max-width: 700px) {
+  .vv-instructors { padding: 10px 0 72px; }
+  .vv-ins-card, .vv-ins-solo .vv-ins-card { flex-basis: 100%; max-width: 100%; }
+}
+
 /* ============ RESERVA (glass sobre foto) ============ */
 .vv-booking { position: relative; color: #fff; overflow: hidden; border-radius: 32px; margin: 0 20px 60px; background: var(--vv-dark); scroll-margin-top: 80px; }
 .vv-booking-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }

@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useCallback, createElement } from 'react'
 import type { CSSProperties, ReactNode, ElementType } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Link2, Share2, Check, MapPin, ChevronDown, ExternalLink } from 'lucide-react'
+import { Link2, Share2, Check, MapPin, ChevronDown, ExternalLink, Globe } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import NumberFlow from '@number-flow/react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { useCourseDetail } from '@/hooks/useCourses'
+import { useCourseDetail, useVivencialInstructors, type VivencialInstructor } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
@@ -368,6 +368,100 @@ function PriceCard(p: PriceCardProps) {
   )
 }
 
+// ── Subcomponente: sección Instructores ───────────────────────────
+
+// Iniciales para el fallback de avatar (sin foto → nunca imagen rota).
+function insInitials(nombre: string): string {
+  const parts = nombre.trim().split(/\s+/).filter(Boolean)
+  const ini = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
+  return (ini || nombre.trim()[0] || '?').toUpperCase()
+}
+
+// Íconos de marca (lucide no trae Instagram/TikTok/WhatsApp en esta versión).
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+    <rect x="2.5" y="2.5" width="19" height="19" rx="5.4" />
+    <circle cx="12" cy="12" r="4.2" />
+    <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+)
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
+    <path d="M16.5 3c.3 2.1 1.5 3.6 3.5 3.9v2.4c-1.2.1-2.4-.2-3.5-.8v5.7c0 3.4-2.6 5.8-5.9 5.8-3.1 0-5.6-2.4-5.6-5.4 0-3.2 2.7-5.6 6.1-5.2v2.5c-.4-.1-.9-.2-1.3-.1-1.4.1-2.4 1.2-2.3 2.7.1 1.4 1.2 2.3 2.5 2.2 1.4-.1 2.2-1.1 2.2-2.6V3h1.8z" />
+  </svg>
+)
+const WhatsAppIcon = () => (
+  <svg viewBox="0 0 32 32" width="17" height="17" fill="currentColor" aria-hidden="true">
+    <path d="M16 .5C7.4.5.5 7.4.5 16c0 2.8.7 5.5 2.1 7.9L.5 31.5l7.9-2.1c2.3 1.3 4.9 2 7.6 2 8.6 0 15.5-6.9 15.5-15.4S24.6.5 16 .5zm8.5 17.1c-.5-.2-2.8-1.4-3.2-1.5-.5-.2-.8-.2-1.1.2-.3.5-1.2 1.5-1.5 1.9-.3.3-.5.4-1 .1-.5-.2-2-.7-3.8-2.3-1.4-1.2-2.3-2.7-2.6-3.2-.3-.5 0-.7.2-.9.2-.2.5-.5.7-.7.2-.2.3-.5.5-.8.2-.3.1-.5 0-.7-.1-.2-1.1-2.7-1.5-3.7-.4-.9-.8-.8-1.1-.8-.3 0-.5 0-.8 0s-.8.1-1.2.5c-.4.5-1.5 1.5-1.5 3.8s1.6 4.5 1.8 4.8c.2.3 3.1 4.8 7.5 6.7 1.1.5 1.9.7 2.6.9 1.1.3 2.1.3 2.9.2.9-.1 2.8-1.1 3.2-2.2.4-1.1.4-2 .3-2.2-.1-.2-.4-.3-.9-.5z" />
+  </svg>
+)
+
+// Normaliza el valor guardado (handle o URL) a un href abrible.
+function socialHref(kind: string, raw: string): string {
+  const v = raw.trim()
+  if (/^https?:\/\//i.test(v)) return v
+  const handle = v.replace(/^@/, '')
+  switch (kind) {
+    case 'instagram': return `https://instagram.com/${handle}`
+    case 'tiktok':    return `https://tiktok.com/@${handle}`
+    case 'whatsapp':  return `https://wa.me/${v.replace(/[^\d]/g, '')}`
+    default:          return `https://${v}` // web
+  }
+}
+
+// Orden fijo de redes; se muestran solo las presentes y no vacías.
+const SOCIAL_ORDER: { key: string; label: string; icon: ReactNode }[] = [
+  { key: 'instagram', label: 'Instagram', icon: <InstagramIcon /> },
+  { key: 'tiktok',    label: 'TikTok',    icon: <TikTokIcon /> },
+  { key: 'whatsapp',  label: 'WhatsApp',  icon: <WhatsAppIcon /> },
+  { key: 'web',       label: 'Sitio web', icon: <Globe className="w-[17px] h-[17px]" /> },
+]
+
+function SocialRow({ redes }: { redes: VivencialInstructor['redes'] }) {
+  if (!redes) return null
+  const items = SOCIAL_ORDER.filter(s => (redes[s.key] ?? '').trim())
+  if (!items.length) return null
+  return (
+    <div className="vv-ins-social">
+      {items.map(s => (
+        <a key={s.key} href={socialHref(s.key, redes[s.key]!)} target="_blank" rel="noopener noreferrer" aria-label={s.label} title={s.label}>
+          {s.icon}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+// Card de instructor: liquid glass claro + spotlight dorado que sigue al cursor
+// (custom props --mx/--my; solo en dispositivos con hover fino, se apaga en
+// touch y con prefers-reduced-motion vía CSS). Entrada con el reveal existente.
+function InstructorCard({ ins, index, revealKey }: { ins: VivencialInstructor; index: number; revealKey: string }) {
+  const { setRef, style } = useReveal(revealKey, (index % 3) * 0.08)
+  const interactive = useRef(false)
+  useEffect(() => {
+    interactive.current = !prefersReduced() && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  }, [])
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!interactive.current) return
+    const r = e.currentTarget.getBoundingClientRect()
+    e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`)
+    e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`)
+  }
+  return (
+    <div ref={setRef} className="vv-ins-card" style={style} onMouseMove={onMove}>
+      <div className="vv-ins-avatar">
+        {ins.avatar_url
+          ? <img src={ins.avatar_url} alt={ins.nombre} loading="lazy" />
+          : <span className="vv-ins-initials">{insInitials(ins.nombre)}</span>}
+      </div>
+      <h3 className="vv-ins-name">{ins.nombre}</h3>
+      {ins.especialidad && <div className="vv-ins-spec">{ins.especialidad}</div>}
+      {ins.bio && <p className="vv-ins-bio">{ins.bio}</p>}
+      <SocialRow redes={ins.redes} />
+    </div>
+  )
+}
+
 // ── Página principal ──────────────────────────────────────────────
 
 export default function VivencialDetail() {
@@ -398,6 +492,9 @@ export default function VivencialDetail() {
     staleTime: 1000 * 30,
   })
   const refreshEnrollment = () => void queryClient.invalidateQueries({ queryKey: enrollmentKey })
+
+  // Instructores asignados al vivencial (en el orden del array). Vacío/null → sin sección.
+  const { data: instructores = [] } = useVivencialInstructors(course?.vivencial_instructor_ids)
 
   const heroRef = useRef<HTMLElement>(null)
   const heroImgRef = useRef<HTMLImageElement>(null)
@@ -738,6 +835,23 @@ export default function VivencialDetail() {
                   <h4>{p.ciudad}</h4>
                   {p.detalle_encuentro && <p>{p.detalle_encuentro}</p>}
                 </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── INSTRUCTORES ── */}
+        {/* Regla dura: sin instructores asignados (o todos borrados), la sección no
+            se renderiza — ni título ni contenedor ni espacio. */}
+        {instructores.length > 0 && (
+          <section className="vv-instructors vv-container">
+            <div className="vv-instructors-head">
+              <Reveal as="span" className="vv-eyebrow" revealKey={rk('ins-eyebrow')}>Instructores</Reveal>
+              <Reveal as="h2" delay={0.06} revealKey={rk('ins-title')}>Aprendé de quienes ya lo vivieron.</Reveal>
+            </div>
+            <div className={`vv-ins-grid${instructores.length === 1 ? ' vv-ins-solo' : ''}`}>
+              {instructores.map((ins, i) => (
+                <InstructorCard key={ins.id} ins={ins} index={i} revealKey={rk(`instructor-${i}`)} />
               ))}
             </div>
           </section>

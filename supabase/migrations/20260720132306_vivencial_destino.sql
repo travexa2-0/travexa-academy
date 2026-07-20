@@ -1,5 +1,8 @@
 -- ============================================================================
--- PROPUESTA — NO APLICADA (regla: los cambios de DB se proponen, no se aplican).
+-- APLICADA y trackeada en prod (Travexa 2.0, proyecto fvrwtqhkskbaixqbxami):
+-- registrada en supabase_migrations.schema_migrations como version 20260720132306
+-- (name: vivencial_destino). El nombre de este archivo se alineó a ese timestamp
+-- para que local y remoto coincidan. Los "if not exists" lo hacen idempotente.
 -- Vivencial: campo "Destino" (continente/zona) independiente de País.
 --
 -- Contexto: hasta ahora el único dato geográfico era vivencial_pais, que además

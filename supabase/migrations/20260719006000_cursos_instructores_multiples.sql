@@ -1,4 +1,4 @@
--- Sesión 36 — Instructores múltiples en cursos (paridad con vivenciales).
+-- Sesión 39 — Instructores múltiples en cursos (paridad con vivenciales).
 --
 -- Hoy los cursos ('en_vivo'/'grabado'/'ebook') soportan un solo instructor (instructor_id
 -- uuid single); los vivenciales soportan varios (vivencial_instructor_ids uuid[]). Se agrega

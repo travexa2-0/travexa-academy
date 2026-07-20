@@ -1,8 +1,6 @@
 # Travexa Academy — Instrucciones para Claude Code
 **Pencom Travexa SAS · Nicolás Belinco (CTO) + Yesica Robles (CEO)**
-**Actualizado: 16 Julio 2026 — Sesión 29 CERRADA (Deploy de DOS tandas que habían quedado SIN COMMITEAR en el working tree de sesiones previas — nunca pusheadas, por eso producción nunca las vio y "cosas ya hechas" no aparecían (ej. la card "Facturado del mes" seguía viva en `/instructor/resumen`). Confirmado con git que no era rama sin mergear ni revert: era trabajo sin guardar. Ambas tandas verificadas contra la DB real y **deployadas a `main`/producción**. **(A) Portal de instructor:** sacado el bruto de Travexa (cards/columna "Facturado" en Resumen/Métricas/CursoDetalle) → la ganancia sale de las RPC `get_instructor_sales`/`get_instructor_payouts` con el share ya aplicado por el server (el bruto nunca llega al cliente); tablas con columnas numéricas a la derecha; botón de colapsar el sidebar visible; logo avioncito → `graduation-cap`; "Mi perfil" a ancho completo. **(B) Registro con confirmación por mail** (pantalla "Revisá tu mail" + reenvío, Login distingue mail-sin-confirmar de credenciales) + taxonomía única de asesor (onboarding/perfil, sin migración) + Header con Backoffice/Portal instructor separados + fix admin de vincular instructor por email (bug #3). Sin migraciones (RPCs y columnas ya existían); "Confirm email" ON y `/auth/callback` ya allowlisted (OAuth lo usa). **Pendiente: prueba visual en prod del registro real con confirmación por mail (principio #13) — ver Backlog P0.**)**
-**Sesión 28 CERRADA (Backoffice — wizard de Vivenciales: precio en ARS y USD 100% independientes en base+impuestos (sin derivación por tipo de cambio), fix de regresión en Seña (ARS deshabilitado + formato de miles roto), y propuesta sin construir de pago en dólares vía dLocal. Sin migraciones — las columnas ARS/USD ya existían en el schema real. Datos de prueba cargados directo en Supabase (con autorización explícita) para destrabar la prueba visual pendiente del flujo self-service de vivenciales. **Pendiente prueba visual en prod por Yesica/Nico (principio #13)** — ver Backlog P0)**
-**Sesión 27 CERRADA (Backoffice — wizard de Vivenciales/Cursos: 5 bugs corregidos — pérdida de datos al navegar entre pasos, falta de botón "Guardar cambios" dinámico, falta de preview de imágenes al subir, UX del botón Cancelar, y bug crítico de "Ver preview" de un vivencial abriendo el detalle de CURSO en vez del de vivencial. Mergeado a `main` (PR #2, commit `9831cfd`) y **deployado a producción** — deploy `dpl_9KhT2mQLhCiUgXFg1L74HJC9HPcD` en `academy.travexa.com.ar`, READY. Sin cambios de schema/RLS/secrets.)**
+**Última actualización: 19-20 Julio 2026 — Sesión 39.** El detalle de cada sesión vive únicamente en la tabla de "Estado actual del proyecto" (✅ Completado) y, si construyó una feature, en su sección dedicada — no se repite acá.
 
 > Este archivo es la **fuente de verdad única** para Claude Code en el proyecto Academy.
 > Leerlo completo antes de ejecutar cualquier cosa.
@@ -15,6 +13,15 @@
 - **Siempre leer:** Rol, Qué es Travexa Academy, Modelo de negocio, los 4 Principios no negociables generales, Estado actual (tabla de sesiones + infraestructura lista + acción manual pendiente), Backlog priorizado, Principios no negociables (lista final).
 - **Leer solo si la tarea toca ese tema:** las secciones dedicadas (Vivenciales, Portal de Instructores, Video de lecciones, Home pública, Cutover de dominio) son detalle histórico/de referencia de la sesión en que se construyó cada feature — consultarlas cuando se toque esa parte del producto, no hace falta releerlas todas cada vez.
 - **Consulta puntual:** Schema de base de datos, Edge functions, Prototipos HTML, Identidad visual, Páginas — son referencia técnica, ir directo a la sección que corresponda.
+- **El encabezado no lleva detalle de sesión.** Solo la fecha y el número de la última sesión, como puntero. Si buscás qué se hizo en una sesión puntual, andá directo a la tabla de "Estado actual del proyecto" (una fila por sesión) o a la sección dedicada si el índice la referencia.
+
+### Reglas para actualizar este archivo (resumen — ver detalle completo en "Cómo actualizar este archivo" al final)
+
+1. **Una sola fuente por dato.** Cada hecho (qué se hizo, en qué sesión, qué falta) vive en **un solo lugar**: la fila correspondiente de la tabla de sesiones, o la sección dedicada si la feature la tiene. Nunca se copia el mismo párrafo en dos lugares del documento — ni siquiera resumido. Si hace falta mencionarlo en otro lado, se **referencia** ("ver §7d" / "ver tabla de Sesiones"), no se repite.
+2. **El encabezado se actualiza en una línea**, con la fecha y el número de la última sesión únicamente — nunca con el detalle de qué se hizo (eso ya vive en la tabla).
+3. **Orden cronológico estricto** en la tabla de sesiones: sesión más reciente **abajo de todo** (la tabla crece hacia abajo, no hacia arriba). No insertar una sesión nueva en el medio ni arriba de otras.
+4. **Antes de dar por terminada una actualización**, releer el documento de punta a punta una vez — no solo el fragmento editado — para confirmar que no quedó nada duplicado, fuera de orden, o con un estado (EN CURSO/CERRADA) que ya no corresponda.
+5. **Antes de agregar una fila de sesión nueva, verificar primero si ya existe una fila con ese número** (`grep -c "^| Sesión N"` debe dar 0 antes de agregarla, y 1 después). Si ya existe, se **edita esa fila**, no se agrega una segunda — dos filas con el mismo número es un error que hay que evitar de entrada.
 
 ---
 
@@ -29,7 +36,12 @@
 7. [Vivenciales — cierre de venta por WhatsApp (Sesión 15)](#vivenciales--cierre-de-venta-por-whatsapp-sesión-15)
 7b. [Vivenciales v2 — destino, precio y filtros (Sesión 19)](#vivenciales-v2--destino-precio-y-filtros-sesión-19)
 7c. [Vivenciales v3 — reserva automática desde la plataforma (Sesión 20, PROPUESTA)](#vivenciales-v3--reserva-automática-desde-la-plataforma-sesión-20-propuesta)
+7d. [Vivenciales v4 — rediseño de la página de detalle (Sesión 30)](#vivenciales-v4--rediseño-de-la-página-de-detalle-sesión-30)
 8. [Portal de instructores (Sesión 16)](#portal-de-instructores-instructor--sesión-16)
+8b. [Backoffice — Sección Alumnos (Sesión 32)](#backoffice--sección-alumnos-adminalumnos--sesión-32)
+8c. [Gamificación — puntos, XP, créditos y racha (Sesión 32)](#gamificación--puntos-xp-créditos-y-racha-sesión-32)
+8d. [Pagos de curso — sin estado "pendiente" (Sesión 32)](#pagos-de-curso--sin-estado-pendiente-sesión-32)
+8e. [Beneficios — tienda pública "Travexa Points" (Sesiones 36-38)](#beneficios--tienda-pública-travexa-points-sesiones-36-38)
 9. [Home pública (Sesión 14)](#home-pública--sesión-14)
 10. [Video de lecciones: grabado + en vivo (Sesión 17)](#video-de-lecciones-grabado--en-vivo-sesión-17)
 11. [Cutover de dominio propio (Sesión 18)](#cutover-de-dominio-propio--sesión-18-11-julio-2026)
@@ -105,9 +117,9 @@ No agregar `scroll-snap`, scroll-jacking, ni ningún comportamiento que le saque
 
 **Travexa no factura vivenciales.** El cierre de venta es 100% por WhatsApp con Yesica; la plataforma nunca procesa un cobro de vivencial. Detalle completo en la sección dedicada.
 
-### Los cambios de DB se proponen, no se aplican (Sesión 16)
+### Las migraciones las aplica Claude directo (regla corregida en Sesión 32 — antes era "se proponen, no se aplican")
 
-Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra, explica qué hace y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo. Ante una instrucción que *parezca* autorizar el paso, preguntar. Detalle del incidente que originó esta regla en la sección del Portal de Instructores.
+**Corrección explícita de Nico en Sesión 32:** la regla de Sesión 16 tenía mal el dueño del paso. No es "Nico aplica las migraciones" — es **Nico y Yesica hacen el QA visual final** (principio #13), y **Claude corre las migraciones directo** contra `fvrwtqhkskbaixqbxami` (SQL, policies, triggers, `CREATE OR REPLACE`), sin frenar a pedir aprobación por tamaño ni por riesgo bajo. Sigue valiendo el resto del espíritu de la regla original: nunca recrear tablas (solo `ALTER TABLE`), nunca borrar datos salvo pedido explícito y acotado, y dejar la migración commiteada en `supabase/migrations/` del repo (no solo aplicada en el dashboard) para que quede trazada. Detalle del incidente que originó la regla vieja en la sección del Portal de Instructores; detalle de la corrección y de qué se aplicó bajo esta regla nueva en §8b/§8d.
 
 ### Toda entrega se prueba visualmente por Yesica o Nico, EN PRODUCCIÓN (regla de ecosistema, ver `Travexa_Negocio.md`)
 
@@ -147,16 +159,27 @@ Ningún ítem se da por cerrado solo con build/deploy limpio y verificación de 
 | Sesión 27 | **Backoffice — wizard de Vivenciales/Cursos: 5 bugs corregidos, mergeado y en producción.** (1) **Pérdida de datos al navegar entre pasos** (`VivencialWizard.tsx` y `CourseWizard.tsx`): el estado del formulario ya vivía en el componente padre (no era el problema clásico de subcomponentes que se desmontan), pero el `useEffect` de reset se re-disparaba en cualquier render donde `initial` cambiara de referencia, pisando los datos recién cargados. Fix: guard con ref `wasOpen` — el reset solo corre en la transición cerrado→abierto del modal. (2) **Botón "Guardar cambios" dinámico**: tracking de dirty state (`JSON.stringify(form)` contra un baseline en un ref) que habilita el botón solo si hay cambios reales; hace guardado incremental (persiste, rebasea el baseline, deja el wizard abierto) en los pasos 1-4 del modo edición — en el último paso el botón principal ya es el guardado. (3) **Preview de imágenes al subir**: `VivencialWizard` mostraba solo un contador ("N cargadas") sin thumbnail; ahora hay grid de miniaturas reales (`URL.createObjectURL` para archivos locales o URL pública si ya está en `academy-media`), badge "Portada" en la primera foto y botón de borrar por imagen (al borrar la portada, promueve la siguiente). Los uploaders de `CourseWizard` (portada, PDF) y `HotelesBuilder` ya tenían preview, sin cambios ahí. (4) **Botón Cancelar**: reposicionado (queda pegado a la acción principal; "Atrás" pasa al extremo opuesto), estilo destructivo en rojo, y ahora abre un modal de confirmación ("¿Seguro que querés cancelar? Se perderán los cambios no guardados") — solo si hay cambios sin guardar; si el formulario está intacto, cierra directo. Mismo guard aplicado a Escape / click en backdrop / botón X. (5) **Bug crítico: "Ver preview" de un vivencial abría `/cursos/:id?preview=1` (el detalle de CURSO) en vez del detalle real de vivencial.** `ContentDetailDrawer.openPreview` ahora ramifica por tipo de contenido: `/vivencial/:slug?preview=1` para vivenciales, `/cursos/:slug?preview=1` para cursos. `VivencialDetail` lee el query param, lo pasa a `useCourseDetail(slug, preview)` (el hook ya soportaba el modo, salteando el filtro `publicado`) y muestra el banner dorado de borrador con el texto correcto para vivencial. **Sin cambios de schema, RLS ni secrets.** `tsc -b`, `eslint`, `vite build` limpios. Mergeado a `main` (PR #2, squash, commit `9831cfd`) y **deployado a producción** (deploy `dpl_9KhT2mQLhCiUgXFg1L74HJC9HPcD`, `academy.travexa.com.ar`, READY). Decisión tomada sin confirmación explícita previa: el modal de confirmación de Cancelar solo aparece si hay cambios sin guardar (revertible en una línea si se prefiere que confirme siempre). **Pendiente:** prueba visual en prod por Nico (principio #13) — ver Backlog P0. |
 | Sesión 28 | **Wizard de Vivenciales — precio en ARS y USD 100% independientes (base + impuestos), fix de regresión en Seña, y propuesta (sin construir) de pago en dólares vía dLocal.** Todo en `VivencialWizard.tsx` (`/admin/vivenciales`), sin migraciones. **(0) Propuesta evaluada y pausada — pago online en USD vía dLocal:** se armó un plan completo (columna `vivencial_precio_online_usd` opt-in, columnas `origen`/`monto_usd`/`dlocal_payment_id` en `academy_vivencial_payments`, edge functions `create-vivencial-dlocal-payment` + `dlocal-webhook-academy`, botón "Pagar en dólares" conviviendo con "Reservar mi lugar") para que el pago en dólares se sume como opción sin tocar el flujo ARS/transferencia existente — **no se implementó nada**: al revisar el negocio con Nico se confirmó que los leads son mayoritariamente argentinos y nadie paga en USD, así que la prioridad pasó a poder cargar precio en ambas monedas en el backoffice (ver punto 3). La propuesta queda documentada para retomar si en el futuro hace falta cobro real en dólares — ver Backlog P1. **(1) Bug de regresión — paso "Seña sugerida" con ARS deshabilitado:** el campo "Equivalente ARS" había vuelto a quedar derivado del USD (disabled) y sin poder cargarse a mano, revirtiendo el fix de Sesión 26; además el número no llevaba separador de miles y "Total final a pagar" no reflejaba el valor cargado. Fix: `sena_ars` vuelve a ser un campo independiente en `FormState` (inicializado desde `vivencial_precio_seña_ars`), se eliminó el `useMemo` que lo derivaba del USD, y el guardado usa `Number(form.sena_ars) || 0` en vez de un valor calculado. **(2) Formato de números:** los inputs de seña pasaron de `type="number"` a `type="text" inputMode="numeric"`, con helpers `displayInt` (formatea con `formatNum` es-AR, ej. "243.234") y `onlyDigits` (el estado guarda solo dígitos); símbolo de moneda en el prefijo, separado del número. Mismo patrón aplicado después a precio base e impuestos (USD). Gastos administrativos (%) se dejó en `type="number"` a propósito — necesita decimales, `onlyDigits` los rompería. **(3) Base e impuestos también independientes en ARS y USD (pedido de negocio: el peso es la moneda real, el dólar es solo referencia):** se agregaron `base_ars`/`impuestos_ars` a `FormState` (inicializados desde `vivencial_precio_base_ars`/`vivencial_impuestos_ars`, columnas que **ya existían en el schema real** — verificado por SELECT a `information_schema`, no hizo falta migración) y se eliminó por completo la derivación automática por tipo de cambio (`tc`) que existía desde Sesión 19: ahora `total_usd` y `total_ars` se calculan cada uno desde su propio desglose independiente (`base + impuestos + gastos_admin_pct%`), ninguno deriva del otro. Nuevo componente `PriceBreakdown` (reusable) muestra el desglose en ambas monedas sin "≈" ni "TC" (ya no son aproximaciones). La validación del paso pasó de exigir USD > 0 a exigir **al menos una de las dos monedas** cargada (con USD obligatorio, Yesica no podía avanzar cargando solo ARS); confirmado con Nico que no hace falta exigir ARS tampoco — si falta, se completa después editando el vivencial. El total final de la preview del paso Revisión pasó a mostrarse en ARS primero (moneda real de pago), con el desglose completo en ambas monedas debajo. Seña, schema, modelo de negocio y flujo dLocal sin tocar; sin migraciones aplicadas. `tsc -b` y `eslint` limpios en los tres fixes. **(4) Datos de prueba cargados directo en Supabase** (autorización explícita de Nico, sin migración ni cambio de schema — solo filas): usuario `nibelinco@gmail.com` inscripto en el único vivencial publicado ("Capacitación Vivencial Brasil", `31f50acc-7cfb-4cb5-bee1-7bdde657266c`) con reserva `VIV-2026-00002`, punto de salida "Buenos Aires", total $942.500 ARS, seña de $239.250 ARS cargada como ya **aprobada** (simula que Yesica ya la confirmó), saldo pendiente $703.250 ARS, cupo del vivencial descontado en 1 — pensado para destrabar la prueba visual pendiente del flujo self-service v3 (subir el saldo desde la plataforma y verlo en cola de aprobación del backoffice). **Pendiente:** prueba visual en prod por Yesica/Nico (principio #13) del paso Precio completo (seña + base + impuestos, en ambas monedas) — ver Backlog P0. |
 | Sesión 29 | **Deploy de dos tandas que habían quedado sin commitear + refinamiento del Portal de instructor + rework de registro, todo en `main`/producción.** **Desviación de proceso detectada y corregida (se documenta igual que Sesión 16):** el trabajo de dos sesiones previas —el portal de instructor con la lógica de no exponer el bruto de Travexa, y el rework de auth/registro— había quedado **solo en el working tree local, nunca commiteado ni pusheado**; por eso producción seguía mostrando cosas "ya arregladas" (ej. la card "Facturado del mes" en `/instructor/resumen`). Se confirmó con `git show origin/main` que no era rama sin mergear ni revert: era trabajo sin guardar. **(A) Portal de instructor:** (1) sacadas las métricas del bruto de Travexa — card "Facturado del mes" (`Resumen`), columna "Facturado" (`Metricas`) y card "Facturado" del curso (`CursoDetalle`); la ganancia sale ahora de las RPC `get_instructor_sales`/`get_instructor_payouts` (share aplicado por el servidor, el bruto nunca llega al cliente — verificado que ambas RPC ya existían en la DB con la forma correcta). (2) Tablas prolijas: regla `.align-right` real para celdas de tabla (faltaba en `admin.css`, era no-op) → columnas numéricas alineadas a la derecha con sus headers en `Cursos`/`Metricas`/`Pagos` instructor y `PagosInstructores` admin, + aire arriba en headers. (3) Botón de colapsar el sidebar del portal ahora visible (más grande, chevron teal, sombra fuerte contra el fondo oscuro). (4) Logo del portal: avioncito de papel → `graduation-cap` (lucide) sobre el mismo cuadro dorado. (5) `Mi perfil`: layout a ancho completo — "Sobre vos" (Especialidad+Bio) y "Redes" (grilla 2x2) lado a lado, responsive apila en mobile. Commits `f886e28`, `e583ff5`. **(B) Registro con confirmación por mail + taxonomía única:** (1) `signUp` con `emailRedirectTo /auth/callback`, detección de "ya registrado" (identities vacío, anti-enumeración), retrocompatible (si "Confirm email" está apagado loguea directo); pantalla "Revisá tu mail" + reenvío; Login distingue "mail sin confirmar" de credenciales incorrectas (code de Supabase); `AuthCallback` maneja confirmación OK (toast) y link vencido/inválido → `/login`. (2) `lib/taxonomy.ts`: fuente única de `tipo_vendedor`/`anos_experiencia`/`genero` compartida por onboarding y "Tus datos" del perfil (mismos `value` ya cargados en `academy_profiles` → **sin migración**); saca el selector de tipo de cuenta del registro (ahora lo define el onboarding, paso 2); guard anti-loop de onboarding en mobile (`onboarding_completo` → `/`). (3) Header: Backoffice y Portal instructor como accesos independientes (quien es las dos cosas ve los dos, Portal con ícono graduation-cap); z-index del drawer de notificaciones (abre debajo del header, no lo tapa). (4) Admin: al cargar instructor, detectar cuenta existente por email y precargar nombre/teléfono sin pisar lo tipeado + vincular `user_id` (bug #3). Commits `7a9f8b1`, `8e857d2`, `ac63bad`. **Verificado contra la DB real antes de deployar:** trigger `handle_new_user` tolera la ausencia de `tipo_cuenta` (guard `IF ... IS NOT NULL`, no rompe el alta), las columnas de la taxonomía existen y son nullable, `profiles.telefono` existe, "Confirm email" está ON (hay usuarios reales confirmando horas después de registrarse) y `/auth/callback` ya está en el allowlist de Supabase (el OAuth de Google ya lo usa en prod, misma URL). `npm run build` limpio antes de cada push. **Deploys directos a `main`** (memoria del usuario: migraciones/deploys sin pedir aprobación). **Pendiente:** prueba visual en prod del registro real con confirmación por mail — que llegue el mail, que el link loguee y lleve al onboarding, y que el reenvío funcione (principio #13) — ver Backlog P0. |
+| Sesión 30 | **Rediseño completo de la página pública de detalle de vivencial (`/vivencial/:slug`) + una ronda larga de debugging post-deploy, en `main`/producción.** Diseño hecho primero en mockup HTML iterado en vivo con Nico (`vivencial-detalle.V2.html`) hasta su aprobación explícita, y recién ahí implementado — mismo patrón que el resto de prototipos aprobados. **Diseño:** hero cinematográfico full-bleed con parallax + nombre del país gigante flotante (blanco, glow, animación de levitación) + botones de copiar link/compartir; itinerario en timeline vertical con apertura al hover (desktop) o click (mobile) y foto por día; manifiesto/Q&A que Yesica había cargado como texto libre en `incluye` ahora se separa automáticamente en chips (bullets cortos) + cards de prosa agrupadas por subtítulo con fondo liquid glass a ancho completo de sección (no hardcodeado al contenido de Brasil — la regla de agrupamiento es genérica); sección "Qué incluye + Alojamiento" inmersiva sobre foto de fondo; price card liquid glass con contador animado, barra de cupos y "Ver qué no incluye" desplegable; barra flotante inferior persistente estilo iOS que aparece pasado el hero y se autooculta al llegar a "Reservá tu lugar". Toda la lógica de negocio (login-gate antes de reservar/informar transferencia, WhatsApp, saldo del inscripto, cupos en vivo, menú real de Academy) se preservó intacta — se tocó solo la capa visual. **Schema:** columna nueva `academy_courses.vivencial_tipo_destino` (`playa`\|`montana`\|`desierto`\|`selva`\|`ciudad`, check constraint) **APLICADA** — define el tema de color de la página; el vivencial de Brasil quedó en `'playa'`. Sin otras columnas nuevas: fotos, itinerario, incluye/no_incluye ya soportaban todo lo que pide el diseño nuevo (el campo `foto_url` opcional por día de itinerario va dentro del JSONB existente, sin migración). **Debugging post-deploy (6 rondas):** (1) itinerario sin fotos visibles, "qué incluye" mostrando preguntas sueltas sin ícono, espacios vacíos enormes entre secciones, franja oscura vacía al final — causa real: el campo `incluye` es texto libre único donde Yesica escribió bullets + manifiesto + Q&A todo junto, y el parseo inicial partía cada línea como chip individual, inflando la sección y arrastrando efectos visuales en cascada; corregido con regla de parseo genérica (bullets cortos consecutivos al inicio → chips, resto → prosa) + fallbacks de layout. (2) Parpadeo de títulos/descripciones al scrollear, reportado como persistente a través de **tres intentos de fix** (framer-motion → reveal manejado por IntersectionObserver en React state → blindaje con registro global de claves reveladas a nivel de módulo, inmune a remounts) sin cambio visual alguno entre intentos — señal de que el diagnóstico venía mal. Se cortó el ciclo de adivinar leyendo código y se exigió evidencia real (Playwright contra producción, capturando screenshots + valores de opacity en vivo) antes de seguir tocando código; con eso se resolvió. **Fixes menores:** estilo tipográfico de las cards de prosa (ancho, tamaño, interlineado) y luego corregido a ancho completo de sección (no angosto) a pedido explícito; botones de compartir/copiar reposicionados debajo del título con mayor tamaño táctil; botón "← Volver a vivenciales" sacado del hero. **Pendiente, no ejecutado en esta sesión:** Prompt 2 al backoffice (`VivencialWizard`) para que el wizard soporte lo que la página nueva ya sabe mostrar — foto opcional por día de itinerario, tags de posición (Portada/Experiencia/Reserva) sobre las fotos del destino ya existentes, y select de "Tipo de destino" leyendo/escribiendo la columna nueva. Fix aparte de layout en la home de Formación ("Los cursos más elegidos" — grid con hueco enorme por solo 2 cursos cargados, cambiar a flex centrado) — prompt entregado, sin aplicar ni verificar. **Ninguna prueba visual en prod confirmada todavía por Nico/Yesica más allá de las rondas de bugs ya corregidas en vivo durante la sesión** — ver Backlog P0. |
+| Sesión 31 | **Backoffice — Prompt 2 del rediseño de detalle de vivencial (§7d) documentado como COMPLETO tras confirmar que sus 3 ítems ya estaban commiteados en `main`.** Los 3 campos que la página pública nueva ya sabía mostrar están implementados en `VivencialWizard`/`ItineraryBuilder` (`/admin/vivenciales`): **(a) foto opcional por día en el paso Itinerario** — debajo del textarea de cada día, campo "Foto del día (opcional)" con el mismo patrón y bucket que la foto de hotel de `HotelesBuilder` (thumbnail + "Cambiar foto"/"Quitar" / placeholder "Sin foto"; sube a `academy-media` con path `itinerario-N`), persistida como clave opcional `foto_url` dentro de cada objeto de `academy_courses.vivencial_itinerario` (**jsonb, sin migración**); los días sin foto no llevan la clave y la página pública los colapsa a una columna (`vv-nophoto`) sin romper layout. **(b) tags de posición** PORTADA/EXPERIENCIA/RESERVA sobre las 3 primeras "Fotos del destino" (`FOTO_POS_TAGS`, derivados del orden del array, sin cambiar su formato). **(c) select "Tipo de destino"** en el paso 1, leyendo/escribiendo la columna `vivencial_tipo_destino` (default público `'playa'` si queda vacío). La lógica de dirty/"Guardar cambios" y el payload no se tocaron; el paso Revisión ya cuenta "Días con foto: X/Y". **Todo ya estaba en `main` (commit `0d684e9`, "Fixes en wizards de Cursos y Vivenciales + tipo de destino") pero nunca se había documentado** — mismo patrón de desviación que la Sesión 29; esta fila y §7d lo dejan asentado. `tsc -b` limpio. **Pendiente:** prueba visual en prod por Nico/Yesica (principio #13) de los 3 campos — cargar/quitar foto por día y verla persistir; ver los tags sobre las fotos del destino; ver el select cambiando el tema — en `/admin/vivenciales`, `?preview=1` y la página pública real (incluido el borrador "Encantos de Brasil"). Ver Backlog P0. |
+| Sesión 32 | **Backoffice: sección Alumnos nueva + gamificación unificada (puntos/XP/créditos/racha) + pagos de curso sin estado "pendiente" + corrección de la regla de migraciones, todo en `main`/producción.** **(A) Sección `/admin/alumnos` (nueva, ver §8b):** lista de usuarios (no admins) con cursos/vivenciales tomados (contados por separado), buscador, y drawer de detalle (datos, gamificación, cursos/vivenciales inscriptos, pagos, dar de baja/reactivar vía `profiles.activo` — migración nueva). No requirió RPC ni política nueva: el RLS de admin (`is_academy_admin()`) ya alcanzaba `profiles`/`academy_profiles`/`academy_enrollments`/`academy_payments`. **Bug del botón de colapsar el sidebar del admin corregido** — causa raíz real (no la sospechada al principio): el `.topbar` con `backdrop-filter:blur()` se promueve a su propia capa de composición en GPU y pintaba por encima del botón pese a tener menor z-index (artefacto conocido de `backdrop-filter`, no un problema de z-index puro); fix fue forzar al botón a su propia capa (`translateZ(0)`) + subir su z-index a 50. **(B) Gamificación unificada (ver §8c):** existían dos tablas de puntos paralelas que no coincidían entre sí (`useGamification.ts` del cliente vs `award-points`/edge function) y la mayoría de los triggers no estaban conectados a nada; se unificó todo en `award-points` como única fuente de verdad (13 acciones), se conectaron 6 triggers que no disparaban nada (quedaron 4 sin enganche real en el producto — vivencial completado, asistencia en vivo, referido-primera-compra, compartir logro — documentados, no inventada la UI que les falta), se agregó el modal "Cómo ganar XP" (el de Créditos ya existía, se le actualizaron los valores), y se redefinió la racha: ventana de 30 días (no calendario día a día), ligada a actividad de formación (columna nueva `academy_profiles.streak_window_start`), no a login. **Corrección de cierre, en un commit aparte:** el bono de registro se acumulaba con el de referido (20+50=70 créditos); se corrigió para que el de 50 reemplace al de 20, no se sume — verificado contra la función real deployada, cero llamadas viejas a `bono_bienvenida` remanentes. **(C) Pagos de curso sin "pendiente" (ver §8d):** un pago de curso ahora o está aprobado o no existe — se eliminó el estado intermedio persistido (constraint de `academy_payments.estado` ya no admite `'pendiente'`), se agregó `academy_payment_attempts` (tabla nueva) para loguear intentos como métrica sin que sean pagos reintentables, y se reescribieron las 3 edge functions de pago de curso. Se borraron 3 registros reales de checkouts abandonados (nunca tocados desde su creación, sin `mp_payment_id`) que quedaban en `pendiente` sin ningún camino para destrabarse — no eran pagos "atascados", eran checkouts que el usuario nunca terminó. **(D) Hallazgo de proceso — repo desincronizado del deploy real:** se confirmó que `supabase/functions/*` en el repo **no reflejaba** lo que corría en producción (al menos `create-course-payment` tenía un bug ya corregido en el deploy real que en el repo seguía roto) — alguien había deployado edge functions sin commitear. Se sincronizó el repo con lo real (vía MCP de Supabase) en un commit aparte, y quedó la regla: ninguna edge function se deploya sin pasar por el repo primero. **(E) Regla de migraciones corregida** (ver arriba, Principios): Nico aclaró que el dueño del paso de aplicar migraciones es Claude, no él — la regla de Sesión 16 tenía mal ese punto; queda registrado como corrección explícita, no como excepción puntual. **(F) Wizards de Cursos y Vivenciales, 3 fixes genéricos** (mismo patrón copiado en `CourseWizard.tsx`/`VivencialWizard.tsx`, no un componente compartido — se replicó en los dos): prefijo de moneda (`US$`) que se pisaba con el valor tipeado por padding insuficiente; footer reordenado (Cancelar al extremo izquierdo, Atrás agrupado con Siguiente a la derecha); pasos del stepper ahora clickeables para saltar directo, solo si el resto de los pasos ya están completos (`validateStep`). Quedó pendiente, a confirmar con Nico, sumarle el mismo stepper clickeable a `BenefitWizard.tsx` (comparte el componente visual pero no el footer). `tsc -b` y build limpios en todo. **Pendiente:** prueba visual en prod de todo lo de esta sesión (principio #13) — ver Backlog P0. **Insignias (`academy_badges`) quedan explícitamente para otra sesión** — hay que renombrar/redefinir condiciones (`streak_7` ya no existe, la racha mínima ahora es de 30 días) antes de tocar el front de logros. |
+| Sesión 33 | **Rama `feat/vivencial-home-tipografia` (8 commits): card de precio del detalle de vivencial, rediseño de Home, Montserrat global y respaldo de la rama — mergeada a `main` y en producción.** **(A) Card de precio del vivencial (`/vivencial/:slug`, price card de "Reservá tu lugar"):** los 3 checks del CTA pasaron de derivarse del texto libre de `incluye` (que en datos de prueba llegó a mostrar líneas sueltas sin sentido) a ser **3 textos fijos hardcodeados**, iguales para todos los vivenciales: "Viaja, disfruta y capacitate profesionalmente", "Instructores con más de 15 años de experiencia", "Convertite en profesional del destino y crecé con Travexa" — `incluye` sigue en uso en la sección "Qué incluye", solo dejó de alimentar este checklist. Card más ancha y con más padding; la **seña** pasó a ser la cifra más grande y dominante de la card. Subtítulo nuevo: *"Seña para confirmar tu lugar + cuotas cómodas de: $ X ARS"*, con X = (precio_ars − seña_ars) / meses restantes hasta la salida, reusando la misma lógica de `lib/vivencial.ts` que ya calculaba la cuota estimada del listado (mismo fallback a "Pago único" si falta menos de un mes o la fecha ya pasó). Se mantiene "Total del viaje: $ X ARS" y se agregó una línea nueva "O pagá en dólares: US$ X" (con `precio_usd`, ya existente — no hizo falta tipo de cambio ni columna nueva). Se borró la línea redundante "Seña sugerida: $ X". **(B) Home pública (ver §9, tabla actualizada):** sacado "Sin tarjeta · Acceso inmediato" del hero; el bloque "Formación hecha por y para asesores de viajes..." pasó de íconos de silueta genéricos a **fotos reales de `academy_instructors` (activo=true)** en un avatar-stack — los instructores sin `avatar_url` se excluyen del stack (nunca un ícono genérico simulando una persona, principio de integridad de datos), si ninguno tiene foto el bloque queda solo con el texto; la tira de números (curso disponible/cursos gratis/instructor/vivencial activo) pasó a ser **su propia sección** (fondo distinto del hero, números más grandes y centrados, sin scroll-snap); nuevo **orden de secciones**: números → Vivenciales → Formación → "Qué encontrás" (antes Vivenciales quedaba después); "Qué encontrás" rediseñada con más jerarquía visual (íconos, títulos y bajadas más grandes, cards más altas, padding de sección acotado en vez de contenido chico perdido en un espacio enorme). **(C) Tipografía global → Montserrat:** `--font-display`, `--font-body` y **también `--font-mono`** (badges, números, labels, timestamps, botones, inputs) apuntan a Montserrat en `index.css` y `admin.css` — sin excepciones, en toda la plataforma (público, privado, backoffice, portal de instructor); se agregó `input, button, textarea, select { font-family: inherit }` porque los controles de formulario no heredaban la fuente. **(D) Tab de Instructor condicional — implementado y luego superado por el rediseño V2:** en el diseño de tabs vigente al momento de este pedido se agregó la regla de que el tab de Instructor solo se muestra si el vivencial tiene instructor cargado (mismo criterio para Reseñas/Itinerario/Qué incluye). Al revisar contra el código real (V2 de Sesión 30, que ya está en producción y convirtió el detalle en una página de scroll sin tabs), se confirmó que **el V2 no tiene ninguna sección de Instructor que ocultar/mostrar** — se eliminó por completo en ese rediseño, no es que quedó vacía. Se evaluó construirla de cero pero **se decidió NO hacerlo en esta sesión**: excede el alcance pedido (que era solo lógica condicional sobre algo existente) y hoy ningún vivencial tiene `instructor_id` cargado en la base, así que no habría nada que mostrar igual. Las demás secciones del V2 que pueden quedar vacías (Itinerario, Experiencia/Qué incluye, Puntos de salida) ya estaban correctamente condicionadas desde Sesión 30 — no hubo nada suelto ahí. Queda como ítem de Backlog P1: agregar la sección de Instructor al V2 cuando haya vivenciales con instructor asignado. **(E) Proceso:** la rama vivió varias sesiones solo en local; en esta sesión se **pusheó a `origin` como respaldo** (antes no tenía upstream en GitHub). `tsc -b`, `eslint` y `vite build` limpios. **Pendiente:** prueba visual en prod de los 4 puntos (card de precio con un vivencial real que tenga seña/fecha/precio_usd cargados, hero con fotos de instructores, orden de secciones y tira de números, Montserrat en todas las áreas) — ver Backlog P0. |
+| Sesión 34 | **Backoffice — selección de instructores en el wizard de Vivenciales (`VivencialWizard.tsx`, `/admin/vivenciales`).** Yesica ya puede asignar **uno o varios instructores** a un vivencial; la página pública (Prompt B, otra tanda) los mostrará. **Columna nueva `academy_courses.vivencial_instructor_ids` (`uuid[]`)** — array de IDs de `academy_instructors`, en orden; null o vacío = sin instructores. **Aplicada por Claude IA vía MCP con autorización de Nico** (mismo procedimiento que `vivencial_tipo_destino` de Sesión 30); se usa columna array nueva y **no** el `instructor_id` single existente, que es el de los **cursos** y quedó intacto. Verificada con SELECT a `information_schema` antes de codear (`data_type=ARRAY`, `udt_name=_uuid`). **Wizard:** bloque nuevo "Instructores" en el paso 1 (Destino y logística), después de "Hoteles / alojamiento" — componente `InstructorPicker`: chips en orden (avatar real o iniciales sobre gradiente determinístico vía `lib/avatar`, nombre, especialidad) que se agregan desde un `<select>` de instructores **activos** (`useAdminInstructors`, ya existente); cada chip con **flechas ↑↓ para reordenar** y ✕ para quitar. Un instructor asignado que después queda `activo=false` **se muestra igual con badge "inactivo"** al reabrir (no se borra solo del array). Estado vacío con CTA a `/admin/instructores` si no hay ningún instructor activo ni asignado. Paso 5 (Revisión): línea "Instructores: N" con los nombres, o "Instructores: — (la sección no se mostrará)" si no hay ninguno. Integrado al `FormState` (`instructor_ids`) y al payload sin tocar la lógica de dirty state / "Guardar cambios" (Sesión 27). **Decisiones:** (1) **reordenamiento SÍ** (flechas ↑↓, no drag — barato con array); (2) **null cuando vacío** (no array vacío) al persistir — la página pública tratará ambos igual (sección oculta); (3) `Course.vivencial_instructor_ids: string[] | null` agregado al type (alimenta `Database` + `CourseWrite` de una). `tsc -b`, `eslint` y `vite build` limpios. Estado DB al cierre: ambos vivenciales de Brasil con `vivencial_instructor_ids=null`, 3 instructores activos disponibles (Hernán Causté, nicolas, Yesica). **NO tocado:** lógica de cursos (`instructor_id`), resto de pasos del wizard, guardado incremental, página pública. **Pendiente:** que Yesica cargue los instructores del vivencial de Brasil y la prueba visual en prod (principio #13) — asignar 2 / reordenar / quitar / reabrir. Ver §7d (mapeo) y Backlog P0. |
+| Sesión 35 | **Resend configurado en producción (dominio + API key) + `send-reserva-email` finalmente deployada (escrita desde Sesión 22) + gap real encontrado y cerrado: mail de compra de curso, inexistente hasta hoy.** Arrancó como pedido de "configurar Resend para confirmar el mail" (registro); el análisis derivó en priorizar el mail de vivenciales que ya estaba escrito y pausado, y de ahí surgió un segundo frente al probarlo. **(A) Resend — infraestructura compartida:** dominio `travexa.com.ar` verificado en Resend vía los 4 registros DNS en Cloudflare (DKIM `resend._domainkey`, MX `send`, SPF `send`, DMARC `_dmarc`, todos "DNS only"); API key generada y cargada como secret `RESEND_API_KEY` en Supabase Edge Functions — **nota de seguridad:** esa key quedó pegada en el chat, pendiente que Nico la rote en Resend (crear nueva, borrar vieja) y actualice el secret. **(B) `send-reserva-email` deployada (Sesión 22 → Sesión 35):** la function escrita hace 13 sesiones y nunca deployada quedó **ACTIVE en producción**, vía Claude IA por MCP de Supabase — CORS reescrito inline (self-contained, mismo patrón que `confirm-course-payment`) porque el import relativo a `../_shared/cors.ts` no viaja en un deploy por MCP; secret `RESERVA_FROM` cargado (`Travexa Academy <reservas@travexa.com.ar>`). **(C) Gap encontrado en QA:** primera prueba real (usuario `Katrix840216@gmail.com`) no generó ningún mail; revisando los logs de Edge Functions se confirmó que `send-reserva-email` **nunca se invocó** — la reserva de prueba fue de un **curso** (vía Mercado Pago: `create-course-payment`/`confirm-course-payment`/`mp-webhook-academy`), no de un vivencial, y esa function solo está cableada al flujo de vivenciales. Conclusión real: **nunca existió ningún mail de confirmación para compra de curso**, no era un bug de esta configuración. **(D) `send-course-email` — nueva function, mail de "compra de curso confirmada":** mismo patrón (Resend por API HTTP, fire-and-forget, CORS inline), secret `COURSE_FROM` (`Travexa Academy <cursos@travexa.com.ar>`, con fallback a `RESERVA_FROM` y luego a `onboarding@resend.dev`). El problema real a resolver era **evitar mail duplicado**: `confirm-course-payment` (redirect de éxito) y `mp-webhook-academy` (notificación de MP) corren casi en simultáneo y ambos pueden aprobar el mismo pago — confirmado en los logs de la compra de prueba. Se descartó unificar ambas functions (acoplaría el camino de pago) a favor de reusar una señal atómica que ya existía: `ensureEnrollment()` hace `upsert(..., { onConflict: 'user_id,course_id', ignoreDuplicates: true })` sobre el `UNIQUE(user_id, course_id)` de `academy_enrollments` — Postgres resuelve el conflicto de forma atómica, así que entre las dos llamadas exactamente una ve `created = true` (la misma señal que ya usaban para no inflar `total_alumnos`). Ambas functions modificadas para que `ensureEnrollment()` devuelva ese booleano y solo dispare `send-course-email` cuando `created === true`. Segunda red de seguridad dentro de `send-course-email`: no manda nada si no existe un pago `estado='aprobado'` para ese `(user, course)`. Las 3 functions (`send-course-email` nueva, `confirm-course-payment` v9, `mp-webhook-academy` v11) deployadas por Claude IA vía MCP. **Sin migraciones ni cambios de schema en toda la sesión** — todo a nivel edge functions y secrets. **Pendiente:** (1) confirmar que `COURSE_FROM` quedó guardado (Bulk save) en el dashboard; (2) prueba real de compra de curso para confirmar que `send-course-email` sale **una sola vez** pese a la carrera webhook/redirect (queda documentado el método con `curl` en paralelo para forzarla si hace falta); (3) prueba real de una reserva de **vivencial** (no curso) para confirmar que `send-reserva-email` efectivamente dispara y el mail llega — el único test hecho hasta ahora fue de curso, que no la invoca; (4) rotar la API key de Resend expuesta en el chat. Ver Backlog P0/P1. |
+| Sesión 36 | **Sistema de Beneficios "Travexa Points" completo: tienda pública `/beneficios`, perfil, checkout con descuento automático, `CourseWizard`, backoffice y notificaciones — diseñado y planificado por Claude IA (chat), ejecutado en 2 tandas por Claude Code, deployado a producción.** Ver §8e para el detalle completo (reglas de negocio, schema, edge functions, QA pendiente). Resumen: **(A)** Especificación funcional completa (`ESPEC_Beneficios_Academy.md`) con 14 reglas de negocio cerradas junto a Nico (canje total/parcial por curso, sorteos por chances, vencimiento de créditos al año, canje intocable una vez hecho). **(B) Backend aplicado directo por Claude IA vía MCP** (mismo criterio que el resto del proyecto desde la corrección de Sesión 32): 4 migraciones sobre `academy_benefits`/`academy_credit_redemptions`/`academy_payment_attempts`/`academy_enrollments` + 3 funciones SQL nuevas (`redeem_benefit`, `draw_benefit_winner`, `expire_credits_run`) + 3 edge functions nuevas (`redeem-benefit`, `draw-benefit-winner`, `expire-credits`). **(C) Prototipo visual** iterado en vivo con Nico (`prototipo_beneficios.html`, en la raíz — mismo patrón que el resto de prototipos aprobados): hero a dos columnas siguiendo la línea visual de `/vivencial` (Montserrat, sin logo, colores reales de prod), carrusel 3D de destacados estilo liquid glass, panel de créditos, filtros, grilla y modal de canje con pantalla de éxito. **(D) Claude Code — tanda 1:** tienda pública completa (ítem "Beneficios" sumado al menú existente, entre Vivencial e Instructores, sin tocar su lógica), perfil ("Tus canjes" dentro de Logros → "Tus movimientos"), checkout de curso con descuento automático antes de Mercado Pago, `CourseWizard` con canje total/parcial sincronizado a `academy_benefits`, notificaciones in-app. **(E) Claude Code — tanda 2, backoffice:** `BenefitWizard` extendido (destacado, bases y condiciones, "valor de 1 chance", stepper clickeable — cierra el ítem pendiente desde Sesión 32), lista con badges/drawer de canjes, botón real "Realizar sorteo" (invoca `draw-benefit-winner`), "Marcar como entregado" para beneficios tipo `otro` (edge function nueva `mark-redemption-delivered`), bloque de Métricas de beneficios. `tsc -b`/build limpios en ambas tandas, pusheado a `main` y deployado a `academy.travexa.com.ar` (verificado con Playwright contra prod). **Sin datos de ejemplo inventados**: como no había ningún beneficio cargado al momento del deploy, la tienda mostró su estado vacío real. **Pendiente:** prueba visual en prod por Nico/Yesica (principio #13) — ver Backlog P0. |
+| Sesión 37 | **Bugfix: saldo de créditos invisible en el hero de `/beneficios`, en producción.** Reportado por Nico tras la Sesión 36: el panel "Tus créditos" mostraba el nivel y la etiqueta "disponibles" pero el número del saldo quedaba vacío. **Causa raíz real** (no era timing de animación, como se sospechó al principio): el componente de conteo animado usado (`NumberFlow`) renderiza en un *web component con shadow DOM*, y el efecto de relleno con gradiente del número (`background-clip:text` + `-webkit-text-fill-color:transparent`) no cruza el límite del shadow DOM — los dígitos quedaban 100% transparentes, invisibles, mientras el resto del panel (elementos normales) se veía bien. **Fix:** número movido a un `<span>` normal (mismo patrón que ya funcionaba en `/perfil`) + count-up propio que se re-dispara cuando cambia el saldo (incluso después de un canje) + estado "nunca vacío" (skeleton/`—` mientras carga, valor directo si la animación no llega a correr). Verificado con Playwright contra prod en la vista deslogueada (sin regresiones); **la vista logueada quedó pendiente de la confirmación visual de Nico** (Claude Code no tiene forma de loguearse con una cuenta real). Deployado a `main`/producción. |
+| Sesión 38 | **Aceptación de bases y condiciones en el canje de beneficios con `terminos` cargados (sorteos).** A pedido de Nico: (1) Claude IA (chat) redactó la plantilla genérica de bases y condiciones de sorteos (`bases_y_condiciones_sorteos.md`) — pendiente que Nico confirme la razón social a usar mientras Pencom Travexa SAS termina su constitución. (2) **Backend, aplicado y deployado directo por Claude IA vía MCP:** columna nueva `academy_credit_redemptions.terminos_aceptados_at`; `redeem_benefit()` reemplazada con un 4° parámetro `p_acepta_terminos boolean` — si el beneficio tiene `terminos` no vacío y no llega en `true`, rechaza con `RAISE EXCEPTION 'TERMINOS_NO_ACEPTADOS'` sin descontar nada; si lo acepta, graba la fecha. Edge function `redeem-benefit` redeployada (v3) para reenviar `aceptaTerminos` desde el body. (3) **Claude Code, solo frontend:** en el modal de canje, si el beneficio tiene `terminos`, aparece un checkbox obligatorio sin marcar por defecto ("Leí y acepto las bases y condiciones...") con link a un acordeón (texto general + "Condiciones específicas de este beneficio" con el `terminos` del beneficio); "Confirmar canje" queda deshabilitado hasta tildarlo; si no tiene `terminos`, cero cambios. Texto general centralizado en `src/content/basesYCondicionesSorteos.ts` (una sola fuente). En el drawer de canjes del backoffice (`/admin/beneficios`), cada canje con aceptación muestra "Bases aceptadas el {fecha}" para trazabilidad de Yesica. Deployado a `main`/producción (commit `e5f01b9`, sin mezclar con trabajo sin commitear de otra sesión que había en el árbol). **Pendiente:** confirmar la razón social del texto legal; prueba visual en prod con un sorteo real que tenga bases cargadas — ver Backlog P0. |
+| Sesión 39 | **Bug crítico de RLS resuelto + instructores múltiples en cursos + reconciliación de trabajo sin commitear, todo en `main`/producción.** **(Tarea 1) Bug crítico — `/admin/cursos`, `/admin/vivenciales` e `/admin/instructores` mostraban 0 resultados pese a tener datos.** Causa raíz (diagnosticada simulando el JWT real del admin contra la DB, no adivinando): **ciclo de RLS** entre dos policies — `"Instructor ve sus propios cursos"` (en `academy_courses`) consultaba `academy_instructors`, y `"Instructores asignados a vivencial visibles"` (en `academy_instructors`, agregada al publicar la sección pública de instructores del vivencial) consultaba `academy_courses` → `ERROR 42P17: infinite recursion detected in policy`. Todo SELECT autenticado a esas dos tablas fallaba y el frontend lo tragaba como lista vacía (Alumnos seguía OK porque lee `profiles`, fuera del ciclo). `is_academy_admin()` nunca fue el problema (los 36 alumnos lo probaban). **Fix (migración `20260719005000`):** el `EXISTS` sobre `academy_courses` se movió a la función `SECURITY DEFINER` `instructor_en_vivencial_publicado()` (bypassa RLS, no re-evalúa policies) → corta el ciclo, mismo resultado funcional. Además, las listas del backoffice ahora distinguen **error de vacío** (`ListErrorState`): un fallo de query/RLS ya no se disfraza de "0 resultados". Regla nueva registrada: dos policies de estas tablas nunca se consultan en cruz; si hace falta, `SECURITY DEFINER`. **(Tarea 2) Instructores múltiples en cursos (paridad con vivenciales).** Los cursos (`en_vivo`/`grabado`/`ebook`) soportaban un solo instructor (`instructor_id`); ahora soportan varios. **Migración `20260719006000`:** columna `academy_courses.instructor_ids uuid[]` (fuente de verdad, ordenada) + backfill de los 6 cursos existentes (`instructor_ids = [instructor_id]`); `instructor_id` **no se dropea**, queda como espejo de `instructor_ids[0]` (compat con embed, conteos y datos viejos), sincronizado en cada guardado del wizard. La policy `"Instructor ve sus propios cursos"` se extendió a reconocer single y array vía la función `SECURITY DEFINER` `mi_instructor_id()` (resuelve `auth.uid()` sin consultar otra tabla → no reintroduce la recursión de la Tarea 1). **Frontend:** `InstructorPicker` extraído a componente compartido (`VivencialWizard` + `CourseWizard`); `CourseWizard` con selector múltiple de chips reordenables (instructor sigue opcional); detalle público del curso muestra todos los instructores (nombre/foto/especialidad/bio) vía `usePublicInstructors` (hook generalizado desde el de vivenciales). **(Housekeeping) Reconciliación de trabajo sin commitear que había quedado en el árbol de sesiones previas** (mismo patrón de desviación que Sesiones 29/31): se revisó cada archivo (diff mostrado a Nico) y se commitearon por separado — (a) `.gitignore` ignora `.vercel`; (b) **mail de compra de curso** (`send-course-email` + los 2 webhooks, Sesión 35: ya deployado y vivo, solo faltaba versionar el fuente); (c) **sección pública de instructores del vivencial** (`VivencialDetail` + estilos + migración `002000` de `vivencial_instructor_ids`, que coincide exacto con la DB). La migración `003000` (RLS pública de instructores asignados) quedó **sin commitear a la espera de confirmación de Nico**: su policy fue superseded por la `005000` de esta sesión, así que el archivo no coincide con la policy viva. `tsc`, `vite build` y `eslint` limpios; los dos commits de las tareas pusheados a `main` y **deployados a producción** (deploy `dpl_BvEj1UGC3sKA7yroeVp1HXxTbzFB`, READY). **Pendiente:** prueba visual en prod por Nico/Yesica (principio #13) — listas del backoffice con datos, y asignar/reordenar varios instructores a un curso y verlos en el detalle público; decisión de Nico sobre commitear `003000` y el mockup `vivencial-detalle.V2.html`. Ver Backlog P0. |
 
 ### ✅ Infraestructura lista
 
 - Supabase `fvrwtqhkskbaixqbxami` creada, schema completo con RLS y todas las migraciones.
-- 7 edge functions deployadas y ACTIVE (las 3 de pagos + `award-points` + `check-badges`, más las 2 originales de MP), más `create-vivencial-cuotas-payment` (Sesión 15, deployada sin uso — ver Backlog). *(No cuenta acá `create-subscription-academy`/`confirm-subscription-academy` — son deuda técnica sin relación con el modelo actual, ver Backlog.)*
+- 13 edge functions deployadas y ACTIVE (las 3 de pagos + `award-points` + `check-badges`, más las 2 originales de MP), más `create-vivencial-cuotas-payment` (Sesión 15, deployada sin uso — ver Backlog), más `send-reserva-email` (escrita en Sesión 22, deployada recién en Sesión 35) y `send-course-email` (nueva, Sesión 35), más `redeem-benefit`/`draw-benefit-winner`/`expire-credits`/`mark-redemption-delivered` (nuevas, Sesión 36, sistema de Beneficios — ver §8e). *(No cuenta acá `create-subscription-academy`/`confirm-subscription-academy` — son deuda técnica sin relación con el modelo actual, ver Backlog.)*
 - Bucket `academy-media` (público, imágenes) + bucket `academy-comprobantes` (privado) en Storage.
 - Onboarding obligatorio en producción.
 - Home pública (`/`) en producción, ver §9.
 - Flujo de vivenciales por WhatsApp + backoffice en producción, ver §7.
 - Portal de instructores en producción, ver §8.
+- Backoffice: sección Alumnos (`/admin/alumnos`) en producción, ver §8b.
 - Dominio propio `academy.travexa.com.ar` sirviendo, ver §11.
 
 ---
@@ -167,6 +190,19 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 
 ### 🔴 P0 — Bloqueante para operar con usuarios reales / cobrar de verdad
 
+- [ ] **Prueba visual en prod del sistema de Beneficios completo (Sesiones 36-38, ver §8e)** — deployado y verificado a nivel código/build, falta el cierre humano (principio #13): cargar un beneficio de cada tipo desde `/admin/beneficios` (curso gratis, % descuento, monto fijo, sorteo, otro), recorrer `/beneficios` logueado y deslogueado con los filtros, hacer un canje real de cada tipo, confirmar que el descuento se aplica solo en un pago real de MP, correr un sorteo con participantes de prueba (botón "Realizar sorteo"), probar "Marcar como entregado", y confirmar el checkbox de bases y condiciones con un sorteo que tenga `terminos` cargado (Sesión 38).
+- [ ] **Confirmar la razón social a usar en las bases y condiciones de sorteos (Sesión 38)** — Pencom Travexa SAS sigue "en proceso de constitución" (`Travexa_Negocio.md` §13); ajustar `bases_y_condiciones_sorteos.md` y `src/content/basesYCondicionesSorteos.ts` con el nombre confirmado.
+- [ ] **Programar `expire-credits` como cron (Sesión 36, ver §8e)** — la edge function está deployada y funciona, pero no se automatizó por SQL para no hardcodear la `SERVICE_ROLE_KEY` en una migración versionada; falta el alta manual en Supabase Dashboard → Edge Functions → Cron (2 minutos, documentado en la sesión).
+
+- [ ] **Rotar la API key de Resend expuesta en el chat (Sesión 35).** La key (`re_GVfYYApt...`) quedó pegada en texto plano en esta conversación. Recomendado: crear una nueva en Resend, actualizar el secret `RESEND_API_KEY` en Supabase, borrar la vieja.
+- [ ] **Confirmar que `send-course-email` sale una sola vez ante la carrera webhook/redirect (Sesión 35).** Función y guard anti-duplicado (`ensureEnrollment` → `created`) ya deployados; falta una compra de curso real (o el test con `curl` en paralelo documentado en la sesión) que confirme un solo mail y una sola invocación `sent:true` en los logs.
+- [ ] **Confirmar que `send-course-email` quedó bien conectada — verificar que el secret `COURSE_FROM` haya quedado guardado (Bulk save) en Supabase (Sesión 35).**
+- [ ] **Prueba visual en prod del bloque "Instructores" del wizard de Vivenciales (Sesión 34, ver §7d)** — implementación en `main`, falta el cierre humano (principio #13): en `/admin/vivenciales`, asignar 2 instructores a un vivencial (arrancar por el de Brasil), reordenarlos con las flechas, guardar, cerrar y reabrir → aparecen en el orden guardado; quitar 1 y guardar → queda 1; quitar todos → la columna queda null. Confirmar con un SELECT a `academy_courses.vivencial_instructor_ids` que el array quedó bien escrito. (La vista pública de la sección es el Prompt B, tanda aparte.)
+- [ ] **Prueba visual en prod de todo lo de Sesión 33 (rama `feat/vivencial-home-tipografia`, ver tabla de sesiones)** — mergeada y en producción, falta el cierre humano (principio #13): (a) card de precio en un vivencial real con seña/fecha/precio_usd cargados — que la cuota calculada dé bien, la seña se lea como la cifra dominante, y aparezca "O pagá en dólares"; (b) hero de la Home con fotos reales de instructores en el avatar-stack; (c) tira de números como sección propia + nuevo orden de secciones (Vivenciales antes que Formación) + "Qué encontrás" rediseñada; (d) Montserrat aplicado en todas las áreas (público, privado, backoffice, portal de instructor), incluidos inputs, botones, números y badges.
+- [ ] **Prueba visual en prod de todo lo de Sesión 32 (ver tabla de sesiones + §8b/§8c/§8d)** — deployado y verificado a nivel código/DB, falta el cierre humano (principio #13): sección `/admin/alumnos` (lista, drawer, dar de baja/reactivar), botón de colapsar sidebar del admin visible en Chrome y Safari, modal "Cómo ganar XP" en `/perfil`, un pago de curso real de punta a punta (que habilite solo, sin nada manual, y que un checkout abandonado no deje ninguna fila en `academy_payments`), y los 3 fixes genéricos de los wizards (prefijo de moneda, footer, stepper clickeable) en `/admin/cursos` y `/admin/vivenciales`.
+- [ ] **Prueba visual en prod de los 3 campos nuevos del wizard de Vivenciales (Prompt 2 COMPLETO, Sesión 31, ver §7d)** — implementación ya en `main` (commit `0d684e9`), falta el cierre humano (principio #13): (a) cargar/quitar foto por día en el paso Itinerario y confirmar que persiste al reabrir; (b) que los tags PORTADA/EXPERIENCIA/RESERVA aparezcan sobre las 3 primeras "Fotos del destino"; (c) que el select "Tipo de destino" guarde y cambie el tema de color de la página. Verificar en `/admin/vivenciales`, en `?preview=1` y en la página pública real, incluido el borrador "Encantos de Brasil".
+- [ ] **Prueba visual final EN PRODUCCIÓN del rediseño completo de `/vivencial/:slug` (Sesión 30, ver §7d)** — se corrigieron varias rondas de bugs reales ya en vivo durante la sesión (parpadeo de texto, espacios vacíos, parseo de "Qué incluye", fotos de fondo) hasta quedar aprobado por Nico en el recorrido de esa sesión, pero falta el cierre formal: recorrido completo de la página (hero → itinerario → qué incluye → alojamiento → puntos de salida → reserva → footer) en desktop y mobile, con los 3 estados de usuario (deslogueado, logueado sin inscripción, inscripto con saldo), y confirmar que el preview del backoffice (`?preview=1`) renderiza este mismo diseño nuevo.
+- [ ] **Fix de layout de "Los cursos más elegidos" en la home de Formación — prompt entregado, sin aplicar.** Grid de columnas fijas deja un hueco enorme con solo 2 cursos cargados; cambiar a un layout tipo flex centrado con cards más grandes, que se sostenga igual de bien con pocos o muchos cursos.
 - [ ] **Prueba visual real EN PRODUCCIÓN de los 5 fixes del wizard de Vivenciales/Cursos (Sesión 27)** —
   mergeado y deployado (`academy.travexa.com.ar`), pendiente que Nico lo confirme en vivo, backoffice
   → `/admin/vivenciales` y `/admin/cursos`: (a) editar un vivencial, subir foto en "Destino", ir a
@@ -206,15 +242,14 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 ### 🟡 P1 — Producto: pilares incompletos o features a medio construir
 
 - [ ] **Prototipo `academy_vivencial.html`: alinear del todo con el flujo v3 (Sesión 24).** El proto todavía arrastra el layout self-service legacy / CTA viejo; el producto ya usa "Reservar mi lugar" → pantalla de confirmación. Actualizar el proto para que refleje el flujo real de reserva self-service.
-- [ ] **Configurar Resend para el mail de reserva (Sesión 22, en pausa):** verificar dominio en Resend, generar API key, cargar los secrets `RESEND_API_KEY` + `RESERVA_FROM` en Supabase y deployar la edge function `send-reserva-email` (ya escrita, sin deployar). Ya NO bloquea nada: el flujo de reserva funciona sin el mail (disparo fire-and-forget).
-- [ ] **Confirmar que el mail de reserva sale bien una vez deployado (Sesión 22):** probar que llega el mail de "reserva confirmada" con número, resumen, monto y datos bancarios, después de configurar Resend.
+- [ ] **Confirmar que el mail de reserva sale bien (Sesión 22 → Sesión 35):** `send-reserva-email` ya está deployada y Resend configurado (dominio verificado, secrets cargados), pero el único test real hecho hasta ahora fue con una compra de **curso** (que no la invoca — ver Sesión 35). Falta probar con una reserva de **vivencial** real: que llegue el mail con número, resumen, monto y datos bancarios.
 - [ ] **DNI del cliente en perfil (Sesión 21):** columna `academy_profiles.dni` (en la migración v3) + campo obligatorio en el onboarding + lectura en backoffice/PDF. Reemplaza el "—" que salía antes en la liquidación. Ya implementado en código; una vez aplicada la migración v3, los usuarios nuevos lo cargan en el onboarding. Los usuarios **ya existentes** no tienen DNI hasta que completen/reediten el perfil → evaluar pedirlo retroactivamente (banner o gate suave) si Yesica lo necesita para liquidaciones viejas.
 - [ ] Testimonios reales para `TestimonialsSection` de la Home (hoy `SHOW_TESTIMONIALS = false`, activar cuando existan reseñas).
 - [ ] Ajustes finales de la Home (checklist de Sesión 14, ver §9).
 - [ ] Mergear Fase 2 del hero animado (`feat/plane-takeoff-hero`) a `main`.
 - [ ] Tienda pública de canjes `/beneficios` — solo existe el lado de administración del catálogo.
-- [ ] Badge `top10_monthly` (ranking-based, contra `get_academy_ranking()`).
-- [ ] Auditar `academy_badges.condicion` completo contra lo que cubren `useGamification.ts`/`check-badges`.
+- [ ] **Rediseño de insignias (`academy_badges`) — explícitamente pospuesto a otra sesión en Sesión 32** (ver tabla de sesiones): con la racha redefinida a ventana de 30 días (ver §8c), la condición `streak_7` ya no existe y hay que decidir cómo queda (renombrar a `streak_30`, sacarla, u otra). Alcance a definir con Nico: renombrar/redefinir las 7 condiciones de `academy_badges.condicion` (`first_lesson`, `first_review`, `first_vivencial`, `first_referral`, `streak_7`, `streak_100`, `top10_monthly`), y recién ahí conectar `check-badges` con la tabla de acciones unificada de §8c (hoy sin lógica implementada para ninguna condición).
+- [ ] Badge `top10_monthly` (ranking-based, contra `get_academy_ranking()`) — parte del ítem de arriba.
 - [ ] Certificados: título para certificados externos + generación de PDF en backend.
 - [ ] Backoffice: drag-and-drop para reordenar módulos/lecciones e itinerario de vivenciales.
 - [ ] **Comunidad** (pilar): feed social + directorio de miembros — no construido (tablas placeholder ya existen).
@@ -238,6 +273,7 @@ Backlog único (reemplaza las listas separadas de versiones anteriores de este d
 - [ ] Probar el Portal de Instructores con un instructor real (carga de datos, no código — Yesica/Nico cargan un `academy_instructors` con email de una cuenta existente + un pago de curso aprobado).
 - [ ] Exportar CSV de liquidaciones de instructores.
 - [ ] Mergear la rama del video unificado (Sesión 17) a `main` — hoy solo el hotfix de `/cursos` está en producción, el resto sigue en rama.
+- [ ] **Agregar sección de Instructor al rediseño V2 del detalle de vivencial (decisión de Sesión 33, ver §7d).** El V2 no tiene ningún bloque de instructor — se eliminó por completo en el rediseño de Sesión 30. Retomar cuando haya al menos un vivencial con `instructor_id` cargado en `academy_instructors`: construir la sección (foto, bio, nombre reales) visible solo cuando el vivencial tenga instructor asignado, sin mostrar nada si no lo tiene.
 
 ### 🧹 P2 — Limpieza de deuda técnica
 
@@ -458,6 +494,129 @@ trigger y las columnas existen; el código compila y buildea contra prod.
 
 ---
 
+## VIVENCIALES v4 — REDISEÑO DE LA PÁGINA DE DETALLE (Sesión 30)
+
+> Esta sección documenta un cambio **puramente visual** de `/vivencial/:slug`. **No toca**
+> el modelo de negocio (§7), ni la reserva self-service (§7c), ni el modelo de precio
+> (§7b) — la lógica de todos esos flujos se preservó intacta a propósito.
+
+### Qué es y por qué
+
+Yesica pidió que la página de detalle de un vivencial "venda la experiencia desde el
+primer segundo", en línea con el diferenciador de Travexa Academy (viajar y vivir el
+destino, no solo estudiarlo). El diseño anterior era una ficha de producto genérica
+(hero chico, tabs, sidebar de precio) que no comunicaba eso.
+
+### Proceso de diseño
+
+Como con el resto de prototipos del proyecto: el diseño se iteró punto por punto en un
+**mockup HTML standalone** (`vivencial-detalle.V2.html`, en la raíz del proyecto junto a
+los demás `academy_*.html`) hasta la aprobación explícita de Nico, y **recién ahí** se
+portó a React. El mockup es la fuente de verdad visual de esta feature — si hace falta
+retocar el diseño más adelante, arrancar por ahí, no directo en el componente React.
+
+### Diseño aprobado
+
+- **Hero 100svh**: foto de portada full-bleed con parallax sutil, nombre del país en
+  mayúsculas gigante flotando de fondo (blanco, borde con glow, sombra, animación de
+  levitación continua — no el gris apenas visible de la primera iteración), tag "✦
+  Capacitación vivencial", título, subtítulo (oculto si no hay), botones de copiar
+  link/compartir (44×44px, glass con buen contraste, ubicados debajo del título — no
+  perdidos a mitad de la foto), y 4 mini-cards de datos (fechas/duración/cupos/sale
+  desde). Sin el botón "Volver a vivenciales" (se sacó del hero a pedido explícito).
+- **Itinerario** en timeline vertical con línea dorada: cada día se expande solo (con
+  apertura lenta) al pasar el mouse en desktop, y con click/tap en mobile (no hay hover
+  en touch). Cada día puede llevar una foto — campo nuevo y **opcional**
+  `vivencial_itinerario[i].foto_url` dentro del mismo JSONB existente, sin migración.
+- **"Qué incluye"**: el campo `incluye` es texto libre único (Yesica escribe ahí bullets
+  cortos seguidos de párrafos largos y hasta bloques de preguntas y respuestas, todo en
+  el mismo campo — no hay estructura). Se parsea de forma **genérica** (no atada al texto
+  de ningún vivencial en particular): las líneas cortas consecutivas desde el inicio se
+  muestran como chips con ícono de check; el resto se agrupa por los "subtítulos" que
+  aparecen en el texto (líneas cortas seguidas de contenido, tipo "¿A quién está
+  dirigido?") en **cards de vidrio liquid glass separadas**, a **ancho completo** de la
+  sección (no angostas) — así el texto siempre tiene contraste garantizado sin importar
+  qué parte de la foto de fondo quede detrás.
+- **"Alojamiento"**: comparte la sección inmersiva con "Qué incluye", misma foto de fondo
+  (`fotos[1]`). Cards de hotel con foto, estrellas, noches, hover con zoom.
+- **Puntos de salida**: cards claras con pin dorado.
+- **"Reservá tu lugar"**: foto de fondo (`fotos[2]`) + price card liquid glass premium
+  (blur fuerte, borde luminoso, contador animado del monto, barra de cupos animada,
+  desglose completo, botón dorado "Informar transferencia", botón "Consultá por
+  WhatsApp", y un botón nuevo **"Ver qué no incluye"** desplegable debajo de WhatsApp que
+  lee `no_incluye`).
+- **Barra flotante inferior persistente** (liquid glass, estilo iOS): aparece pasado el
+  hero, muestra seña + cupos + botón **"Ver detalle"** que scrollea a "Reservá tu lugar",
+  y **se autooculta** cuando esa sección ya está en pantalla (para no duplicar
+  información en la vista).
+- **Tema de color por destino**: `vivencial_tipo_destino` (playa/montaña/desierto/
+  selva/ciudad) tiñe los tonos de fondo de la página. Implementado en el mockup con 5
+  variantes de token de color; el selector para cargarlo en el backoffice se agregó en
+  Sesión 31 (commit `0d684e9`) — antes de eso todo vivencial usaba el default.
+
+### Regla de oro que se mantuvo: diseño nuevo, lógica intacta
+
+Todo lo que ya funcionaba se preservó sin tocar: el gate de login antes de reservar/
+informar transferencia, el link de WhatsApp con mensaje pre-armado, el saldo del
+inscripto, los cupos en vivo, el menú real de Academy (no el placeholder del mockup). El
+modal de "Informar transferencia" (mismo formulario de siempre: método, depositante, DNI,
+importe, fecha, cupón, comprobante) se re-estiló en liquid glass oscuro con blur del
+fondo de la página al abrirse, sin tocar su lógica de guardado en
+`academy_vivencial_payments`. Todos los textos dicen **"el equipo Travexa"**, nunca un
+nombre propio (antes decía "Yesica" en un par de lugares).
+
+### Cambios de schema (APLICADOS)
+
+- `academy_courses.vivencial_tipo_destino text` con `CHECK IN ('playa','montana','desierto','selva','ciudad')` — **aplicada** vía MCP en esta sesión (columna nueva, aditiva, sin dato existente que migrar salvo el backfill de Brasil). El vivencial "Capacitación Vivencial Brasil" quedó seteado en `'playa'`.
+- **Nada más requirió migración**: `fotos` (array de URLs, ya existente) se reutiliza con una convención de **posición** (1ª = portada/hero, 2ª = fondo de "Qué incluye+Alojamiento", 3ª = fondo de "Reservá tu lugar") en vez de un campo nuevo; `vivencial_itinerario` es JSONB y admite la clave opcional `foto_url` sin alterar su forma; `incluye`/`no_incluye` son los mismos campos de texto libre de siempre.
+
+### Debugging post-deploy — qué pasó y causa raíz real de cada bug
+
+Se shippeó a producción antes de que estuviera terminado de pulir (según el principio #13, no bloquea el deploy) y salieron varios bugs reales en producción, con varias rondas de idas y vueltas:
+
+1. **"Qué incluye" con preguntas sueltas sin ícono, itinerario con días sin contenido visible, espacios vacíos enormes entre secciones, franja oscura vacía al final de la página.** Causa raíz real: el campo `incluye` de este vivencial en particular tiene bullets + el manifiesto completo + un bloque de preguntas y respuestas, todo en el mismo texto libre — el primer parseo partía **cada línea** como un chip individual (incluyendo preguntas y párrafos largos), lo que infló la sección y disparó efectos en cascada (foto de fondo recortada rara por la sección desproporcionadamente alta, layout roto). Se resolvió con la regla de parseo genérica descrita arriba, más una franja residual del footer viejo que quedó de una sección eliminada del mockup.
+2. **Parpadeo de títulos/descripciones al hacer scroll — el bug más largo de resolver, tres intentos fallidos antes del correcto:**
+   - *Intento 1:* se sospechó de la animación de reveal implementada con `framer-motion` (`whileInView`) reaplicándose en cada re-render del padre. Se reemplazó por un `IntersectionObserver` manejado en `useState` de React puro. **No cambió el bug.**
+   - *Intento 2:* se blindó ese mecanismo con un registro global (`Set` a nivel de módulo, fuera de React) de elementos ya revelados por `key` estable, para que ningún remount pudiera volver a ocultar algo ya mostrado — estructuralmente imposible que fallara por esa causa. **El bug siguió exactamente igual, pixel por pixel.**
+   - Que dos fixes distintos y verificablemente correctos no cambiaran nada en absoluto fue la señal de que el diagnóstico estaba mal desde el principio — Claude Code venía razonando por lectura estática de código, sin ver la página correr en un navegador real. Se cortó ese ciclo exigiendo evidencia real: correr Playwright contra la URL de producción, scrollear de a poco, y capturar screenshots + valores reales de `opacity` del DOM en cada paso, en vez de seguir razonando solo sobre el código; la hipótesis alternativa a probar era que el texto nunca desaparecía — sino que algo se le superponía encima (gradiente de fondo, overlay, doble render). Con esa exigencia de evidencia, el bug se resolvió en el intento siguiente.
+3. **Fixes menores, sin misterio:** tipografía de las cards de prosa demasiado angosta (se corrigió a ancho completo de sección a pedido explícito, con límite de línea más generoso en pantallas muy anchas); botones de compartir/copiar reposicionados y agrandados; botón "Volver a vivenciales" sacado del hero.
+
+**Lección de proceso para sesiones futuras con este mismo patrón de bug (algo que "debería" estar arreglado por el código pero el usuario ve que sigue igual):** si un segundo fix estructuralmente sólido no cambia el resultado visual ni un poco, dejar de iterar hipótesis por lectura de código y pasar a diagnóstico con evidencia real (navegador real, screenshots, valores computados) antes de proponer un tercer fix.
+
+### Cómo se conecta con el backoffice (mapeo de datos)
+
+La página pública **no tiene nada hardcodeado** — todo lo que muestra sale de la fila de `academy_courses` que edita Yesica en `/admin/vivenciales`. Si en el futuro hay que agregar o cambiar un campo del wizard, **primero hay que saber qué parte visual alimenta** para no romper la página nueva sin querer:
+
+| Campo del wizard (`VivencialWizard`) | Columna en DB | Dónde se ve en `/vivencial/:slug` |
+|---|---|---|
+| Título del vivencial | `titulo` | Hero: título grande |
+| País | `vivencial_pais` | Hero: palabra gigante flotante de fondo |
+| Descripción | `descripcion` | Hero: subtítulo (oculto si vacío) |
+| Fechas de salida/regreso | `vivencial_fecha_salida/regreso` | Hero: mini-card "Fechas" + duración calculada |
+| Cupo máximo/disponible | `vivencial_cupo_maximo/disponible` | Hero + barra flotante + price card (cupos y barra animada) |
+| Puntos de salida | `vivencial_puntos_salida` (jsonb) | Hero: mini-card "Sale desde" + sección "Puntos de salida" |
+| Tipo de traslado / régimen de alimentos | `vivencial_tipo_traslado/regimen_alimentos` | Chips bajo el hero (heredado de v2, sin cambios en Sesión 30) |
+| **Fotos del destino** | `fotos` (array de URLs) | **Por posición**: 1ª = fondo del hero, 2ª = fondo de "Qué incluye + Alojamiento", 3ª = fondo de "Reservá tu lugar". El wizard muestra los tags de posición **PORTADA / EXPERIENCIA / RESERVA** sobre las 3 primeras (`FOTO_POS_TAGS`, desde Sesión 31, commit `0d684e9`) — derivados del orden del array, sin cambiar su formato |
+| Itinerario día por día | `vivencial_itinerario` (jsonb `{dia,titulo,descripcion,foto_url?}`) | Sección "Itinerario", timeline. La clave opcional `foto_url` por día (**cargable desde el wizard desde Sesión 31**, commit `0d684e9`) se muestra dentro de la card del día al expandirse; los días sin `foto_url` colapsan a una sola columna (`vv-nophoto`), sin placeholder roto |
+| Hoteles | `vivencial_hoteles` (jsonb) | Sección "Alojamiento" |
+| Incluye | `incluye` (texto libre) | Se parsea de forma automática: líneas cortas consecutivas del inicio → chips con ícono; el resto, agrupado por subtítulos, → cards de prosa liquid glass. **Ver la regla de parseo en el debugging de esta sesión, arriba** — no es una lista estructurada, es texto libre |
+| No incluye | `no_incluye` (texto libre) | Botón "Ver qué no incluye" desplegable, dentro de la price card |
+| Precio (seña/base/impuestos, ARS y USD) | `vivencial_precio_*` | Price card de "Reservá tu lugar" — sin cambios de mapeo en esta sesión, hereda de §7b |
+| **Tipo de destino** (nuevo, Sesión 30) | `vivencial_tipo_destino` | Tema de color de toda la página (`data-theme`). Selector en el paso 1 del wizard (desde Sesión 31, commit `0d684e9`); si queda vacío, el público usa `'playa'` |
+| **Instructores** (nuevo, Sesión 34) | `vivencial_instructor_ids` (uuid[]) | Sección "Instructores" de la página pública (Prompt B) — oculta si vacío. Selector múltiple con reorden en el paso 1 del wizard (`InstructorPicker`, desde Sesión 34) |
+
+**Regla para cambios futuros al wizard:** si se agrega un campo nuevo al formulario, hay que decidir explícitamente si tiene o no una vista correspondiente en la página pública nueva — no asumir que "se va a mostrar solo". Si hace falta agregar la vista, tocar `VivencialDetail` (componente de la página pública) y este mapeo a la vez, no por separado.
+
+### Pendiente
+
+- **Backoffice (`VivencialWizard`) — Prompt 2 COMPLETO ✅** (los 3 ítems commiteados en `0d684e9`, ya en `main` — ver Sesión 31 en la tabla): (a) campo de foto opcional por día en el paso Itinerario **✅ RESUELTO** (`ItineraryBuilder`, mismo patrón de subida y bucket `academy-media` que la foto de hotel); (b) tags visuales de posición (Portada/Experiencia/Reserva) sobre el picker de "Fotos del destino" **✅ RESUELTO** (`FOTO_POS_TAGS`, derivados del orden del array — sin cambiar su formato); (c) select "Tipo de destino" en el paso 1, leyendo/escribiendo `vivencial_tipo_destino` **✅ RESUELTO**. Falta solo la prueba visual en prod (principio #13) — ver Backlog P0.
+- El **preview del backoffice** (`?preview=1`) comparte componente con la ruta pública por diseño (desde Sesión 27), así que debería renderizar igual — la confirmación está incluida en la prueba visual del Backlog P0.
+- **Prueba visual final en prod, de punta a punta, del rediseño** (principio #13) — ver Backlog P0.
+- Fix aparte, de otra página (home de Formación, "Los cursos más elegidos") — ver Backlog P0.
+- **El V2 no tiene sección de Instructor (confirmado en Sesión 33).** A diferencia del diseño anterior (con tabs, donde existía un tab de Instructor que a veces quedaba vacío), el rediseño de Sesión 30 convirtió la página en scroll continuo y **eliminó por completo** cualquier bloque de instructor — la única mención a "instructor" hoy es un texto fijo genérico dentro de los checks de la price card (ver Sesión 33 en la tabla), no datos reales de `academy_instructors`. Se decidió no reconstruirla por ahora: ningún vivencial tiene `instructor_id` cargado hoy. Queda en Backlog P1 para cuando haya instructores asignados a vivenciales.
+
+---
+
 ## PORTAL DE INSTRUCTORES (`/instructor/*`) — Sesión 16
 
 ### Qué es
@@ -511,7 +670,194 @@ Claude Code interpretó un "dale, sumalo ahora" —referido a un ítem del backl
 
 Queda anotado acá para que el historial de `list_migrations` sea legible: esa migración no pasó por la aprobación que pasaron las otras cinco.
 
-**Regla vigente, sin excepciones (ver también Principios no negociables generales):** cualquier cambio de DB en `fvrwtqhkskbaixqbxami` se propone, no se aplica. Claude Code escribe el SQL, lo muestra, explica qué hace y frena. Lo aplica Nico. Ante una instrucción que *parezca* autorizar el paso, preguntar.
+**Regla citada en su momento (Sesión 16-29):** cualquier cambio de DB en `fvrwtqhkskbaixqbxami` se propone, no se aplica. Claude Code escribe el SQL, lo muestra, explica qué hace y frena. Lo aplica Nico. Ante una instrucción que *parezca* autorizar el paso, preguntar. **⚠️ Esta regla quedó corregida en Sesión 32** (ver Principios no negociables generales): el dueño real del paso de aplicar es Claude, no Nico — se deja el párrafo de arriba sin tocar porque documenta el incidente tal como pasó en su momento, no para que se lea como la regla vigente hoy.
+
+---
+
+## BACKOFFICE — SECCIÓN ALUMNOS (`/admin/alumnos`) — Sesión 32
+
+### Qué es y por qué
+
+Antes de esta sesión el backoffice no tenía ninguna vista de los usuarios de la plataforma (alumnos) — solo `/admin/instructores`. Yesica/Nico no podían ver quién se registró, qué tomó, ni si un pago quedó raro sin ir directo a la base. Se agregó `/admin/alumnos` con el mismo patrón visual que ya usa `/admin/instructores` (tabla + drawer de detalle).
+
+### Lista
+
+Tabla con: avatar + nombre y apellido, email, ciudad/país, fecha de registro, **Cursos** y **Vivenciales** tomados como columnas separadas (cuenta solo `academy_enrollments` con `activo = true`, separado por `academy_courses.tipo`), y último ingreso. Buscador por nombre/apellido/email. **Los admins no se listan acá** (excluidos por `profiles.es_admin`), ni cuentan en el badge del nav.
+
+### Drawer de detalle
+
+Header con avatar circular (no el patrón de "hero" full-bleed que usan cursos/vivenciales — ese es para portadas, no para fotos de persona), datos de contacto + DNI + registro + último ingreso, gamificación (puntos/nivel/streak — oculto si no hay datos reales, nunca ceros crudos), cursos inscriptos con progreso, vivenciales inscriptos con número de reserva/estado de pago/montos, pagos con estado, y **dar de baja/reactivar** (`profiles.activo`, migración nueva de esta sesión — soft-delete real, nunca un `delete`; no bloquea Auth/login, es un flag interno de bookkeeping, bloquear login sería tarea aparte).
+
+### Cómo se leen los datos
+
+**No hay FK embebida confiable entre `academy_enrollments`/`academy_profiles` y `profiles`** — se traen por separado y se arma el join en JS (mismo patrón que ya usaba `useAdminEnrollments.ts`). **No hizo falta ninguna migración ni RPC para leer nada de esto**: el RLS de admin (`is_academy_admin()`) ya tenía policies de SELECT sobre `profiles`, `academy_profiles`, `academy_enrollments` y `academy_payments` desde antes de esta sesión — se verificó contra la DB real antes de asumirlo.
+
+### Bug del botón de colapsar el sidebar — causa raíz real
+
+El botón quedaba prácticamente tapado por el propio sidebar (una tira de pocos píxeles visible, no el botón completo), pese a que en el CSS su `z-index` (41) era mayor al del sidebar (40) — matemáticamente debería haber ganado. **La causa real no era de z-index:** el `.topbar` (`position:sticky` + `backdrop-filter:blur(10px)`) se promueve a su propia capa de composición en GPU, y esa capa terminaba pintándose por encima del botón pese al z-index menor — un artefacto conocido de `backdrop-filter`, no un bug de stacking context clásico. El botón quedaba justo en la costura entre sidebar y topbar, por eso solo se veía una tira. **Fix:** forzar al botón a su propia capa de composición (`transform:translateZ(0)`) + subir su z-index a 50 — con los dos elementos en capas propias, el compositor vuelve a respetar el z-index declarado. Reproducido y confirmado en Chrome headless antes del fix (ahí SÍ se veía bien, porque el bug es específico de compositing en GPU real) — la lección para bugs de este tipo: si un fix "matemáticamente correcto" no cambia nada, sospechar de compositing/GPU antes que de z-index.
+
+### Wizards de Cursos y Vivenciales — 3 fixes genéricos (mismo commit, feature aparte)
+
+No son parte de la sección Alumnos, pero se hicieron en la misma sesión y tocan `admin.css` + `CourseWizard.tsx` + `VivencialWizard.tsx` (mismo patrón copiado en los dos, no un componente compartido — cualquier fix futuro de este tipo hay que replicarlo en ambos archivos):
+1. **Prefijo de moneda `US$` pisándose con el valor tipeado** — `padding-left` del input insuficiente para 3 caracteres (alcanzaba para `$`/`%` pero no `US$`); subido de 30px a 44px.
+2. **Footer reordenado**: `Cancelar` pasa al extremo izquierdo; `Atrás` se agrupa con la navegación de pasos a la derecha (antes era al revés — quedaba `Atrás` aislado a la izquierda y `Cancelar` pegado a `Siguiente`).
+3. **Stepper clickeable**: los pasos 1-5 ahora se pueden clickear para saltar directo, pero solo si el resto de los pasos ya está completo (`canJumpTo` sobre la función `validateStep` que ya existía en los dos wizards). `BenefitWizard.tsx` comparte el mismo CSS del stepper — **el mismo fix se le sumó en Sesión 36, ver §8e.**
+
+---
+
+## GAMIFICACIÓN — PUNTOS, XP, CRÉDITOS Y RACHA (Sesión 32)
+
+### El problema que había antes de esta sesión
+
+Existían **dos sistemas de puntos en paralelo que no coincidían entre sí**: una tabla de valores hardcodeada en el cliente (`useGamification.ts`, con inserts directos a `academy_points_transactions`) y otra tabla distinta en la edge function `award-points` (única con acceso real a `award_points_and_credits`, la RPC que reparte a `academy_profiles.puntos`/`creditos`). La mayoría de las acciones (reseña, referido, compartir logro, vivencial completado, asistir en vivo) estaban **declaradas pero nunca conectadas a ningún botón real** — solo `onLessonComplete` (lección completada) y `perfil_completado` (onboarding) disparaban algo.
+
+### Reglas del negocio, definidas esta sesión
+
+- **XP mide nivel de profesionalidad** — a futuro alimenta un ranking para ventas. Solo lo dan acciones de **formación/vivencial** (comprar, completar lección, completar curso, reservar vivencial, completar vivencial, asistir en vivo). Nada social ni administrativo suma XP.
+- **Créditos son la moneda** — canjeable por cursos/sorteos/descuentos en `/beneficios` (tienda pública todavía no construida, ver Backlog P1). Los da absolutamente **toda** acción, incluido el registro.
+- **Única excepción a la regla de XP**: el bono de registro sí suma XP (bono de bienvenida a propósito, no viene de formación).
+- **Racha**: unidad mínima de **30 días** (no hay "racha de 7 días" — se sacó `STREAK_7` del código; el badge `streak_7` en `academy_badges` quedó desactualizado, ver Backlog P1). No es por login — se mide contra la última actividad de formación (completar una lección/módulo). Si hay más de un curso, cuenta el más reciente, no se suman entre sí. No se acumula "guardado": pasados 30 días sin actividad, vuelve a 0.
+
+### Tabla de puntos — única fuente de verdad, en `award-points`
+
+| Acción | XP | Créditos |
+|---|---|---|
+| Registrarse (directo) | 20 | 20 |
+| Registrarse (con código de referido válido) | 20 | 50 *(reemplaza a los 20, no se suma — fix de cierre de esta sesión)* |
+| Completar onboarding | 0 | 50 |
+| Comprar un curso | 30 | 20 |
+| Completar una lección | 10 | 5 |
+| Completar un curso | 100 | 40 |
+| Reservar un vivencial | 50 | 30 |
+| Completar un vivencial | 300 | 300 |
+| Publicar una reseña | 0 | 15 |
+| Racha de 30 días | 50 | 100 |
+| Asistir a clase en vivo | 20 | 15 |
+| Referido — se registra | 0 | 20 |
+| Referido — primera compra | 0 | 100 |
+| Compartir logro/certificado | 0 | 15 |
+
+`perfil_completado` bajó de 50 XP a 0 XP (se mantienen los 50 créditos) — **no se corrigió retroactivo** en la base, el fix aplica solo para adelante.
+
+### Triggers conectados vs. pendientes
+
+**Conectados esta sesión:** `leccion_completada`/`curso_completado` (`onLessonComplete`, Player), `racha_30_dias` (dentro de `updateStreak`), `resena_publicada` (`useSubmitReview`), `vivencial_reservado` (`PuntoSalidaModal`), `curso_comprado` (server-side, al aprobar el pago — ver §8d), `registro`+`referido_registrado` (trigger `handle_new_user`, DB).
+
+**Sin conectar, a propósito — no se inventó la UI que les falta:**
+- `vivencial_completado`: existe la función (`onVivencialCompletado`) pero no hay ningún punto en el producto que marque un vivencial como "completado".
+- `clase_en_vivo_asistida`: no hay tracking de asistencia a clases en vivo todavía.
+- `referido_compra`: existe la función pero falta la lógica que, en la primera compra del referido, busque a su referidor.
+- `logro_compartido`: existe la función pero no hay botón de "compartir logro/certificado" en el perfil.
+
+### Deuda técnica identificada (resuelta parcialmente)
+
+Dentro de `handle_new_user` había una llamada vieja, previa a esta sesión, que le daba 50 créditos extra al usuario referido bajo el motivo `bono_bienvenida` — **saltándose por completo** `award-points`/la tabla de arriba (un tercer camino paralelo para dar puntos). Se corrigió como parte del fix de cierre: ese bono quedó absorbido en el bono de registro (50 créditos si es referido, ver tabla), y la llamada a `bono_bienvenida` se eliminó — verificado contra la función real deployada que no queda ninguna llamada con ese motivo.
+
+### Front
+
+Modal **"Cómo ganar XP"** nuevo en `/perfil` (tab Logros), mismo patrón visual que el modal de Créditos que ya existía — lista solo las acciones que dan XP, de menor a mayor. El modal de Créditos existente se actualizó con los valores nuevos de la tabla de arriba (antes mostraba reseña +10, referir +20, completar curso +40, completar vivencial +300 — desactualizado).
+
+### Pendiente
+
+Rediseño de insignias (`academy_badges`) — pospuesto explícitamente a otra sesión, ver Backlog P1. Prueba visual en prod de todo lo de arriba, ver Backlog P0.
+
+---
+
+## PAGOS DE CURSO — SIN ESTADO "PENDIENTE" (Sesión 32)
+
+### Regla del negocio
+
+**Un pago de curso o está aprobado, o no existe.** No hay estado intermedio persistido. Si alguien arranca un checkout de Mercado Pago y no lo termina, no queda ningún registro de "pago pendiente" dando vueltas en `academy_payments` — como mucho, un registro de que *intentó* pagar, para métricas (`academy_payment_attempts`, tabla nueva).
+
+### Por qué se cambió
+
+Se encontraron 3 pagos de curso reales en estado `pendiente` que nunca se habían tocado desde que se crearon (`mp_payment_id` nulo, `updated_at` = `created_at`) — checkouts que el usuario nunca terminó de completar del lado de Mercado Pago, no pagos "atascados" por un bug nuestro. No había ningún camino para destrabarlos ni tenía sentido que hubiera uno (no hay nada que reconciliar si nunca hubo plata de por medio). Se borraron los 3 (dato real sin ningún valor, no un soft-delete de negocio) y se rediseñó el flujo para que esto no vuelva a pasar.
+
+### Diseño nuevo
+
+- `create-course-payment` ya no escribe en `academy_payments` — inserta en `academy_payment_attempts` (`user_id`, `course_id`, `metodo_pago`, `mp_preference_id`), sirve solo de métrica de intentos.
+- `confirm-course-payment` y la rama de curso de `mp-webhook-academy`: `academy_payments` solo recibe una fila cuando MP confirma un **estado final** (aprobado/rechazado/cancelado/reembolsado) — `upsert` por `mp_external_reference` (que es `UNIQUE` y determinístico por user+course), así que es idempotente y un `aprobado` nunca se degrada por un evento posterior. Estados intermedios de MP (`pending`/`in_process`/`authorized`) no dejan ninguna fila.
+- Constraint de `academy_payments.estado` para estos casos ya no admite `'pendiente'` (aplicado recién después de deployar el código nuevo, no antes — si se aplica primero, el próximo intento de pago real rompe).
+- **`create-vivencial-cuotas-payment` y la rama `vivencial_cuotas` del webhook quedaron sin tocar** — es una feature confirmada sin uso (ningún botón la invoca), sigue escribiendo `pendiente` en sus estados intermedios si algún día recibe tráfico real. Si se retoma esa feature, hay que rediseñarle el pago con esta misma regla — tarea aparte.
+
+### Hallazgo de proceso, en la misma sesión
+
+Al ir a tocar `create-course-payment`, se confirmó (comparando contra el código real deployado vía MCP de Supabase) que **el repo no reflejaba lo que corría en producción** — la versión del repo tenía un bug de `estado` en inglés (violaba el propio `CHECK` constraint) que en el deploy real ya estaba corregido, y le faltaba la lógica de precio por método de pago. Se sincronizó el repo con lo real en un commit aparte antes de tocar nada más, y quedó la regla operativa: ninguna edge function se deploya sin pasar por el repo primero (detalle en Edge Functions Deployadas).
+
+### Pendiente
+
+Prueba visual en prod: un pago de curso real de punta a punta (que habilite solo, sin nada manual) y confirmar que un checkout abandonado no deja ninguna fila en `academy_payments` — ver Backlog P0.
+
+---
+
+## BENEFICIOS — TIENDA PÚBLICA "TRAVEXA POINTS" (Sesiones 36-38)
+
+### Qué es
+
+Los créditos (moneda de la gamificación, ver §8c — distinta del XP) ya se otorgaban desde Sesión 32, pero no había ningún lugar donde gastarlos: `/admin/beneficios` solo administraba el catálogo (Sesión 13), sin tienda pública. Esta feature cierra ese círculo: página pública `/beneficios` para canjear, reflejo en el perfil, descuento automático en el checkout de cursos, canje configurable por curso desde `CourseWizard`, y administración completa en el backoffice (sorteos incluidos).
+
+### Proceso
+
+Especificación funcional (`ESPEC_Beneficios_Academy.md`) escrita junto a Nico, con 14 preguntas de definición respondidas antes de tocar código — mismo patrón que el resto del proyecto (nunca asumir reglas de negocio no confirmadas). Prototipo visual (`prototipo_beneficios.html`, en la raíz junto a los demás) iterado en vivo hasta su aprobación explícita, siguiendo la línea visual ya establecida en `/vivencial` (hero a dos columnas, eyebrow + título gigante, Montserrat, sin logo de marca en el hero, colores reales de prod) — y **recién ahí** se pasó a Claude Code, en dos tandas de prompts (front + backoffice) más una tanda de fix/feature chica.
+
+### Reglas de negocio (definidas con Nico, cerradas)
+
+- **Créditos son la moneda** — el costo en créditos de cualquier beneficio (o del canje de un curso) **lo define Yesica a mano siempre**, nunca una tasa automática.
+- **Canje por curso, dos modalidades**, configurables desde `CourseWizard`: **total** (el curso entero por N créditos) o **parcial** (% de descuento por N créditos). El descuento parcial **no vence** y se aplica **automáticamente** en el próximo intento de pago de ese curso por ese usuario — nunca un cupón que el usuario deba "usar" a mano.
+- **Un curso comprado o canjeado queda para siempre** — no se puede recomprar; un beneficio de un curso ya adquirido se muestra deshabilitado ("Ya tenés este curso"). Un beneficio no-sorteo se canjea **una sola vez por usuario**.
+- **Vivenciales quedan fuera del descuento/canje directo** (siguen sin cobrarse en la plataforma, principio #10) — la única vía es un **sorteo** (`sorteo_vivencial`) con chances: cada chance tiene un costo en créditos que define Yesica, sin tope de chances por usuario, y a diferencia del resto de beneficios **sí se puede volver a canjear** (comprar más chances).
+- **Sorteo:** selección al azar **ponderada por chances**, ejecutada 100% server-side (nunca client-side) desde un botón "Realizar sorteo" en el backoffice. El ganador se contacta manualmente por Yesica (además de la notificación in-app); los no ganadores pierden los créditos gastados en chances — **los créditos se descuentan siempre en el momento del canje**, gane o no.
+- **`curso_gratis` habilita el curso al instante**, sin aprobación de nadie (mismo criterio que un pago de MP aprobado).
+- **El canje NO otorga XP ni créditos** — evita el loop "créditos que generan créditos"; sí sigue sumando normalmente todo lo que pasa *después* del canje (completar lecciones, reseñas, etc.).
+- **`/beneficios` es pública**, canjear exige login (mismo gate que comprar un curso).
+- **Créditos vencen al año** de obtenidos, FIFO sobre el ledger (`academy_points_transactions`), sin tocar transacciones existentes — job de vencimiento (`expire_credits_run`) pendiente de programarse como cron (ver Pendiente).
+- **Un canje ya realizado es intocable**: si Yesica edita o archiva el beneficio después, el canje hecho conserva los valores que tenía al momento de canjearse (copiados a la redemption, no referenciados).
+- **Aceptación de bases y condiciones (Sesión 38):** si un beneficio tiene el campo `terminos` cargado (hoy, sorteos), el canje **exige** aceptación explícita antes de descontar créditos — a nivel backend, no solo UI (ver más abajo).
+
+### Schema (APLICADO en Sesiones 36 y 38, por Claude IA vía MCP)
+
+Ver detalle completo de columnas en la sección Schema de base de datos, tablas `academy_benefits` y `academy_credit_redemptions`. Resumen de lo nuevo sobre lo que ya existía desde Sesión 13:
+
+- `academy_benefits`: + `origen` (`standalone`\|`curso` — distingue lo que carga Yesica a mano de lo que sincroniza `CourseWizard`), `destacado` (carrusel de la tienda), `sorteo_realizado_at`, `terminos` (bases y condiciones, texto libre).
+- `academy_credit_redemptions`: se completaron las columnas que existían pero estaban vacías desde Sesión 13 (`course_id`, `cantidad_chances`, `descuento_tipo`, `descuento_valor` — todas **copias** del beneficio al momento del canje, no referencias, para que un canje quede intocable, `estado` `activo`\|`usado`\|`ganador`\|`no_ganador`, `usado_at`, `enrollment_id`) + **Sesión 38:** `terminos_aceptados_at`.
+- `academy_payment_attempts`: + `redemption_id` (liga el intento de pago a la redemption del descuento que se le aplicó).
+- `academy_enrollments.tipo_acceso`: se sumó el valor `'canje_creditos'` al CHECK existente.
+- `academy_points_transactions.tipo`: el CHECK pasó a admitir `'ganado'`\|`'canjeado'`\|`'vencido'` (antes solo tenía los dos primeros).
+- Índices únicos: un beneficio activo de `origen='curso'` por (curso, tipo); un canje por usuario por beneficio no-sorteo.
+- RLS: `academy_benefits` con SELECT público (anon+authenticated) de vigentes; `academy_credit_redemptions` con SELECT propio + admin, **INSERT/UPDATE solo desde edge functions con `service_role`** — el frontend nunca escribe canjes, créditos ni cupos directo.
+
+**Funciones SQL nuevas** (`SECURITY DEFINER`, `EXECUTE` solo `service_role`):
+- `redeem_benefit(p_user_id, p_benefit_id, p_cantidad_chances, p_acepta_terminos)` — canje atómico completo: valida vigencia/cupo/unicidad/curso-ya-adquirido/saldo/aceptación de términos con locks, descuenta créditos, crea la redemption, crea el enrollment si es `curso_gratis`, notifica. El 4° parámetro (`p_acepta_terminos`) se sumó en Sesión 38.
+- `draw_benefit_winner(p_benefit_id)` — sorteo ponderado por chances, marca ganador/no ganadores, notifica a todos.
+- `expire_credits_run()` — vencimiento FIFO anual.
+
+### Frontend (Claude Code, 3 tandas)
+
+**Tanda 1 (Sesión 36) — tienda + perfil + checkout + wizard:**
+- `/beneficios`: réplica del prototipo en React — hero, panel de créditos animado, carrusel 3D de destacados (Framer Motion: drag, flechas, teclado, `prefers-reduced-motion`), filtros pegajosos, grilla, modal de canje con pantalla de éxito + confetti, modal "Cómo conseguir créditos". Ítem **"Beneficios"** sumado al menú principal existente (entre Vivencial e Instructores, desktop y mobile), sin tocar su lógica/estilos.
+- `/perfil` → tab Logros → dentro de la card de Créditos ("Tus movimientos"): ahora se ven también los negativos (canjes, vencimientos) + bloque nuevo "Tus canjes" con estado legible por tipo.
+- Checkout de curso: si hay un descuento activo para ese (usuario, curso), `create-course-payment` calcula el monto final **antes** de generar la preferencia de MP; al aprobarse el pago, la redemption pasa a `usado`. En la ficha del curso, precio tachado + precio final + badge.
+- `CourseWizard`: sección "Canje por créditos" (toggle + total/parcial) que sincroniza automáticamente una fila en `academy_benefits` (`origen='curso'`) — desactivarlo la archiva, nunca la borra.
+
+**Tanda 2 (Sesión 36) — backoffice:**
+- `BenefitWizard` extendido: campo "Destacado en la tienda", "Bases y condiciones" (sorteos), label "Valor de 1 chance" en sorteos, y el **stepper clickeable** que quedó pendiente desde Sesión 32 (mismo `canJumpTo`/`validateStep` que `CourseWizard`/`VivencialWizard`) — este ítem del Backlog queda cerrado acá.
+- Lista de `/admin/beneficios`: badges de tipo/origen/estado, toggle de destacado inline, drawer de canjes por beneficio (participantes, chances, estados).
+- Botón real **"Realizar sorteo"** (invoca `draw-benefit-winner`, con modal de confirmación y panel de resultado con la probabilidad del ganador).
+- **"Marcar como entregado"** para beneficios tipo `otro` — requirió una edge function nueva, `mark-redemption-delivered` (mismo patrón de auth admin que `draw-benefit-winner`), porque la RLS no permite ese `UPDATE` desde el cliente.
+- Bloque de Métricas de beneficios en `/admin/metricas`.
+
+**Tanda 3 (Sesión 38) — checkbox de bases y condiciones:** en el modal de canje, si `beneficio.terminos` tiene contenido, aparece un checkbox obligatorio (sin marcar por defecto) que habilita "Confirmar canje"; link a un acordeón con el texto general (fuente única en `src/content/basesYCondicionesSorteos.ts`) + las condiciones específicas del beneficio. El drawer de canjes del backoffice muestra "Bases aceptadas el {fecha}" cuando corresponde.
+
+### Bug encontrado y corregido (Sesión 37)
+
+El saldo de créditos no se veía en el hero de `/beneficios` (el resto del panel sí). Causa real: el componente de conteo animado (`NumberFlow`) es un *web component con shadow DOM*, y el relleno con gradiente del número (`background-clip:text` + texto transparente) no cruza ese límite — quedaba 100% transparente. Se reemplazó por un `<span>` normal + count-up propio (mismo patrón que ya funcionaba en `/perfil`). Ver fila de Sesión 37 en la tabla para el detalle completo.
+
+### Pendiente
+
+- **Prueba visual en prod por Nico/Yesica de todo el sistema** (principio #13) — nada de esto queda cerrado hasta entonces: cargar un beneficio de cada tipo desde `/admin/beneficios`, recorrer la tienda logueado y deslogueado, hacer un canje real de cada tipo (curso gratis, descuento, sorteo, otro), confirmar el descuento en un pago real de MP, correr un sorteo con participantes de prueba, y probar "Marcar como entregado".
+- **Confirmar la razón social** a usar en el texto de bases y condiciones (Sesión 38) — Pencom Travexa SAS sigue "en proceso de constitución" (ver `Travexa_Negocio.md` §13).
+- **Programar `expire-credits` como cron** — no se automatizó por SQL para no hardcodear la `SERVICE_ROLE_KEY` en una migración versionada (violaría el principio de no hardcodear secrets); queda como paso manual de 2 minutos en el dashboard de Supabase (Edge Functions → Cron), documentado en la sesión.
+- Ver ítems relacionados en el Backlog P0/P1.
 
 ---
 
@@ -529,16 +875,18 @@ Hasta esta sesión, Academy no tenía una landing pública propia — `/cursos` 
 
 ### Estructura
 
-Hero → proof strip (stats reales) → 4 pilares → catálogo destacado (marquee) → vivencial headliner → "Cómo funciona" → testimonios (hoy oculto) → gamificación → CTA final → footer.
+Hero → proof strip (stats reales, su propia sección desde Sesión 33) → **Vivenciales** → Formación → "Qué encontrás" (4 pilares) → catálogo destacado (marquee) → vivencial headliner → "Cómo funciona" → testimonios (hoy oculto) → gamificación → CTA final → footer.
+
+**Orden de secciones actualizado en Sesión 33** (ver tabla de sesiones): Vivenciales pasó a ir inmediatamente después de la tira de números, antes de Formación — es el pilar diferenciador del negocio y no puede quedar después de "Qué encontrás" como estaba antes.
 
 ### Datos reales vs. placeholder
 
 | Elemento | Estado en producción |
 |---|---|
-| Proof strip | Conectado a `useCourses()`, datos reales. Si la DB da todo en cero, la tira se oculta entera |
+| Proof strip | Conectado a `useCourses()`, datos reales. Si la DB da todo en cero, la tira se oculta entera. **Sesión 33:** ahora es su propia sección visual (fondo distinto del hero, números más grandes y centrados), ya no queda pegada al hero |
 | Catálogo destacado / vivencial headliner | Conectados a `academy_courses` real, con estado vacío diseñado |
 | Testimonios | `TestimonialsSection` feature-flagged off (`SHOW_TESTIMONIALS = false`) |
-| Avatares del hero | Genéricos (ícono), no fotos de stock |
+| Avatares del hero | **Sesión 33:** fotos reales de `academy_instructors` (`activo=true`, `avatar_url`), ya no íconos genéricos. Los instructores sin foto se excluyen del stack (nunca un ícono simulando una persona); si ninguno tiene foto, el bloque queda solo con el texto |
 | Cards de sincronización Academy↔Marketplace en gamificación | "Tu perfil" + avatar genérico |
 
 ### Fase 2 — Hero animado (avión con scroll-scrub)
@@ -601,7 +949,7 @@ Academy pasó de vivir solo en la URL de Vercel a tener su dominio propio en pro
 
 ## PROTOTIPOS HTML APROBADOS
 
-Los prototipos viven en la **raíz del proyecto**: `academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`, `academy_home.html`, `academy_player_proto.html`, `travexa_academy_backoffice.html`. Son la **fuente de verdad visual**. Claude Code debe replicar ese diseño exactamente en React, no reinterpretarlo.
+Los prototipos viven en la **raíz del proyecto**: `academy_catalogo.html`, `academy_perfil.html`, `academy_vivencial.html`, `academy_onboarding_proto.html`, `academy_home.html`, `academy_player_proto.html`, `travexa_academy_backoffice.html`, `prototipo_beneficios.html` (Sesión 36). Son la **fuente de verdad visual**. Claude Code debe replicar ese diseño exactamente en React, no reinterpretarlo.
 
 - **`academy_home.html`** — referencia de `/`. Hero orientado a resultado, 4 pilares, catálogo/vivencial en marquee, "cómo funciona" tipo pase de embarque, testimonios (oculto en prod), gamificación con diagrama Academy↔Marketplace.
 - **`academy_catalogo.html`** — referencia de `/cursos` y `/cursos/:slug`.
@@ -609,6 +957,7 @@ Los prototipos viven en la **raíz del proyecto**: `academy_catalogo.html`, `aca
 - **`academy_vivencial.html`** — referencia de `/vivencial/:slug` y `/viaje/:slug`. ⚠️ Desde Sesión 15 la sección de CTA de pago del prototipo está desactualizada respecto a producción (mostraba botones de pago propios; producción usa "Quiero anotarme" → WhatsApp). Actualizar el prototipo antes de retocarlo, para no volver a divergir.
 - **`academy_player_proto.html`** — referencia del player (Sesión 12, extendido en Sesión 17 con video unificado).
 - **`travexa_academy_backoffice.html`** — referencia de `/admin/*` y `/instructor/*`.
+- **`prototipo_beneficios.html`** (Sesión 36) — referencia de `/beneficios`. Hero a dos columnas siguiendo la línea visual de `academy_vivencial.html` (eyebrow + título gigante Montserrat, sin logo de marca en el hero, colores reales de prod), carrusel 3D de destacados liquid glass, panel de créditos, filtros y modal de canje.
 
 ---
 
@@ -656,12 +1005,18 @@ IBM Plex Mono 400 → badges, datos, timestamps
 
 **Hub de identidad:**
 ```
-profiles          → id, email, nombre, apellido, avatar_url, telefono (compartido con Core)
+profiles          → id, email, nombre, apellido, avatar_url, telefono (compartido con Core),
+                    activo (bool, default true — Sesión 32, migración APLICADA; soft-delete de
+                      alumnos desde `/admin/alumnos`, NUNCA delete; no bloquea Auth/login, es
+                      solo un flag interno de bookkeeping — bloquear login sería tarea aparte
+                      con service_role vía edge function)
 academy_profiles  → bio, ciudad, pais (default 'Argentina'), username, referral_code,
                     puntos, creditos, nivel, tipo_cuenta,
                     fecha_nacimiento, dni (Sesión 21, migración v3 APLICADA en Sesión 22), genero, tipo_vendedor, anos_experiencia,
                     destinos_principales (array), onboarding_completo (bool, default false),
-                    streak_actual, streak_maximo, total_cursos_completados, total_vivenciales
+                    streak_actual, streak_maximo, total_cursos_completados, total_vivenciales,
+                    streak_window_start (timestamptz, Sesión 32, migración APLICADA — ancla de la
+                      ventana de racha de 30 días, separada de `ultimo_acceso_leccion`; ver §8c)
 ```
 
 ⚠️ `onboarding_completo` es el campo canónico del gate de acceso.
@@ -698,6 +1053,9 @@ academy_courses       → titulo, slug, descripcion, descripcion_larga (cuerpo d
                         vivencial_hoteles (JSONB {nombre,noches,link,foto_url}),
                         vivencial_precio_base_usd/ars, vivencial_impuestos_usd/ars, vivencial_gastos_admin_pct,
                         vivencial_tipo_traslado (TEXT[]), vivencial_regimen_alimentos (TEXT[]),
+                        -- Sesión 30 (v4, rediseño de detalle — ver §7d, migración APLICADA):
+                        vivencial_tipo_destino (TEXT, check 'playa'|'montana'|'desierto'|'selva'|'ciudad';
+                          tema de color de la página pública; selector en el wizard desde Sesión 31),
                         -- precio_usd/precio_ars = TOTAL FINAL (base+impuestos+gastos admin, calculado en el wizard)
                         -- DEPRECADAS (no borrar): vivencial_ciudad_salida, vivencial_punto_encuentro, vivencial_hotel
 academy_modules       → course_id, titulo, orden
@@ -724,16 +1082,23 @@ academy_user_badges         → user_id, badge_id, earned_at
 academy_certificates        → user_id, course_id, enrollment_id, numero, emitido_at
 academy_credit_redemptions  → user_id, ..., benefit_id (→ academy_benefits)
 ```
-⚠️ `academy_badges.condicion`: `first_lesson`, `first_review`, `first_vivencial`, `first_referral`, `streak_7`, `streak_100`, `top10_monthly` (sin lógica implementada).
+⚠️ `academy_badges.condicion`: `first_lesson`, `first_review`, `first_vivencial`, `first_referral`, `streak_7`, `streak_100`, `top10_monthly` (sin lógica implementada). **`streak_7` quedó desactualizada desde Sesión 32** (la racha mínima ahora es de 30 días, ver §8c) — rediseño completo de insignias pospuesto a otra sesión, ver Backlog P1.
 
-**Beneficios:**
+**Beneficios (tienda pública `/beneficios` — Sesiones 36-38, ver §8e):**
 ```
 academy_benefits → id, titulo, descripcion, tipo ('curso_gratis'|'descuento_pct'|'descuento_fijo'|
                    'sorteo_vivencial'|'otro'), imagen_url, costo_creditos, course_id, descuento_valor,
                    cupo_maximo, cupo_usado, fecha_inicio, fecha_vencimiento, publicado, archivado,
-                   ganador_user_id + ganador_anunciado_at (solo sorteo_vivencial)
+                   ganador_user_id + ganador_anunciado_at (solo sorteo_vivencial),
+                   origen ('standalone'|'curso' — Sesión 36, si es 'curso' lo sincroniza CourseWizard),
+                   destacado (bool, carrusel de la tienda), sorteo_realizado_at, terminos (bases y condiciones)
+academy_credit_redemptions → user_id, tipo, creditos_consumidos, referencia_id, descripcion, benefit_id,
+                   course_id, cantidad_chances (solo sorteos), descuento_tipo/descuento_valor (COPIA del
+                   beneficio al momento del canje — un canje ya hecho es intocable), estado ('activo'|
+                   'usado'|'ganador'|'no_ganador'), usado_at, enrollment_id, mp_external_reference,
+                   terminos_aceptados_at (Sesión 38)
 ```
-⚠️ `/admin/beneficios` solo administra el catálogo — la tienda pública (`/beneficios`) no existe.
+⚠️ Un solo beneficio activo `origen='curso'` por (curso, tipo); un solo canje por usuario por beneficio no-sorteo (índices únicos). RLS: `academy_benefits` SELECT público de vigentes; `academy_credit_redemptions` INSERT/UPDATE solo desde edge functions con `service_role`, nunca desde el frontend.
 
 **Pagos de vivenciales:**
 ```
@@ -776,15 +1141,21 @@ academy_enrollments       → user_id, course_id, tipo_acceso, progreso_pct, com
 academy_lesson_progress   → user_id, lesson_id, course_id, completada, segundos_vistos
 academy_payments          → user_id, tipo ('curso'|'suscripcion'[deuda técnica]|'vivencial_cuotas'),
                              course_id, enrollment_id, monto_ars, monto_usd, mp_payment_id,
-                             mp_external_reference, mp_status, estado, comprobante_url
+                             mp_external_reference (UNIQUE), mp_status, estado, comprobante_url
+academy_payment_attempts  → user_id, course_id, metodo_pago ('transferencia'|'tarjeta'),
+                             mp_preference_id, created_at (Sesión 32, tabla nueva APLICADA —
+                             solo métrica de intentos de checkout, nunca un pago; RLS: admin lee,
+                             insert solo desde edge function con service_role)
 ```
 ⚠️ `monto_señado_ars`/`monto_pendiente_ars` nunca se editan a mano — los recalcula `academy_recalc_vivencial_balance()`.
+⚠️ **`academy_payments.estado` para `tipo='curso'` ya NO admite `'pendiente'` desde Sesión 32** (constraint reemplazado, default de la columna sacado): un pago de curso o está en un estado final (`aprobado`/`rechazado`/`cancelado`/`reembolsado`) o directamente no tiene fila — el intento se loguea en `academy_payment_attempts` en su lugar. Ver §8d para el detalle completo y la excepción de `vivencial_cuotas` (dead feature, sin tocar, sigue usando `pendiente` en su rama del webhook si algún día se reactiva).
 
 **Reglas canónicas:**
 - Acceso a curso: `academy_enrollments` con `activo = true` O `lesson.es_preview = true`.
 - `external_reference`: `ACAD-COURSE-{userId}-{courseId}` (cursos) / `ACAD-VIV-{enrollmentId}-{timestamp}` (vivenciales, sin uso).
 - Tipo de curso: `'grabado'` | `'en_vivo'` | `'vivencial'` | `'ebook'`.
-- `tipo_acceso`: `'gratuito'` | `'pago'` | `'suscripcion'` | `'b2b_incluido'`.
+- `tipo_acceso`: `'gratuito'` | `'pago'` | `'suscripcion'` | `'b2b_incluido'` | `'canje_creditos'` (Sesión 36, canje de un `curso_gratis` en Beneficios).
+- `academy_points_transactions.tipo`: `'ganado'` | `'canjeado'` | `'vencido'` (Sesión 36 — antes solo los dos primeros).
 
 ---
 
@@ -792,14 +1163,20 @@ academy_payments          → user_id, tipo ('curso'|'suscripcion'[deuda técnic
 
 | Función | Estado | Uso |
 |---|---|---|
-| `create-course-payment` | ✅ ACTIVE | Genera link de pago MP para cursos |
-| `confirm-course-payment` | ✅ ACTIVE | Verifica pago de curso y crea enrollment |
-| `mp-webhook-academy` | ✅ ACTIVE (v4) | Recibe notificaciones de MP (cursos, vivenciales-cuotas) |
-| `award-points` | ✅ ACTIVE | Acredita XP/Créditos, dispara check-badges |
+| `create-course-payment` | ✅ ACTIVE | Genera link de pago MP para cursos. **Sesión 32:** ya no escribe en `academy_payments` — loguea el intento en `academy_payment_attempts` (ver §8d) |
+| `confirm-course-payment` | ✅ ACTIVE (v9) | Verifica pago de curso y crea enrollment. **Sesión 32:** hace `upsert` en `academy_payments` por `mp_external_reference` (UNIQUE) solo con estado final aprobado; un `aprobado` nunca se degrada por una llamada posterior. **Sesión 35:** `ensureEnrollment()` ahora devuelve `boolean` (`created`); dispara `send-course-email` solo si `created === true`, para que el mail salga una sola vez pese a la carrera con `mp-webhook-academy` |
+| `mp-webhook-academy` | ✅ ACTIVE (v11) | Recibe notificaciones de MP (cursos, vivenciales-cuotas). **Sesión 32:** rama de curso reescrita igual que `confirm-course-payment` (solo estados finales); rama de `vivencial_cuotas` sin tocar (dead feature, sigue usando `pendiente` — no rompe nada porque no hay tráfico real). **Sesión 35:** mismo cambio que `confirm-course-payment` — dispara `send-course-email` solo si este camino creó el enrollment (`verify_jwt: false`, MP no manda Authorization) |
+| `award-points` | ✅ ACTIVE | Acredita XP/Créditos, dispara check-badges. **Sesión 32:** única fuente de verdad de puntos (13 acciones, ver §8c) — antes había una segunda tabla de valores en el cliente (`useGamification.ts`) que no coincidía con esta |
 | `check-badges` | ✅ ACTIVE | Evalúa condiciones y otorga badges nuevas |
 | `create-vivencial-cuotas-payment` | ✅ ACTIVE (sin uso) | Primera iteración, ningún botón la invoca. Ver Backlog |
+| `send-reserva-email` | ✅ ACTIVE | Mail "reserva confirmada" (vivenciales) — escrita en Sesión 22, **deployada en Sesión 35**. Fire-and-forget, no rompe la reserva si falla. Requiere secrets `RESEND_API_KEY` + `RESERVA_FROM` |
+| `send-course-email` | ✅ ACTIVE | **Nueva, Sesión 35.** Mail "compra confirmada" (cursos). Se llama server-side desde `confirm-course-payment`/`mp-webhook-academy` solo cuando ese camino creó el enrollment (evita duplicado); doble red de seguridad: no manda si no hay pago `estado='aprobado'` para ese `(user, course)`. Requiere `RESEND_API_KEY` + `COURSE_FROM` (fallback a `RESERVA_FROM`) |
 | `create-subscription-academy` | ⚠️ ACTIVE, **deuda técnica** | Sin uso, ver Backlog P2 |
 | `confirm-subscription-academy` | ⚠️ ACTIVE, **deuda técnica** | Sin uso, ver Backlog P2 |
+| `redeem-benefit` | ✅ ACTIVE (v3) | **Nueva, Sesión 36.** Canje atómico de un beneficio (JWT del usuario) — llama `redeem_benefit()`. **Sesión 38:** reenvía `aceptaTerminos` (4° parámetro de la función SQL) |
+| `draw-benefit-winner` | ✅ ACTIVE | **Nueva, Sesión 36.** Sorteo ponderado por chances (JWT de admin) — llama `draw_benefit_winner()`, invocada desde el botón "Realizar sorteo" del backoffice |
+| `expire-credits` | ✅ ACTIVE | **Nueva, Sesión 36.** Vencimiento FIFO anual de créditos — llama `expire_credits_run()`. Protegida comparando el header contra la `SERVICE_ROLE_KEY` propia. **Pendiente programarla como cron** (paso manual en el dashboard, ver §8e) |
+| `mark-redemption-delivered` | ✅ ACTIVE | **Nueva, Sesión 36 (tanda backoffice).** Marca `usado` un canje de beneficio tipo `otro` (JWT de admin) — botón "Marcar como entregado" en el drawer de canjes |
 
 ```
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/create-course-payment
@@ -808,9 +1185,17 @@ https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/mp-webhook-academy
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/award-points
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/check-badges
 https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/create-vivencial-cuotas-payment
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/send-reserva-email
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/send-course-email
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/redeem-benefit
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/draw-benefit-winner
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/expire-credits
+https://fvrwtqhkskbaixqbxami.supabase.co/functions/v1/mark-redemption-delivered
 ```
 
-**Además, en DB:** `handle_new_user()` (trigger sobre `auth.users`) crea `academy_profiles` para cualquier signup, copia metadata y acredita referidos. No recrear esta lógica en el frontend.
+⚠️ **El repo es la fuente de verdad para `supabase/functions/*` — regla agregada en Sesión 32** tras confirmar (comparando contra el código real deployado vía MCP de Supabase) que el repo se había desincronizado: alguien había deployado cambios directo, sin commitear, y el repo tenía un bug ya corregido en producción. Se sincronizó una vez (commit aparte) y de acá en más ninguna edge function se deploya sin pasar por el repo primero — si hace falta un deploy urgente desde el dashboard, se trae ese código de vuelta al repo el mismo día.
+
+**Además, en DB:** `handle_new_user()` (trigger sobre `auth.users`) crea `academy_profiles` para cualquier signup, copia metadata y acredita referidos. No recrear esta lógica en el frontend. **Desde Sesión 32** también otorga el bono de registro (20 XP siempre; créditos 20 si el registro es directo, 50 si es referido — no se acumulan, el de 50 reemplaza al de 20, ver §8c) y da de alta el referral + premia al referrer, todo en la misma función.
 
 ---
 
@@ -884,6 +1269,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - `/cursos`, `/cursos/:slug` — Catálogo y detalle.
 - `/vivencial`, `/vivencial/:slug` — CTA "Reservar mi lugar" (reserva self-service v3, ver §7c). `/reserva/:slug` = confirmación.
 - `/instructores` — Equipo docente (lee de `academy_instructors` real). Nav principal. (Sesión 23)
+- `/beneficios` — Tienda de canjes por créditos "Travexa Points". Nav principal, entre Vivencial e Instructores. (Sesión 36, ver §8e)
 - `/login`, `/registro`, `/auth/callback`.
 - `/pago-confirmado`, `/pago-error`.
 - `/u/:username` — Perfil público del alumno.
@@ -897,7 +1283,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - `/viaje/:slug` — Detalle de vivencial para el inscripto.
 
 ### Admin ✅
-- `/admin/resumen`, `/admin/cursos`, `/admin/vivenciales`, `/admin/instructores`, `/admin/beneficios`, `/admin/comentarios`, `/admin/metricas`, `/admin/pagos-instructores`.
+- `/admin/resumen`, `/admin/cursos`, `/admin/vivenciales`, `/admin/instructores`, `/admin/alumnos` (Sesión 32, ver §8b), `/admin/beneficios`, `/admin/comentarios`, `/admin/metricas`, `/admin/pagos-instructores`.
 - Gate: `AdminGate` (RLS + `profiles.es_admin`).
 
 ### Instructor ✅ (Sesión 16)
@@ -905,7 +1291,6 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 - Gate: `InstructorGate` (RLS + fila propia en `academy_instructors` con `activo = true`). Admin tiene prioridad.
 
 ### Pendientes
-- Tienda pública de canjes (`/beneficios`).
 - Drag-and-drop para reordenar módulos/lecciones e itinerario.
 
 ---
@@ -923,7 +1308,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 9. **Nunca agregar scroll-snap o scroll-jacking no pedido.**
 10. **Los vivenciales no se cobran dentro de la plataforma.** El saldo nunca se edita a mano.
 11. **Comentarios y reseñas:** responde el admin (cualquier curso) o el instructor dueño del curso. El `pagado` de un payout y los campos de dinero nunca se escriben desde el frontend — los protegen triggers.
-12. **Los cambios de DB se proponen, no se aplican.** Claude Code nunca corre migraciones, policies, triggers ni `CREATE OR REPLACE` contra `fvrwtqhkskbaixqbxami`: escribe el SQL, lo muestra y frena. Lo aplica Nico. Sin excepción por tamaño ni por riesgo bajo.
+12. **Las migraciones las aplica Claude directo** (corregido en Sesión 32 — antes decía que las aplicaba Nico). Escribe el SQL, lo corre contra `fvrwtqhkskbaixqbxami` (migraciones, policies, triggers, `CREATE OR REPLACE`) y lo deja commiteado en `supabase/migrations/` del repo. Nico y Yesica hacen el QA visual final (principio #13), no el gatekeeping de si se aplica. Sigue sin poder recrear tablas (solo `ALTER TABLE`) ni borrar datos salvo pedido explícito y acotado.
 13. **Toda entrega se prueba visualmente por Yesica o Nico EN PRODUCCIÓN, después del deploy.** La prueba visual no bloquea el merge/deploy; se mergea, se deploya y recién ahí se prueba en vivo. Verificación técnica (build, deploy, código, DB) no reemplaza ese paso humano, pero tampoco hay que probar antes de deployar. El ítem queda "completamente cerrado" solo tras la prueba en prod.
 14. **Actualizar este archivo con cada sesión** (ver instrucciones abajo).
 
@@ -931,6 +1316,7 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 
 ## CÓMO ACTUALIZAR ESTE ARCHIVO
 
+- **Este archivo se actualiza y commitea SIEMPRE por Claude Code, en el mismo commit (o PR) que el código/migración de la tarea que documenta — nunca por copy-paste manual desde otro chat.** Si Nico pega una versión editada de este archivo en el proyecto de Claude IA, Claude Code la toma como referencia de contenido pero es quien hace el commit real al repo.
 - **Cada sesión que toque Academy** agrega una fila a la tabla de "Sesiones" en Estado actual, con el número de sesión y un resumen de una línea.
 - Si la sesión construye una feature nueva relevante (como Vivenciales, Portal de Instructores, Video, Home, Cutover), se le agrega **su propia sección dedicada** siguiendo el mismo formato que las existentes (qué es, decisiones de diseño, cambios de schema, bugs encontrados, verificación) — y se suma al índice.
 - **El Backlog es único** (sección "Backlog priorizado"). No volver a partirlo en varias listas sueltas. Al cerrar un ítem: se borra de la lista (no se tacha y se deja — el historial de que se hizo ya queda en la tabla de sesiones). Al surgir uno nuevo: se agrega en el bucket de prioridad que corresponda (P0 bloqueante, P1 producto, P2 limpieza de deuda técnica, P3 más adelante).
@@ -942,4 +1328,4 @@ async function canAccessLesson(userId: string, lesson: Lesson, courseId: string)
 
 ---
 
-*Pencom Travexa SAS · Julio 2026 · Uso interno confidencial*
+*Pencom Travexa SAS · Julio 2026 · Uso interno confidencial · Última actualización: Sesión 39*

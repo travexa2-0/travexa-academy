@@ -1,4 +1,4 @@
--- Sesión 36 — Fix recursión infinita de RLS entre academy_courses y academy_instructors.
+-- Sesión 39 — Fix recursión infinita de RLS entre academy_courses y academy_instructors.
 --
 -- Síntoma: /admin/cursos, /admin/vivenciales y /admin/instructores mostraban 0
 -- resultados pese a tener datos. Cualquier SELECT a esas dos tablas para un usuario

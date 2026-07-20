@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Link } from 'react-router-dom'
 import type { Course } from '@/types'
-import { cupoEstado } from '@/lib/cupo'
+import { cupoEstado, cupoDisponibleDisplay } from '@/lib/cupo'
 import { cuotaEstimadaArs, mesesHastaSalida, puntosSalida } from '@/lib/vivencial'
 
 interface Props {
@@ -61,7 +61,11 @@ function DataCell({ icon, label, value, sub, accent, className = '' }: {
 
 export default function VivencialCard({ course: c, isWishlisted, onToggleWishlist, animDelay = 0 }: Props) {
   const { dias, noches } = calcDuracion(c)
-  const disp  = c.vivencial_cupo_disponible ?? 0
+  // HARDCODE TEMPORAL: cupos de display, pedido de Nico (sesión jul-2026). El listado
+  // muestra el mismo "disponible" ficticio que el detalle (cupo_maximo real − anotados
+  // hardcodeados; ver src/lib/cupo.ts). Es sólo visual — la reserva se gatea en el
+  // detalle con el cupo real de la DB.
+  const disp  = cupoDisponibleDisplay(c.slug, c.vivencial_cupo_maximo ?? 0)
   const estado = cupoEstado(disp)
   const thumb = c.thumbnail_url ?? c.fotos?.[0] ?? ''
   // Cuota mensual estimada (informativa — los vivenciales no se cobran en la plataforma).

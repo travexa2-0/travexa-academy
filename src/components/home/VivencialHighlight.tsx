@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Course } from '@/types'
+import { cupoDisponibleDisplay } from '@/lib/cupo'
 import { Reveal } from './Reveal'
 
 interface Props {
@@ -62,7 +63,10 @@ export default function VivencialHighlight({ vivencial, loading }: Props) {
 
   const photo = vivencial.fotos?.[0] ?? vivencial.thumbnail_url ?? undefined
   const cupoMax = vivencial.vivencial_cupo_maximo ?? 0
-  const cupoDisp = vivencial.vivencial_cupo_disponible ?? 0
+  // HARDCODE TEMPORAL: cupos de display, pedido de Nico (sesión jul-2026). Muestra el
+  // "disponible" ficticio (cupo_maximo real − anotados hardcodeados; ver src/lib/cupo.ts),
+  // consistente con el detalle y el listado. Sólo visual.
+  const cupoDisp = cupoDisponibleDisplay(vivencial.slug, cupoMax)
   const fillPct = cupoMax > 0 ? Math.max(0, Math.min(100, (cupoDisp / cupoMax) * 100)) : 0
   const dateRange = formatDateRange(vivencial.vivencial_fecha_salida, vivencial.vivencial_fecha_regreso)
   const ciudad = vivencial.vivencial_ciudad_salida

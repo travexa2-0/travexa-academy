@@ -15,6 +15,7 @@ import VivencialPagoCTA from '@/components/vivencial/VivencialPagoCTA'
 import { useWhatsappBusiness, cleanWhatsappNumber } from '@/hooks/useVivencialPago'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { mesesHastaSalida, puntosSalida } from '@/lib/vivencial'
+import { cupoDisponibleDisplay } from '@/lib/cupo'
 import { formatUsd } from '@/pages/admin/format'
 import type { ItinerarioDia, Enrollment, VivencialHotel, VivencialTipoDestino } from '@/types'
 import './vivencial-detail.css'
@@ -594,7 +595,12 @@ export default function VivencialDetail() {
   const { dias, noches } = calcDuracion(course.vivencial_fecha_salida, course.vivencial_fecha_regreso)
   const disp = course.vivencial_cupo_disponible ?? 0
   const max = course.vivencial_cupo_maximo ?? 0
-  const ctaPct = max > 0 ? Math.max(0, Math.round((1 - disp / max) * 100)) : 0
+  // `disp` real (arriba) se sigue usando para la lógica de negocio (agotado / CTA).
+  // HARDCODE TEMPORAL: cupos de display, pedido de Nico (sesión jul-2026). Los
+  // anotados mostrados son ficticios; ver src/lib/cupo.ts. dispDisplay = cupo_maximo
+  // real − anotados hardcodeados. Es sólo para mostrar, NO para gatear reservas.
+  const dispDisplay = cupoDisponibleDisplay(slug, max)
+  const ctaPct = max > 0 ? Math.max(0, Math.round((1 - dispDisplay / max) * 100)) : 0
 
   const pais = (course.vivencial_pais ?? '').trim()
   const destino = (course.vivencial_destino ?? '').trim()
@@ -651,7 +657,7 @@ export default function VivencialDetail() {
   const heroCards = [
     { k: 'Fechas', v: course.vivencial_fecha_salida && course.vivencial_fecha_regreso ? `${fmtDateShort(course.vivencial_fecha_salida)} — ${fmtDateShort(course.vivencial_fecha_regreso)}` : 'Por confirmar' },
     { k: 'Duración', v: dias > 0 ? `${dias} días · ${noches} noches` : 'Por confirmar' },
-    { k: 'Cupos', v: max > 0 ? (disp > 0 ? `Quedan ${disp} de ${max}` : 'Agotado') : 'Sin límite' },
+    { k: 'Cupos', v: max > 0 ? (dispDisplay > 0 ? `Quedan ${dispDisplay} de ${max}` : 'Agotado') : 'Sin límite' },
     { k: 'Sale desde', v: salidaLabel },
   ]
 
@@ -898,7 +904,7 @@ export default function VivencialDetail() {
               cuotaSaldoArs={cuotaSaldoArs}
               totalArs={totalArs}
               totalUsd={totalUsd}
-              disp={disp}
+              disp={dispDisplay}
               max={max}
               ctaPct={ctaPct}
               noIncluye={course.no_incluye}
@@ -919,7 +925,7 @@ export default function VivencialDetail() {
               </div>
             </div>
             {max > 0 && (
-              <div className="vv-gc"><span className="vv-dot" />Quedan {disp} de {max} lugares</div>
+              <div className="vv-gc"><span className="vv-dot" />Quedan {dispDisplay} de {max} lugares</div>
             )}
             <button className="vv-bar-btn" onClick={scrollToReserva}>Ver detalle</button>
           </div>

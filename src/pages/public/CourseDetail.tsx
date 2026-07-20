@@ -14,6 +14,7 @@ import { usePricingConfig } from '@/hooks/usePricing'
 import { useMyRedemptions } from '@/hooks/useBenefitsStore'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { courseLiveState } from '@/lib/liveState'
+import { cupoDisponibleDisplay } from '@/lib/cupo'
 import { displayName, loginRedirect } from '@/lib/utils'
 import { liveLessonState } from '@/types'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
@@ -1126,13 +1127,18 @@ export default function CourseDetail() {
                           </div>
                         )}
 
-                        {/* Cupo disponible */}
-                        {isVivencial && course.vivencial_cupo_maximo && (
+                        {/* Cupo disponible — HARDCODE TEMPORAL: cupos de display, pedido
+                            de Nico (sesión jul-2026). Muestra el "disponible" ficticio
+                            (cupo_maximo real − anotados hardcodeados; ver src/lib/cupo.ts),
+                            consistente con /vivencial/:slug. Sólo visual. */}
+                        {isVivencial && course.vivencial_cupo_maximo && (() => {
+                          const cupoDispDisplay = cupoDisponibleDisplay(slug, course.vivencial_cupo_maximo)
+                          return (
                           <div className="mb-4">
                             <div className="flex justify-between mb-1">
                               <span className="text-sm font-medium" style={{ color: '#0A1E29' }}>Cupo disponible</span>
                               <span className="font-mono text-sm font-bold" style={{ color: 'var(--primary)' }}>
-                                {course.vivencial_cupo_disponible ?? course.vivencial_cupo_maximo} de {course.vivencial_cupo_maximo}
+                                {cupoDispDisplay} de {course.vivencial_cupo_maximo}
                               </span>
                             </div>
                             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#E2EAEC' }}>
@@ -1140,12 +1146,13 @@ export default function CourseDetail() {
                                 className="h-full rounded-full"
                                 style={{
                                   background: 'var(--primary)',
-                                  width: `${Math.round(((course.vivencial_cupo_maximo - (course.vivencial_cupo_disponible ?? course.vivencial_cupo_maximo)) / course.vivencial_cupo_maximo) * 100)}%`,
+                                  width: `${Math.round(((course.vivencial_cupo_maximo - cupoDispDisplay) / course.vivencial_cupo_maximo) * 100)}%`,
                                 }}
                               />
                             </div>
                           </div>
-                        )}
+                          )
+                        })()}
 
                         {/* Descripción — corta como bajada destacada, larga como cuerpo del artículo */}
                         {course.descripcion && (

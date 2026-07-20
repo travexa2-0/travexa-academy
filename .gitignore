@@ -36,3 +36,4 @@ _ref/
 # Skills de diseño de referencia — Claude Code las usa localmente en cualquier
 # sesión, pero NO van a control de versiones (el repo es público). No borrar del disco.
 /SKILL-*.md
+.vercel

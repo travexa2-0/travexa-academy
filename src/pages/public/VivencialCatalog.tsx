@@ -161,6 +161,9 @@ export default function VivencialCatalog() {
 
   const [activeRegion,   setActiveRegion]   = useState<string>('all')
   const [activeTraslado, setActiveTraslado] = useState<string>('all')
+  // País y Destino (continente/zona) son filtros independientes: se puede filtrar
+  // por uno, por el otro, por ambos (AND) o por ninguno.
+  const [activePais,     setActivePais]     = useState<string>('all')
   const [activeDestino,  setActiveDestino]  = useState<string>('all')
   const [activeFecha,    setActiveFecha]    = useState<string>('all')
   const [showModal,    setShowModal]    = useState(false)
@@ -195,10 +198,10 @@ export default function VivencialCatalog() {
     return order.filter(t => seen.has(t))
   }, [vivenciales])
 
-  // Destino options — DISTINCT vivencial_pais de los vivenciales publicados.
+  // País options — DISTINCT vivencial_pais de los vivenciales publicados.
   // Nunca hardcodeado: si no hay vivenciales con país, el array queda vacío y el
   // select no se renderiza (integridad de datos).
-  const destinoOptions = useMemo(() => {
+  const paisOptions = useMemo(() => {
     const seen = new Set<string>()
     const opts: string[] = []
     vivenciales.forEach(v => {
@@ -206,6 +209,22 @@ export default function VivencialCatalog() {
       if (pais && !seen.has(pais)) {
         seen.add(pais)
         opts.push(pais)
+      }
+    })
+    return opts.sort((a, b) => a.localeCompare(b, 'es'))
+  }, [vivenciales])
+
+  // Destino options — DISTINCT vivencial_destino (continente/zona). Filtro
+  // independiente de País. Mismo criterio de integridad: si ningún vivencial tiene
+  // destino cargado, el array queda vacío y el select no se renderiza.
+  const destinoOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const opts: string[] = []
+    vivenciales.forEach(v => {
+      const destino = v.vivencial_destino?.trim()
+      if (destino && !seen.has(destino)) {
+        seen.add(destino)
+        opts.push(destino)
       }
     })
     return opts.sort((a, b) => a.localeCompare(b, 'es'))
@@ -228,15 +247,18 @@ export default function VivencialCatalog() {
     return opts.sort((a, b) => a.value.localeCompare(b.value))
   }, [vivenciales])
 
-  // Filtered list — Región, Traslado, Destino y Fecha se combinan con AND.
+  // Filtered list — Región, Traslado, País, Destino y Fecha se combinan con AND.
+  // País y Destino son independientes: un vivencial debe matchear los dos solo si
+  // el usuario eligió los dos.
   const filtered = useMemo(() => {
     let list = vivenciales
     if (activeRegion !== 'all')   list = list.filter(v => v.category?.slug === activeRegion)
     if (activeTraslado !== 'all') list = list.filter(v => (v.vivencial_tipo_traslado ?? []).includes(activeTraslado))
-    if (activeDestino !== 'all')  list = list.filter(v => v.vivencial_pais?.trim() === activeDestino)
+    if (activePais !== 'all')     list = list.filter(v => v.vivencial_pais?.trim() === activePais)
+    if (activeDestino !== 'all')  list = list.filter(v => v.vivencial_destino?.trim() === activeDestino)
     if (activeFecha !== 'all')    list = list.filter(v => v.vivencial_fecha_salida?.slice(0, 7) === activeFecha)
     return list
-  }, [vivenciales, activeRegion, activeTraslado, activeDestino, activeFecha])
+  }, [vivenciales, activeRegion, activeTraslado, activePais, activeDestino, activeFecha])
 
   const scrollToFilters = useCallback(() => {
     const el = filtersRef.current
@@ -468,18 +490,29 @@ export default function VivencialCatalog() {
             </div>
           )}
 
-          {/* Row 3: Destino + Fecha de salida (selects, mismo patrón que /cursos).
-              Cada select se muestra solo si hay valores reales en la DB; con la DB
-              de vivenciales vacía no se renderiza ninguno. */}
-          {(destinoOptions.length > 0 || fechaOptions.length > 0) && (
+          {/* Row 3: País + Destino + Fecha de salida (selects, mismo patrón que
+              /cursos). País y Destino son filtros independientes. Cada select se
+              muestra solo si hay valores reales en la DB; con la DB de vivenciales
+              vacía no se renderiza ninguno. */}
+          {(paisOptions.length > 0 || destinoOptions.length > 0 || fechaOptions.length > 0) && (
             <div className="flex items-center gap-[10px] mt-[12px] flex-wrap">
+              {paisOptions.length > 0 && (
+                <FilterSelect
+                  value={activePais}
+                  onChange={setActivePais}
+                  options={[
+                    { value: 'all', label: 'Todos los países' },
+                    ...paisOptions.map(p => ({ value: p, label: p })),
+                  ]}
+                />
+              )}
               {destinoOptions.length > 0 && (
                 <FilterSelect
                   value={activeDestino}
                   onChange={setActiveDestino}
                   options={[
                     { value: 'all', label: 'Todos los destinos' },
-                    ...destinoOptions.map(p => ({ value: p, label: p })),
+                    ...destinoOptions.map(d => ({ value: d, label: d })),
                   ]}
                 />
               )}

@@ -10,7 +10,7 @@ import { formatArs, formatNum, formatUsd } from '../format'
 import { useCategories } from '@/hooks/useCourses'
 import { useUpsertCourse, useAdminInstructors, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
 import {
-  PAISES, TIPO_TRASLADO_OPTIONS, REGIMEN_ALIMENTOS_OPTIONS, TIPO_DESTINO_OPTIONS,
+  PAISES, DESTINOS, TIPO_TRASLADO_OPTIONS, REGIMEN_ALIMENTOS_OPTIONS, TIPO_DESTINO_OPTIONS,
   type Course, type ItinerarioDia, type VivencialPuntoSalida, type VivencialHotel,
 } from '@/types'
 
@@ -24,6 +24,10 @@ interface Props {
 interface FormState {
   titulo: string
   pais: string
+  // Destino (continente/zona) — opcional, independiente de país. '' = sin destino.
+  destino: string
+  // Si el hero público muestra Destino en vez de País como título principal.
+  destino_como_titulo: boolean
   region: string
   localidades: string[]
   category_id: string
@@ -66,6 +70,8 @@ function initialState(initial?: Course | null): FormState {
   return {
     titulo: initial?.titulo ?? '',
     pais: initial?.vivencial_pais ?? 'Argentina',
+    destino: initial?.vivencial_destino ?? '',
+    destino_como_titulo: initial?.vivencial_destino_como_titulo ?? false,
     region: initial?.vivencial_region ?? '',
     localidades: initial?.vivencial_localidades ?? [],
     category_id: initial?.category_id ?? '',
@@ -279,6 +285,9 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         incluye: form.incluye.trim() || null,
         no_incluye: form.no_incluye.trim() || null,
         vivencial_pais: form.pais || null,
+        vivencial_destino: form.destino || null,
+        // El toggle solo tiene efecto si hay destino cargado; si no, el hero cae a País.
+        vivencial_destino_como_titulo: form.destino_como_titulo,
         vivencial_region: form.region || null,
         // Atmósfera de color de la página pública. Si queda vacío, el público usa 'playa'.
         vivencial_tipo_destino: (form.tipo_destino || null) as CourseWrite['vivencial_tipo_destino'],
@@ -358,6 +367,25 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                   </select>
                 </div>
                 <div className="field"><label className="f-label">Región / Provincia <span className="opt">(opcional)</span></label><input className="input" type="text" placeholder="Ej: Salta" value={form.region} onChange={e => set('region', e.target.value)} /></div>
+              </div>
+              {/* Destino (continente/zona) — independiente de País. Para viajes que son
+                  de una zona y no de un país puntual (ej: Europa). Opcional: no bloquea
+                  el guardado si queda vacío. */}
+              <div className="field-row cols-2">
+                <div className="field"><label className="f-label">Destino <span className="opt">(continente/zona, opcional)</span></label>
+                  <select className="select" value={form.destino} onChange={e => set('destino', e.target.value)}>
+                    <option value="">Sin destino</option>
+                    {DESTINOS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <div className="f-hint">Para viajes que son de una zona y no de un país puntual (ej: Europa).</div>
+                </div>
+                <div className="field"><label className="f-label">Título de la portada</label>
+                  <label className={`check-item${form.destino_como_titulo ? ' checked' : ''}`} style={{ marginTop: 2 }}>
+                    <input type="checkbox" checked={form.destino_como_titulo} onChange={e => set('destino_como_titulo', e.target.checked)} />
+                    Mostrar Destino como título principal
+                  </label>
+                  <div className="f-hint">Si está tildado y hay Destino cargado, el hero del detalle muestra el Destino grande y el País como dato secundario. Sin Destino, sigue mostrando el País.</div>
+                </div>
               </div>
               <div className="field-row cols-2">
                 <div className="field"><label className="f-label">Categoría</label>

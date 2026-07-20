@@ -597,7 +597,15 @@ export default function VivencialDetail() {
   const ctaPct = max > 0 ? Math.max(0, Math.round((1 - disp / max) * 100)) : 0
 
   const pais = (course.vivencial_pais ?? '').trim()
-  const heroWord = pais.toUpperCase()
+  const destino = (course.vivencial_destino ?? '').trim()
+  // Título grande del hero: Destino si Yesica lo pidió como título Y hay destino
+  // cargado; si no, País (comportamiento histórico). El flag sin destino no rompe
+  // ni deja el título vacío: cae a País.
+  const destinoComoTitulo = !!course.vivencial_destino_como_titulo && !!destino
+  const heroWord = (destinoComoTitulo ? destino : pais).toUpperCase()
+  // Cuando el Destino toma el título, el País no se pierde: baja de jerarquía a un
+  // tag secundario cerca del título.
+  const paisSecundario = destinoComoTitulo && pais ? pais : ''
 
   const puntos = puntosSalida(course)
   const salidaCiudades = puntos.map(p => p.ciudad).filter(Boolean)
@@ -698,7 +706,13 @@ export default function VivencialDetail() {
           <div className="vv-hero-inner vv-container">
             {/* La vuelta a vivenciales vive en el header de navegación real (Vivencial),
                 no se duplica en el hero. */}
-            <span className="vv-tag" data-enter="1">✦ Capacitación vivencial</span>
+            <div className="vv-hero-tags" data-enter="1">
+              <span className="vv-tag">✦ Capacitación vivencial</span>
+              {/* País como dato secundario cuando el Destino tomó el título grande. */}
+              {paisSecundario && (
+                <span className="vv-tag vv-tag-loc"><MapPin className="w-[13px] h-[13px]" />{paisSecundario}</span>
+              )}
+            </div>
             <h1 data-enter="1">{course.titulo}</h1>
             {course.descripcion && <p className="vv-sub" data-enter="2">{course.descripcion}</p>}
 

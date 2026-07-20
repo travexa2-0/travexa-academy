@@ -273,6 +273,15 @@ export const PAISES = [
   'Japón', 'China', 'India', 'Indonesia', 'Australia', 'Nueva Zelanda',
 ] as const
 
+// Lista fija de destinos (continente/zona) para el dropdown del wizard, mismo
+// patrón que PAISES. Es independiente de País: un vivencial puede tener uno, el
+// otro, ambos o ninguno. Se usa como título del hero público cuando Yesica tilda
+// "Mostrar Destino como título principal" (vivencial_destino_como_titulo).
+export const DESTINOS = [
+  'Europa', 'Sudamérica', 'Norteamérica', 'Centroamérica', 'El Caribe',
+  'África', 'Asia', 'Medio Oriente', 'Oceanía',
+] as const
+
 // ── Perfil resumido embebido en joins (reseñas, comentarios) ──
 export interface ProfileMini {
   id: string
@@ -387,6 +396,12 @@ export interface Course {
   vivencial_fecha_regreso: string | null
   vivencial_ciudad_salida: string | null   // DEPRECADA — usar vivencial_puntos_salida
   vivencial_pais: string | null
+  // Destino (continente/zona, ej. "Europa"). Independiente de país: ambos opcionales,
+  // ninguno prerequisito del otro. Valores válidos en DESTINOS.
+  vivencial_destino: string | null
+  // Si true y vivencial_destino tiene valor, el hero público muestra Destino como
+  // título principal en vez de País. Default false = título = País (histórico).
+  vivencial_destino_como_titulo: boolean
   vivencial_region: string | null
   // Atmósfera visual del destino (playa/montana/desierto/selva/ciudad). Default UI: playa.
   vivencial_tipo_destino: VivencialTipoDestino | null

@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import ContentCard from './ContentCard'
+import ListErrorState from './ListErrorState'
 import type { Course } from '@/types'
 
 type Status = 'todos' | 'publicado' | 'borrador' | 'archivado'
@@ -9,6 +10,8 @@ interface Props {
   courses: Course[]
   onNew: () => void
   onOpen: (course: Course) => void
+  error?: unknown
+  onRetry?: () => void
 }
 
 function FilterDropdown({ label, options, selected, onToggle }: {
@@ -37,7 +40,7 @@ function FilterDropdown({ label, options, selected, onToggle }: {
   )
 }
 
-export default function ContentList({ kind, courses, onNew, onOpen }: Props) {
+export default function ContentList({ kind, courses, onNew, onOpen, error, onRetry }: Props) {
   const [search, setSearch] = useState('')
   const [cats, setCats] = useState<Set<string>>(new Set())
   const [tipos, setTipos] = useState<Set<string>>(new Set())
@@ -118,7 +121,9 @@ export default function ContentList({ kind, courses, onNew, onOpen }: Props) {
         ))}
       </div>
 
-      {filtered.length > 0 ? (
+      {error ? (
+        <ListErrorState error={error} onRetry={onRetry} />
+      ) : filtered.length > 0 ? (
         <div className="item-grid">
           {filtered.map(c => <ContentCard key={c.id} course={c} onClick={() => onOpen(c)} />)}
         </div>

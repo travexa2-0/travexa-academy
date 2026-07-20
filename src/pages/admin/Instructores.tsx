@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import InstructorFormDrawer from './components/InstructorFormDrawer'
 import InstructorDetailDrawer from './components/InstructorDetailDrawer'
+import ListErrorState from './components/ListErrorState'
 import { useInstructorsFull } from '@/hooks/admin/useAdminInstructorsFull'
 import type { Instructor } from '@/types'
 
 type Status = 'todos' | 'activo' | 'inactivo'
 
 export default function Instructores() {
-  const { data: instructores } = useInstructorsFull()
+  const { data: instructores, error, refetch } = useInstructorsFull()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [formOpen, setFormOpen] = useState(false)
@@ -76,7 +77,9 @@ export default function Instructores() {
         ))}
       </div>
 
-      {filtered.length > 0 ? (
+      {error ? (
+        <ListErrorState error={error} onRetry={() => refetch()} />
+      ) : filtered.length > 0 ? (
         <div className="card">
           <div style={{ overflowX: 'auto' }}>
             <table className="tbl">

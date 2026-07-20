@@ -7,7 +7,7 @@ import { useAdminCourses } from '@/hooks/admin/useAdminCourses'
 import type { Course } from '@/types'
 
 export default function Vivenciales() {
-  const { data: courses } = useAdminCourses(['vivencial'])
+  const { data: courses, error, refetch } = useAdminCourses(['vivencial'])
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -28,7 +28,7 @@ export default function Vivenciales() {
 
   return (
     <>
-      <ContentList kind="vivenciales" courses={courses ?? []} onNew={openNew} onOpen={c => setDetail(c)} />
+      <ContentList kind="vivenciales" courses={courses ?? []} onNew={openNew} onOpen={c => setDetail(c)} error={error} onRetry={() => refetch()} />
       <ContentDetailDrawer course={detail} open={!!detail} onClose={() => setDetail(null)} onEdit={openEdit} />
       <VivencialWizard open={wizardOpen} onClose={() => setWizardOpen(false)} initial={editing} />
     </>

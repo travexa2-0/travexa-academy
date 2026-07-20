@@ -7,7 +7,7 @@ import { useAdminCourses } from '@/hooks/admin/useAdminCourses'
 import type { Course } from '@/types'
 
 export default function Cursos() {
-  const { data: courses } = useAdminCourses(['grabado', 'en_vivo'])
+  const { data: courses, error, refetch } = useAdminCourses(['grabado', 'en_vivo'])
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -29,7 +29,7 @@ export default function Cursos() {
 
   return (
     <>
-      <ContentList kind="cursos" courses={courses ?? []} onNew={openNew} onOpen={c => setDetail(c)} />
+      <ContentList kind="cursos" courses={courses ?? []} onNew={openNew} onOpen={c => setDetail(c)} error={error} onRetry={() => refetch()} />
       <ContentDetailDrawer course={detail} open={!!detail} onClose={() => setDetail(null)} onEdit={openEdit} />
       <CourseWizard open={wizardOpen} onClose={() => setWizardOpen(false)} initial={editing} />
     </>

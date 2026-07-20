@@ -4,6 +4,7 @@ import Overlay from './Overlay'
 import RichTextArea from './RichTextArea'
 import ExpandableTextArea from './ExpandableTextArea'
 import ModuleBuilder from './ModuleBuilder'
+import InstructorPicker from './InstructorPicker'
 import { NIVEL_OPTIONS, ACCESO_OPTIONS } from './wizardData'
 import { useAdminUI } from '../adminContext'
 import { formatArs } from '../format'
@@ -25,7 +26,7 @@ interface FormState {
   titulo: string
   category_id: string
   nivel: 'principiante' | 'intermedio' | 'avanzado'
-  instructor_id: string
+  instructor_ids: string[]
   tipo: 'grabado' | 'en_vivo' | 'ebook'
   descripcion: string
   descripcion_larga: string
@@ -69,7 +70,11 @@ function initialState(initial?: (Course & { modules?: Module[] }) | null): FormS
     titulo: initial?.titulo ?? '',
     category_id: initial?.category_id ?? '',
     nivel: (initial?.nivel as FormState['nivel']) ?? 'principiante',
-    instructor_id: initial?.instructor_id ?? '',
+    // instructor_ids es la fuente de verdad; para cursos viejos que solo tienen
+    // instructor_id (single), lo sembramos como primer elemento del array.
+    instructor_ids: initial?.instructor_ids?.length
+      ? initial.instructor_ids
+      : (initial?.instructor_id ? [initial.instructor_id] : []),
     tipo: (initial?.tipo === 'en_vivo' ? 'en_vivo' : initial?.tipo === 'ebook' ? 'ebook' : 'grabado'),
     descripcion: initial?.descripcion ?? '',
     descripcion_larga: initial?.descripcion_larga ?? '',
@@ -232,7 +237,10 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
         slug: initial?.slug ?? slugify(form.titulo),
         tipo: form.tipo,
         category_id: form.category_id || null,
-        instructor_id: form.instructor_id || null,
+        // instructor_ids = fuente de verdad; instructor_id = espejo del principal (primero
+        // del array), para compat con embed/conteos/datos viejos. Se sincronizan siempre.
+        instructor_ids: form.instructor_ids.length ? form.instructor_ids : null,
+        instructor_id: form.instructor_ids[0] ?? null,
         nivel: form.nivel,
         descripcion: form.descripcion || null,
         descripcion_larga: form.descripcion_larga || null,
@@ -319,7 +327,7 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                 <input className="input" type="text" placeholder="Ej: Cómo vender cruceros por el Mediterráneo" value={form.titulo} onChange={e => set('titulo', e.target.value)} />
                 <div className="f-hint">El link va a ser <span className="mono">academy.travexa.com.ar/cursos/{slugify(form.titulo) || '…'}</span></div>
               </div>
-              <div className="field-row cols-3">
+              <div className="field-row cols-2">
                 <div className="field">
                   <label className="f-label">Categoría</label>
                   <select className="select" value={form.category_id} onChange={e => set('category_id', e.target.value)}>
@@ -333,13 +341,10 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                     {NIVEL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
-                <div className="field">
-                  <label className="f-label">Instructor</label>
-                  <select className="select" value={form.instructor_id} onChange={e => set('instructor_id', e.target.value)}>
-                    <option value="">Sin instructor</option>
-                    {(instructors ?? []).map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
-                  </select>
-                </div>
+              </div>
+              <div className="field">
+                <label className="f-label">Instructores <span className="opt">— uno o varios, opcional</span></label>
+                <InstructorPicker all={instructors ?? []} selectedIds={form.instructor_ids} onChange={ids => set('instructor_ids', ids)} />
               </div>
               <div className="field">
                 <label className="f-label">Formato</label>
@@ -566,7 +571,13 @@ export default function CourseWizard({ open, onClose, initial, onSaved }: Props)
                     {form.tipo === 'ebook'
                       ? <div className="stat-mini"><div className="v">{Number(form.total_paginas) || '—'}</div><div className="l">Páginas · Ebook</div></div>
                       : <div className="stat-mini"><div className="v">{form.modules.length}</div><div className="l">Módulos · {totalLecciones} lecciones</div></div>}
-                    <div className="stat-mini"><div className="v">{form.tipo === 'en_vivo' ? 'En vivo' : form.tipo === 'ebook' ? 'Ebook' : 'Grabado'}</div><div className="l">{instructors?.find(i => i.id === form.instructor_id)?.nombre ?? 'Sin instructor'}</div></div>
+                    <div className="stat-mini"><div className="v">{form.tipo === 'en_vivo' ? 'En vivo' : form.tipo === 'ebook' ? 'Ebook' : 'Grabado'}</div><div className="l">{
+                      form.instructor_ids.length === 0
+                        ? 'Sin instructor'
+                        : form.instructor_ids.length === 1
+                          ? (instructors?.find(i => i.id === form.instructor_ids[0])?.nombre ?? 'Instructor')
+                          : `${instructors?.find(i => i.id === form.instructor_ids[0])?.nombre ?? 'Instructor'} +${form.instructor_ids.length - 1}`
+                    }</div></div>
                   </div>
                 </div>
               </div>

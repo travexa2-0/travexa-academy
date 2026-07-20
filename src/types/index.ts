@@ -345,7 +345,11 @@ export interface Course {
   thumbnail_url: string | null
   trailer_url: string | null
   category_id: string | null
+  // instructor_id (single) = instructor PRINCIPAL, espejo de instructor_ids[0]; se mantiene
+  // por compatibilidad (embed, conteos, datos viejos). instructor_ids (array, ordenado) es la
+  // fuente de verdad para cursos, mismo patrón que vivencial_instructor_ids en vivenciales.
   instructor_id: string | null
+  instructor_ids: string[] | null
   nivel: NivelCurso
   tags: string[]
   tipo_acceso: TipoAcceso
@@ -408,6 +412,10 @@ export interface Course {
   vivencial_precio_cuotas_ars: number | null
   vivencial_precio_cuotas_usd: number | null
   vivencial_whatsapp_url: string | null
+  // Instructores del vivencial (orden = orden de la página pública). Un vivencial puede
+  // tener varios; se usa esta columna (array) en vez de instructor_id (single, de cursos).
+  // null o vacío = sin instructores → la sección no se muestra en la página pública.
+  vivencial_instructor_ids: string[] | null
   // joined
   category?: Category
   instructor?: Instructor

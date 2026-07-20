@@ -7,7 +7,7 @@ import {
   Loader2, Heart, AlertCircle, BookOpen,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
-import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments, useReviews } from '@/hooks/useCourses'
+import { useCourseDetail, useWishlist, useToggleWishlist, useMyEnrollments, useReviews, usePublicInstructors, type PublicInstructor } from '@/hooks/useCourses'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCoursePayment, type MetodoPago } from '@/hooks/usePayment'
 import { usePricingConfig } from '@/hooks/usePricing'
@@ -672,6 +672,19 @@ export default function CourseDetail() {
   const [paymentBanner, setPaymentBanner] = useState<'pending' | 'error' | null>(null)
 
   const { data: course, isLoading, error } = useCourseDetail(slug ?? '', preview)
+  // Instructores del curso: instructor_ids (array, fuente de verdad) con fallback al
+  // instructor_id single para datos viejos. Mismo patrón que el detalle de vivencial.
+  const instructorIds = useMemo(
+    () => (course?.instructor_ids?.length ? course.instructor_ids : (course?.instructor_id ? [course.instructor_id] : [])),
+    [course],
+  )
+  const { data: instructoresFetched = [] } = usePublicInstructors(instructorIds)
+  // Si la query todavía no resolvió pero el embed trae el principal, lo mostramos igual.
+  const instructores: PublicInstructor[] = instructoresFetched.length
+    ? instructoresFetched
+    : course?.instructor
+      ? [{ id: course.instructor.id, nombre: course.instructor.nombre, especialidad: course.instructor.especialidad ?? null, bio: course.instructor.bio ?? null, avatar_url: course.instructor.avatar_url ?? null, redes: course.instructor.redes ?? null }]
+      : []
   const { data: wishlist = [] }            = useWishlist(user?.id)
   const { mutate: toggleWishlist }         = useToggleWishlist(user?.id)
   const { data: enrollments = [] }         = useMyEnrollments(user?.id)
@@ -939,9 +952,9 @@ export default function CourseDetail() {
                 {formatDuration(course.duracion_total_minutos)}
               </div>
             ) : null}
-            {course.instructor && (
+            {instructores.length > 0 && (
               <div className="font-mono" style={{ fontSize: '10px', color: 'var(--text-2)' }}>
-                Instructor: <strong style={{ color: 'var(--text-1)', marginLeft: '3px' }}>{course.instructor.nombre}</strong>
+                {instructores.length === 1 ? 'Instructor' : 'Instructores'}: <strong style={{ color: 'var(--text-1)', marginLeft: '3px' }}>{instructores.map(i => i.nombre).join(', ')}</strong>
               </div>
             )}
             {/* Nivel badge */}
@@ -1283,32 +1296,43 @@ export default function CourseDetail() {
                       </div>
                     )}
 
-                    {/* Instructor */}
-                    {activeTab === 'inst' && course.instructor && (
-                      <div className="flex gap-[18px] items-start">
-                        {course.instructor.avatar_url ? (
-                          <img
-                            src={course.instructor.avatar_url}
-                            alt={course.instructor.nombre}
-                            className="w-[58px] h-[58px] rounded-full object-cover shrink-0"
-                          />
-                        ) : (
-                          <div
-                            className="w-[58px] h-[58px] rounded-full shrink-0 flex items-center justify-center font-display font-bold text-[17px]"
-                            style={{ background: 'linear-gradient(135deg,var(--gold),var(--gold-deep))', color: '#0A1E29' }}
-                          >
-                            {course.instructor.nombre[0]}
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-display font-bold" style={{ color: '#0A1E29', fontSize: '1rem' }}>
-                            {course.instructor.nombre}
-                          </h3>
-                          <p className="text-[15px] leading-[1.7] mt-[7px]" style={{ color: '#1A3040' }}>
-                            {course.instructor.bio ?? 'Instructor especializado en turismo argentino.'}
-                          </p>
+                    {/* Instructores */}
+                    {activeTab === 'inst' && (
+                      instructores.length > 0 ? (
+                        <div className="flex flex-col gap-[22px]">
+                          {instructores.map(ins => (
+                            <div key={ins.id} className="flex gap-[18px] items-start">
+                              {ins.avatar_url ? (
+                                <img
+                                  src={ins.avatar_url}
+                                  alt={ins.nombre}
+                                  className="w-[58px] h-[58px] rounded-full object-cover shrink-0"
+                                />
+                              ) : (
+                                <div
+                                  className="w-[58px] h-[58px] rounded-full shrink-0 flex items-center justify-center font-display font-bold text-[17px]"
+                                  style={{ background: 'linear-gradient(135deg,var(--gold),var(--gold-deep))', color: '#0A1E29' }}
+                                >
+                                  {ins.nombre[0]}
+                                </div>
+                              )}
+                              <div>
+                                <h3 className="font-display font-bold" style={{ color: '#0A1E29', fontSize: '1rem' }}>
+                                  {ins.nombre}
+                                </h3>
+                                {ins.especialidad && (
+                                  <div className="font-mono text-[11px] mt-[2px]" style={{ color: 'var(--gold-deep)' }}>{ins.especialidad}</div>
+                                )}
+                                <p className="text-[15px] leading-[1.7] mt-[7px]" style={{ color: '#1A3040' }}>
+                                  {ins.bio ?? 'Instructor especializado en turismo argentino.'}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
+                      ) : (
+                        <p className="text-[15px] leading-[1.7]" style={{ color: '#1A3040' }}>Este curso todavía no tiene instructores asignados.</p>
+                      )
                     )}
 
                     {/* Reseñas */}

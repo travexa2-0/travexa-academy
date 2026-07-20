@@ -46,6 +46,7 @@ function normalize(row: CourseRow): Course {
     vivencial_hoteles: row.vivencial_hoteles ?? [],
     vivencial_tipo_traslado: row.vivencial_tipo_traslado ?? [],
     vivencial_regimen_alimentos: row.vivencial_regimen_alimentos ?? [],
+    instructor_ids: row.instructor_ids ?? [],
     category: row.category ?? undefined,
     instructor: row.instructor ?? undefined,
   } as Course

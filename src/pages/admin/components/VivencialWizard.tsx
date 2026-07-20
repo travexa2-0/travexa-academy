@@ -5,9 +5,10 @@ import RichTextArea from './RichTextArea'
 import ItineraryBuilder from './ItineraryBuilder'
 import PuntosSalidaBuilder from './PuntosSalidaBuilder'
 import HotelesBuilder from './HotelesBuilder'
+import InstructorPicker from './InstructorPicker'
 import { formatArs, formatNum, formatUsd } from '../format'
 import { useCategories } from '@/hooks/useCourses'
-import { useUpsertCourse, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
+import { useUpsertCourse, useAdminInstructors, uploadMedia, slugify, type CourseWrite } from '@/hooks/admin/useAdminCourses'
 import {
   PAISES, TIPO_TRASLADO_OPTIONS, REGIMEN_ALIMENTOS_OPTIONS, TIPO_DESTINO_OPTIONS,
   type Course, type ItinerarioDia, type VivencialPuntoSalida, type VivencialHotel,
@@ -34,6 +35,7 @@ interface FormState {
   hoteles: VivencialHotel[]
   tipo_traslado: string[]
   regimen_alimentos: string[]
+  instructor_ids: string[]
   thumbnail_url: string | null
   fotos: string[]
   // Desglose de precio: USD y ARS se cargan a mano, cada uno independiente
@@ -85,6 +87,7 @@ function initialState(initial?: Course | null): FormState {
         : []),
     tipo_traslado: initial?.vivencial_tipo_traslado ?? [],
     regimen_alimentos: initial?.vivencial_regimen_alimentos ?? [],
+    instructor_ids: initial?.vivencial_instructor_ids ?? [],
     thumbnail_url: initial?.thumbnail_url ?? null,
     fotos: initial?.fotos ?? [],
     base_usd: initial?.vivencial_precio_base_usd != null ? String(initial.vivencial_precio_base_usd) : '',
@@ -144,6 +147,7 @@ function PriceBreakdown({ p }: { p: PriceCalc }) {
 
 export default function VivencialWizard({ open, onClose, initial, onSaved }: Props) {
   const { data: categories } = useCategories()
+  const { data: instructors } = useAdminInstructors()
   const upsert = useUpsertCourse()
   const fileRef = useRef<HTMLInputElement>(null)
   const [locDraft, setLocDraft] = useState('')
@@ -304,6 +308,9 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
         vivencial_precio_cuotas_ars: initial?.vivencial_precio_cuotas_ars ?? null,
         vivencial_whatsapp_url: form.whatsapp || null,
         vivencial_itinerario: form.itinerario,
+        // Array de IDs en orden; null cuando no hay ninguno (la página pública trata
+        // null y vacío igual: sección oculta).
+        vivencial_instructor_ids: form.instructor_ids.length ? form.instructor_ids : null,
       }
       const course = await upsert.mutateAsync(payload)
       toast.success(initial ? 'Vivencial actualizado' : 'Vivencial guardado como borrador')
@@ -411,6 +418,13 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
               <div className="field">
                 <label className="f-label">Hoteles / alojamiento</label>
                 <HotelesBuilder hoteles={form.hoteles} onChange={h => set('hoteles', h)} courseKey={initial?.slug ?? (slugify(form.titulo) || 'nuevo')} />
+              </div>
+
+              {/* Instructores — selector múltiple (orden = orden en la página pública) */}
+              <div className="field">
+                <label className="f-label">Instructores <span className="opt">(opcional)</span></label>
+                <InstructorPicker all={instructors ?? []} selectedIds={form.instructor_ids} onChange={ids => set('instructor_ids', ids)} />
+                <div className="f-hint">Quiénes dictan este vivencial. Si no elegís ninguno, la sección no se muestra en la página pública. El orden de los chips es el orden en que aparecen.</div>
               </div>
 
               {/* Traslado / régimen — multi-select */}
@@ -541,6 +555,19 @@ export default function VivencialWizard({ open, onClose, initial, onSaved }: Pro
                       <>
                         <div className="v">{conFoto.length}/{form.itinerario.length}</div>
                         <div className="l">{conFoto.length ? `Días con foto: ${conFoto.join(', ')}` : 'Días con foto'}</div>
+                      </>
+                    )
+                  })()}
+                </div>
+                <div className="stat-mini">
+                  {(() => {
+                    const names = form.instructor_ids
+                      .map(id => (instructors ?? []).find(i => i.id === id)?.nombre)
+                      .filter((n): n is string => !!n)
+                    return (
+                      <>
+                        <div className="v">{form.instructor_ids.length || '—'}</div>
+                        <div className="l">{names.length ? `Instructores: ${names.join(', ')}` : 'Instructores: — (la sección no se mostrará)'}</div>
                       </>
                     )
                   })()}

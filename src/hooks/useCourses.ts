@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, supabaseWrite } from '@/lib/supabase'
-import type { Course, Category, Instructor, Enrollment, Module, Review } from '@/types'
+import type { Course, Category, Instructor, InstructorRedes, Enrollment, Module, Review } from '@/types'
 
 type CourseRow = Omit<Course, 'category' | 'instructor' | 'modules'> & {
   category: Category | null
@@ -20,6 +20,7 @@ function normalizeCourse(row: CourseRow): Course {
     vivencial_hoteles: (row as unknown as Course).vivencial_hoteles ?? [],
     vivencial_tipo_traslado: (row as unknown as Course).vivencial_tipo_traslado ?? [],
     vivencial_regimen_alimentos: (row as unknown as Course).vivencial_regimen_alimentos ?? [],
+    instructor_ids: (row as unknown as Course).instructor_ids ?? [],
     duracion_total_minutos: (row as unknown as Course).duracion_total_minutos ?? 0,
     total_lecciones: (row as unknown as Course).total_lecciones ?? 0,
     rating_avg: (row as unknown as Course).rating_avg ?? 0,
@@ -133,6 +134,45 @@ export function useCategories() {
     staleTime: 1000 * 60 * 10,
   })
 }
+
+// ── Instructores públicos por lista de IDs (vivencial_instructor_ids o instructor_ids) ──
+// Solo los campos que muestra la card pública (no email/teléfono/share). Reusado por el
+// detalle de vivenciales y el de cursos: mismo patrón, la lista de IDs manda el orden.
+export interface PublicInstructor {
+  id: string
+  nombre: string
+  especialidad: string | null
+  bio: string | null
+  avatar_url: string | null
+  redes: InstructorRedes | null
+}
+// Alias retrocompatible (el detalle de vivencial lo importa con este nombre).
+export type VivencialInstructor = PublicInstructor
+
+async function fetchPublicInstructors(ids: string[]): Promise<PublicInstructor[]> {
+  const { data, error } = await supabase
+    .from('academy_instructors')
+    .select('id, nombre, especialidad, bio, avatar_url, redes')
+    .in('id', ids)
+  if (error) throw new Error(error.message)
+  const rows = (data ?? []) as unknown as PublicInstructor[]
+  // El orden lo manda el array de IDs (no el que devuelva la query).
+  // IDs que ya no existen (instructor borrado) se descartan silenciosamente.
+  const byId = new Map(rows.map(r => [r.id, r]))
+  return ids.map(id => byId.get(id)).filter((r): r is PublicInstructor => !!r)
+}
+
+export function usePublicInstructors(ids: string[] | null | undefined) {
+  const list = ids ?? []
+  return useQuery({
+    queryKey: ['public-instructors', list.join(',')],
+    queryFn:  () => fetchPublicInstructors(list),
+    enabled:  list.length > 0,
+    staleTime: 1000 * 60 * 5,
+  })
+}
+// Alias retrocompatible.
+export const useVivencialInstructors = usePublicInstructors
 
 export function useMyEnrollments(userId: string | undefined) {
   return useQuery({

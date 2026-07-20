@@ -27,7 +27,10 @@ type Admin = any
 // no hace nada y no rompe. `.select()` devuelve la fila SOLO cuando este llamado
 // realmente creó el enrollment, así el contador de alumnos no se infla cuando
 // los dos caminos se disparan para la misma compra.
-async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: string) {
+// Devuelve `true` SOLO cuando ESTE llamado creó el enrollment (ganó la carrera contra
+// el otro camino). Ese booleano es la señal única para disparar el mail de compra una
+// sola vez, igual que ya se usa para incrementar total_alumnos exactamente una vez.
+async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: string): Promise<boolean> {
   const { data: inserted, error: enrollError } = await supabaseAdmin
     .from('academy_enrollments')
     .upsert(
@@ -45,11 +48,13 @@ async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: 
 
   if (enrollError) {
     console.error('academy_enrollments upsert (curso) error:', enrollError)
-    return
+    return false
   }
 
+  const created = !!(inserted && inserted.length > 0)
+
   // Solo se incrementa total_alumnos cuando ESTE llamado creó el enrollment.
-  if (inserted && inserted.length > 0) {
+  if (created) {
     const { data: course } = await supabaseAdmin
       .from('academy_courses')
       .select('total_alumnos')
@@ -62,6 +67,24 @@ async function ensureEnrollment(supabaseAdmin: Admin, userId: string, courseId: 
         .eq('id', courseId)
     }
   }
+
+  return created
+}
+
+// Mail de "compra de curso confirmada" — vía la edge function send-course-email.
+// Se llama SOLO cuando este camino creó la inscripción, así el mail sale una única vez
+// aunque el webhook de MP y el redirect de éxito corran a la par. Fire-and-forget: si
+// el mail falla, el pago y la inscripción ya están hechos y no se rompe nada.
+async function sendCourseEmail(userId: string, courseId: string) {
+  try {
+    const url = Deno.env.get('SUPABASE_URL') ?? ''
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    await fetch(`${url}/functions/v1/send-course-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ user_id: userId, course_id: courseId }),
+    })
+  } catch (_) { /* el mail es una celebración; la compra ya está hecha */ }
 }
 
 // external_reference de curso: `ACAD-COURSE-{userId}-{courseId}` (dos UUIDs de 36
@@ -216,9 +239,12 @@ Deno.serve(async (req) => {
     await recordApprovedCoursePayment(supabaseAdmin, {
       ref, userId, courseId, paymentId: String(payment_id), mpData,
     })
-    await ensureEnrollment(supabaseAdmin, userId, courseId)
+    const created = await ensureEnrollment(supabaseAdmin, userId, courseId)
     await markRedemptionUsed(supabaseAdmin, userId, courseId, ref)
     await awardCursoComprado(userId, courseId)
+
+    // Mail solo si ESTE camino creó la inscripción (una sola vez entre webhook y redirect).
+    if (created) await sendCourseEmail(userId, courseId)
 
     return jsonResponse({ success: true, status: 'approved' })
   } catch (e: unknown) {

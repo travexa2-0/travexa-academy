@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Plane } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import WhatsAppFloat from '@/components/shared/WhatsAppFloat'
 import SkeletonCard from '@/components/shared/SkeletonCard'
@@ -6,53 +8,99 @@ import { useInstructors, type PublicInstructor } from '@/hooks/useInstructors'
 import { avatarGradient, initialsFrom } from '@/lib/avatar'
 
 // ── Instructor card ───────────────────────────────────────────────
-// Avatar (foto o inicial), nombre, rol/especialidad y bio corta (clamp 5 líneas).
+// Retrato vertical grande a todo el ancho de la card → placa BLANCA con
+// nombre + especialidad (contraste fuerte contra el fondo oscuro) → bio a
+// 4 líneas (line-clamp) con botón de avión para expandir/colapsar el resto.
+// El avión arranca HORIZONTAL (cerrado) y rota a apuntar HACIA ABAJO al abrir
+// (mismo patrón que un chevron que rota), con transición suave.
 function InstructorCard({ ins, delay }: { ins: PublicInstructor; delay: number }) {
+  const [open, setOpen] = useState(false)
+
   return (
     <motion.article
-      className="rounded-2xl border p-6 flex gap-[18px]"
+      className="rounded-2xl border overflow-hidden flex flex-col"
       style={{ background: 'var(--card)', borderColor: 'var(--line)' }}
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1], delay }}
     >
-      {ins.avatar_url ? (
-        <img
-          src={ins.avatar_url}
-          alt={ins.nombre}
-          className="shrink-0 rounded-2xl object-cover"
-          style={{ width: 76, height: 76, border: '1px solid var(--line-s)' }}
-          loading="lazy"
-        />
-      ) : (
-        <div
-          className="shrink-0 rounded-2xl flex items-center justify-center font-display font-bold"
-          style={{ width: 76, height: 76, background: avatarGradient(ins.id), color: 'var(--text-1)', fontSize: '1.5rem', border: '1px solid var(--line-s)' }}
-          aria-hidden
-        >
-          {initialsFrom(ins.nombre, null, ins.nombre)}
-        </div>
-      )}
-
-      <div className="min-w-0">
-        <h3 className="font-display font-bold" style={{ fontSize: '1.12rem', color: 'var(--text-1)', lineHeight: 1.2 }}>
-          {ins.nombre}
-        </h3>
-        {ins.especialidad && (
-          <p className="font-mono uppercase" style={{ fontSize: 10.5, letterSpacing: '.06em', color: 'var(--neon)', marginTop: 6 }}>
-            {ins.especialidad}
-          </p>
-        )}
-        {ins.bio && (
-          <p
-            style={{
-              fontSize: '.88rem', color: 'var(--text-3)', marginTop: 10, lineHeight: 1.55,
-              display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-            }}
+      {/* ── Foto: rectángulo vertical (retrato) a todo el ancho de la card ── */}
+      <div className="relative w-full" style={{ aspectRatio: '4 / 5' }}>
+        {ins.avatar_url ? (
+          <img
+            src={ins.avatar_url}
+            alt={ins.nombre}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          // Sin foto → placeholder de iniciales (NUNCA una foto de stock).
+          <div
+            className="absolute inset-0 flex items-center justify-center font-display font-bold"
+            style={{ background: avatarGradient(ins.id), color: 'var(--text-1)', fontSize: 'clamp(3rem, 9vw, 5.5rem)' }}
+            aria-hidden
           >
-            {ins.bio}
-          </p>
+            {initialsFrom(ins.nombre, null, ins.nombre)}
+          </div>
+        )}
+      </div>
+
+      {/* ── Contenido ── */}
+      {/* position:relative + z-index → la placa blanca (elemento en flujo) queda
+          POR ENCIMA de la foto (que es position:absolute y, si no, la taparía). */}
+      <div className="flex flex-col p-4" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Placa BLANCA: nombre + especialidad, superpuesta sobre la base de la foto */}
+        <div
+          className="rounded-2xl"
+          style={{ background: '#FFFFFF', padding: '16px 18px', marginTop: -44, boxShadow: '0 10px 30px rgba(0,0,0,.28)' }}
+        >
+          <h3 className="font-display font-bold" style={{ fontSize: '1.35rem', color: '#0A1E29', lineHeight: 1.15, letterSpacing: '-.01em' }}>
+            {ins.nombre}
+          </h3>
+          {ins.especialidad && (
+            <p className="font-mono uppercase" style={{ fontSize: 11, letterSpacing: '.06em', color: 'var(--primary)', marginTop: 7, fontWeight: 600 }}>
+              {ins.especialidad}
+            </p>
+          )}
+        </div>
+
+        {/* Bio: 4 líneas (clamp) cerrada, texto completo abierta */}
+        {ins.bio && (
+          <>
+            <p
+              style={{
+                fontSize: '.9rem', color: 'var(--text-3)', marginTop: 16, lineHeight: 1.6,
+                ...(open
+                  ? {}
+                  : { display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
+              }}
+            >
+              {ins.bio}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              className="inline-flex items-center gap-2 font-mono uppercase self-start"
+              style={{
+                marginTop: 14, fontSize: 10.5, letterSpacing: '.08em', color: 'var(--neon)',
+                background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0',
+              }}
+            >
+              {open ? 'Ver menos' : 'Leer bio completa'}
+              <Plane
+                className="h-[15px] w-[15px]"
+                style={{
+                  // Cerrado: 45° → nariz horizontal (a la derecha).
+                  // Abierto: 135° → nariz hacia abajo. Transición suave.
+                  transform: `rotate(${open ? 135 : 45}deg)`,
+                  transition: 'transform .35s cubic-bezier(.23,1,.32,1)',
+                }}
+              />
+            </button>
+          </>
         )}
       </div>
     </motion.article>

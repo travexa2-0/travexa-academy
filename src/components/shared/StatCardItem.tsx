@@ -5,26 +5,38 @@ import type { StatCard } from '@/lib/communityStats'
 // color + número + label). Si el stat tiene `to`, se envuelve en un <Link> con un
 // leve hover; si no, es un <div> informativo. Reutilizado por Formación (/cursos) y
 // el Home para que ambas tiras se vean idénticas (Sesión 43).
+//
+// Layout (fix de alineación, Sesión 43b): ícono y número van en una MISMA fila
+// (comparten eje vertical) y el label va debajo; el contenido está top-aligned y la
+// card estira a la altura del grid (`h-full`). Así todas las cards quedan con el
+// ícono, el número y el label en el mismo eje sin importar el largo del label ni si
+// wrapea a 2 líneas (ej. "Cursos completados" vs "Certificados"), en grids de 4 u 8.
 export default function StatCardItem({ stat }: { stat: StatCard }) {
   const inner = (
     <div
-      className="flex items-center gap-[13px] rounded-2xl border px-[18px] py-[17px] h-full"
+      className="flex flex-col gap-[10px] rounded-2xl border px-[18px] py-[16px] h-full"
       style={{ background: 'var(--card)', borderColor: 'var(--line)', backdropFilter: 'blur(6px)' }}
     >
-      <div
-        className="w-11 h-11 rounded-[13px] flex items-center justify-center shrink-0"
-        style={{ background: stat.tint, color: stat.color }}
-      >
-        {stat.icon}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="font-display font-bold" style={{ fontSize: '1.9rem', lineHeight: 1, color: stat.color, letterSpacing: '-.02em' }}>
+      <div className="flex items-center gap-[12px]">
+        <div
+          className="w-11 h-11 rounded-[13px] flex items-center justify-center shrink-0"
+          style={{ background: stat.tint, color: stat.color }}
+        >
+          {stat.icon}
+        </div>
+        <span
+          className="font-display font-bold"
+          style={{ fontSize: '1.9rem', lineHeight: 1, color: stat.color, letterSpacing: '-.02em' }}
+        >
           {stat.n}
         </span>
-        <span className="mt-[5px]" style={{ fontSize: 12, color: 'var(--text-3)', letterSpacing: '.01em' }}>
-          {stat.label}
-        </span>
       </div>
+      <span
+        className="leading-snug"
+        style={{ fontSize: 12, color: 'var(--text-3)', letterSpacing: '.01em' }}
+      >
+        {stat.label}
+      </span>
     </div>
   )
 

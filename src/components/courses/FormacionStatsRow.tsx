@@ -1,16 +1,19 @@
 import { motion } from 'framer-motion'
-import { useCommunityStats } from '@/lib/communityStats'
+import { useFormacionStats } from '@/hooks/useFormacionStats'
+import { buildCommunityStats } from '@/lib/communityStats'
 import StatCardItem from '@/components/shared/StatCardItem'
 
 // Fila de tarjetas destacadas del hero de /cursos.
 //
-// Datos REALES vía RPC `academy_public_formacion_stats` (ver useCommunityStats /
-// useFormacionStats), NUNCA hardcodeados. Se OCULTA entera mientras no haya
-// volumen real (usuarios activos por debajo del piso). Desde Sesión 43 son 4
-// (sin "Tasa de finalización").
+// Datos REALES vía RPC `academy_public_formacion_stats` (useFormacionStats), NUNCA
+// hardcodeados. Desde Sesión 43b (decisión de Nico) NO se aplica piso de volumen acá:
+// Formación muestra SIEMPRE sus 4 indicadores reales, incluso con números bajos o 0
+// (son datos reales, no un error). Solo se oculta si el RPC no devuelve nada. Son 4
+// (sin "Tasa de finalización"). El piso de 50 sigue vigente solo en el Home.
 export default function FormacionStatsRow() {
-  const cards = useCommunityStats()
-  if (cards.length === 0) return null
+  const { data: stats } = useFormacionStats()
+  if (!stats) return null
+  const cards = buildCommunityStats(stats)
 
   return (
     <motion.div

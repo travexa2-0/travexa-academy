@@ -1,9 +1,10 @@
 import { useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Heart, Users, Clock, ArrowRight, BookOpen, Star } from 'lucide-react'
+import { Heart, Clock, ArrowRight, BookOpen, Star } from 'lucide-react'
 import { usePricingConfig } from '@/hooks/usePricing'
 import { courseLiveState } from '@/lib/liveState'
+import { vecesTomado } from '@/lib/course'
 import type { Course, NivelCurso } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -24,15 +25,6 @@ function formatDuration(min: number): string {
   const h = Math.floor(min / 60)
   const m = min % 60
   return m > 0 ? `${h}h ${m}min` : `${h}h`
-}
-
-// Cantidad aproximada de veces que se tomó el curso — valor ilustrativo y estable
-// por curso (derivado del id, no de una query), por decisión de producto para dar
-// prueba social en la card. No cambia entre renders.
-function vecesTomado(id: string): number {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
-  return 140 + (h % 720) // 140..859
 }
 
 const EASE = 'cubic-bezier(0.23,1,0.32,1)'
@@ -346,36 +338,33 @@ export default function CourseCard({ course, wishlisted = false, onWishlistToggl
           )}
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-[9px] mt-2">
-          {course.rating_avg > 0 && (
-            <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
-              <span style={{ color: 'var(--text-1)', fontSize: '11.5px', letterSpacing: '.5px' }}>
-                {'★'.repeat(Math.min(5, Math.round(course.rating_avg)))}
-              </span>
-              {course.rating_avg.toFixed(1)}
-            </span>
-          )}
-          {isEbook ? (
-            course.total_paginas ? (
+        {/* Stats — rating + duración/páginas. Se oculta entera si no hay ninguno,
+            para no dejar un espacio vacío (el conteo de alumnos se sacó, Sesión 42). */}
+        {(course.rating_avg > 0 || (isEbook ? !!course.total_paginas : course.duracion_total_minutos > 0)) && (
+          <div className="flex items-center gap-[9px] mt-2">
+            {course.rating_avg > 0 && (
               <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
-                <BookOpen className="w-[11px] h-[11px]" />
-                {course.total_paginas} pág
+                <span style={{ color: 'var(--text-1)', fontSize: '11.5px', letterSpacing: '.5px' }}>
+                  {'★'.repeat(Math.min(5, Math.round(course.rating_avg)))}
+                </span>
+                {course.rating_avg.toFixed(1)}
               </span>
-            ) : null
-          ) : course.duracion_total_minutos > 0 ? (
-            <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
-              <Clock className="w-[11px] h-[11px]" />
-              {formatDuration(course.duracion_total_minutos)}
-            </span>
-          ) : null}
-          {course.total_alumnos > 0 && (
-            <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
-              <Users className="w-[11px] h-[11px]" />
-              {course.total_alumnos}
-            </span>
-          )}
-        </div>
+            )}
+            {isEbook ? (
+              course.total_paginas ? (
+                <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
+                  <BookOpen className="w-[11px] h-[11px]" />
+                  {course.total_paginas} pág
+                </span>
+              ) : null
+            ) : course.duracion_total_minutos > 0 ? (
+              <span className="font-mono flex items-center gap-[3px]" style={{ fontSize: '10.5px', color: 'var(--text-3)' }}>
+                <Clock className="w-[11px] h-[11px]" />
+                {formatDuration(course.duracion_total_minutos)}
+              </span>
+            ) : null}
+          </div>
+        )}
 
         {/* Clase en vivo — próxima o en curso (si ya pasó y hay grabación, se ve como grabado) */}
         {liveState === 'live' ? (

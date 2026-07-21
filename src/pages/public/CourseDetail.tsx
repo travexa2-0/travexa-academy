@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeft, Copy, CheckCircle2, Users, Clock,
+  ArrowLeft, Copy, CheckCircle2, Clock, Star,
   Play, Lock, X, Check, MapPin, Hotel, CalendarDays,
   Loader2, Heart, AlertCircle, BookOpen,
 } from 'lucide-react'
@@ -15,6 +15,7 @@ import { useMyRedemptions } from '@/hooks/useBenefitsStore'
 import { richTextLines, hasRichText, renderBold } from '@/lib/richText'
 import { courseLiveState } from '@/lib/liveState'
 import { cupoDisponibleDisplay } from '@/lib/cupo'
+import { vecesTomado } from '@/lib/course'
 import { displayName, loginRedirect } from '@/lib/utils'
 import { liveLessonState } from '@/types'
 import type { Course, Module, Lesson, NivelCurso } from '@/types'
@@ -934,12 +935,13 @@ export default function CourseDetail() {
                 <span className="ml-1">{course.rating_avg.toFixed(1)}</span>
               </div>
             )}
-            {course.total_alumnos > 0 && (
-              <div className="flex items-center gap-1 font-mono" style={{ fontSize: '10px', color: 'var(--text-2)' }}>
-                <Users className="w-3 h-3" />
-                {course.total_alumnos} alumnos
-              </div>
-            )}
+            {/* Personas capacitadas — mismo badge dorado que la card (`vecesTomado`,
+                Sesión 42), en el lugar donde estaba el conteo de alumnos */}
+            <div className="flex items-center gap-[4px] font-mono font-bold" title="Cantidad de personas capacitadas" style={{ color: 'var(--gold)', fontSize: '12px' }}>
+              <Star className="w-[12px] h-[12px]" style={{ fill: 'var(--gold)', stroke: 'var(--gold)' }} />
+              {vecesTomado(course.id).toLocaleString('es-AR')}
+              <span className="uppercase" style={{ fontSize: '8px', letterSpacing: '.06em', color: 'rgba(201,154,58,.72)', fontWeight: 400 }}>personas capacitadas</span>
+            </div>
             {isEbook ? (
               course.total_paginas ? (
                 <div className="flex items-center gap-1 font-mono" style={{ fontSize: '10px', color: 'var(--text-2)' }}>

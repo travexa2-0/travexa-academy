@@ -49,11 +49,15 @@ function CourseCardMini({ course }: { course: Course }) {
       <div className="course-body">
         <h4>{course.titulo}</h4>
         <p className="course-instructor">{course.instructor?.nombre ?? 'Travexa Academy'}</p>
-        <div className="course-meta">
-          {rating > 0 && <><span className="star">★</span> {rating.toFixed(1)} <span className="dot">·</span> </>}
-          {duration && <>{duration} <span className="dot">·</span> </>}
-          {course.total_alumnos} alumnos
-        </div>
+        {/* Meta: rating + duración. Se oculta si no hay ninguno (el conteo de
+            alumnos se sacó, Sesión 42) para no dejar una línea vacía. */}
+        {(rating > 0 || duration) && (
+          <div className="course-meta">
+            {rating > 0 && <><span className="star">★</span> {rating.toFixed(1)}</>}
+            {rating > 0 && duration && <> <span className="dot">·</span> </>}
+            {duration}
+          </div>
+        )}
         <div className="course-foot">
           <span className={`course-price${isFree ? ' free' : ''}`}>{formatPrice(course.precio_ars, course.tipo_acceso)}</span>
           <span className="chip-level">{NIVEL_LABEL[course.nivel] ?? course.nivel}</span>

@@ -11,6 +11,7 @@ import TestimonialsSection from '@/components/home/TestimonialsSection'
 import GamificationSection from '@/components/home/GamificationSection'
 import FinalCTA from '@/components/home/FinalCTA'
 import { useCourses } from '@/hooks/useCourses'
+import { usePublicBenefits } from '@/hooks/useBenefitsStore'
 import '@/components/home/home.css'
 
 // Home pública (/) — puerta de entrada del producto. Réplica del prototipo
@@ -19,21 +20,33 @@ import '@/components/home/home.css'
 // compartidos, no recreados desde el HTML del prototipo (Regla #1).
 export default function Home() {
   const { data: courses = [], isLoading } = useCourses()
+  // "Cursos gratis" = cursos DISTINTOS con un beneficio vigente tipo 'curso_gratis'
+  // en academy_benefits (NO tipo_acceso del curso). usePublicBenefits ya filtra
+  // vigentes por RLS; igual re-chequeamos publicado/archivado/fechas por robustez.
+  const { data: benefits = [] } = usePublicBenefits()
 
   const { formacion, vivencial, coursesCount, vivencialCount, freeCount, instructorsCount } = useMemo(() => {
     const vivenciales = courses.filter(c => c.tipo === 'vivencial')
     const formacionList = courses.filter(c => c.tipo !== 'vivencial')
-    const free = formacionList.filter(c => c.tipo_acceso === 'gratuito' || c.precio_ars === 0)
+    const now = Date.now()
+    const freeCourseIds = new Set(
+      benefits
+        .filter(b =>
+          b.tipo === 'curso_gratis' && b.course_id && b.publicado && !b.archivado &&
+          (!b.fecha_inicio || new Date(b.fecha_inicio).getTime() <= now) &&
+          (!b.fecha_vencimiento || new Date(b.fecha_vencimiento).getTime() >= now))
+        .map(b => b.course_id as string),
+    )
     const instructorIds = new Set(courses.map(c => c.instructor_id).filter(Boolean))
     return {
       formacion: formacionList,
       vivencial: vivenciales[0] ?? null,
       coursesCount: formacionList.length,
       vivencialCount: vivenciales.length,
-      freeCount: free.length,
+      freeCount: freeCourseIds.size,
       instructorsCount: instructorIds.size,
     }
-  }, [courses])
+  }, [courses, benefits])
 
   return (
     <div className="home-root">

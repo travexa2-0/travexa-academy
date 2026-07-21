@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ChevronDown, Check } from 'lucide-react'
 import Header from '@/components/layout/Header'
@@ -12,7 +13,7 @@ import type { Course, TipoCurso, NivelCurso } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────
 
-type TipoFilter  = TipoCurso | 'all' | 'gratis'
+type TipoFilter  = TipoCurso | 'all'
 type NivelFilter = NivelCurso | 'all'
 type SortKey     = 'popular' | 'rating' | 'price-asc' | 'price-desc' | 'newest'
 
@@ -29,7 +30,6 @@ const TIPO_OPTIONS: { value: TipoFilter; label: string; icon?: string }[] = [
   { value: 'grabado',   label: 'A tu ritmo' },
   { value: 'en_vivo',   label: 'En Vivo' },
   { value: 'ebook',     label: 'Ebook / PDF' },
-  { value: 'gratis',    label: 'Gratis' },
 ]
 
 const NIVEL_OPTIONS: { value: NivelFilter; label: string }[] = [
@@ -207,6 +207,7 @@ function WhatsAppFloat() {
 
 export default function Catalog() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [selectedTipo, setSelectedTipo]     = useState<TipoFilter>('all')
   const [selectedNivel, setSelectedNivel]   = useState<NivelFilter>('all')
   const [selectedCat, setSelectedCat]       = useState<string>('all')
@@ -246,7 +247,6 @@ export default function Catalog() {
     if (selectedTipo === 'grabado')      list = list.filter(c => c.tipo === 'grabado')
     else if (selectedTipo === 'en_vivo') list = list.filter(c => c.tipo === 'en_vivo')
     else if (selectedTipo === 'ebook')   list = list.filter(c => c.tipo === 'ebook')
-    else if (selectedTipo === 'gratis')  list = list.filter(c => c.precio_ars === 0 || c.tipo_acceso === 'gratuito')
 
     if (selectedNivel !== 'all') list = list.filter(c => c.nivel === selectedNivel)
     if (selectedCat !== 'all')   list = list.filter(c => c.category?.nombre === selectedCat)
@@ -343,7 +343,7 @@ export default function Catalog() {
               <motion.button
                 className="font-display font-bold rounded-[10px] border inline-flex items-center"
                 style={{ background: 'transparent', borderColor: 'var(--line-s)', color: 'var(--text-2)', fontSize: '14.5px', padding: '12px 24px', minHeight: 48 }}
-                onClick={() => { setSelectedTipo('gratis'); scrollToResults() }}
+                onClick={() => navigate('/beneficios')}
                 whileTap={{ scale: 0.97 }}
               >
                 Cursos gratis

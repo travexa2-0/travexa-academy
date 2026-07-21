@@ -1,20 +1,26 @@
 import { motion } from 'framer-motion'
-import { useFormacionStats } from '@/hooks/useFormacionStats'
-import { buildCommunityStats } from '@/lib/communityStats'
+import { Users, BookOpen, CheckCircle2, Trophy } from 'lucide-react'
+import type { StatCard } from '@/lib/communityStats'
 import StatCardItem from '@/components/shared/StatCardItem'
 
 // Fila de tarjetas destacadas del hero de /cursos.
 //
-// Datos REALES vía RPC `academy_public_formacion_stats` (useFormacionStats), NUNCA
-// hardcodeados. Desde Sesión 43b (decisión de Nico) NO se aplica piso de volumen acá:
-// Formación muestra SIEMPRE sus 4 indicadores reales, incluso con números bajos o 0
-// (son datos reales, no un error). Solo se oculta si el RPC no devuelve nada. Son 4
-// (sin "Tasa de finalización"). El piso de 50 sigue vigente solo en el Home.
-export default function FormacionStatsRow() {
-  const { data: stats } = useFormacionStats()
-  if (!stats) return null
-  const cards = buildCommunityStats(stats)
+// HARDCODE INTENCIONAL: números de ejemplo en la tira de Formación, decisión
+// explícita de Nico (sesión jul-2026, revirtiendo el cableado a datos reales de
+// la Sesión 43b). No "corregir" pensando que es un bug: los datos reales del RPC
+// (32/2/0/0 hoy) son demasiado bajos para mostrarse de cara al público, así que se
+// vuelve a los números de ejemplo del mockup. Mismo criterio que los cupos
+// hardcodeados de vivenciales (cupo.ts, Sesión 41). El Home (/) NO usa esto: sigue
+// con datos reales vía RPC + piso de 50 (useCommunityStats). El hook
+// `useFormacionStats` real queda disponible por si se quiere reconectar acá.
+const STATS: StatCard[] = [
+  { key: 'usuarios',     n: '195', label: 'Usuarios activos',   icon: <Users className="h-[19px] w-[19px]" />,        color: '#2FC4AE',       tint: 'rgba(47,196,174,.14)' },
+  { key: 'iniciados',    n: '769', label: 'Cursos iniciados',   icon: <BookOpen className="h-[19px] w-[19px]" />,      color: 'var(--text-1)', tint: 'rgba(245,243,236,.10)' },
+  { key: 'completados',  n: '567', label: 'Cursos completados', icon: <CheckCircle2 className="h-[19px] w-[19px]" />,  color: '#4ADE80',       tint: 'rgba(74,222,128,.14)' },
+  { key: 'certificados', n: '422', label: 'Certificados',       icon: <Trophy className="h-[19px] w-[19px]" />,        color: '#E0A24E',       tint: 'rgba(224,162,78,.15)' },
+]
 
+export default function FormacionStatsRow() {
   return (
     <motion.div
       className="relative z-[1] w-full max-w-[1200px] mx-auto px-[22px] mt-12 grid gap-[14px] grid-cols-2 lg:grid-cols-4"
@@ -22,7 +28,7 @@ export default function FormacionStatsRow() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1], delay: 0.7 }}
     >
-      {cards.map(s => (
+      {STATS.map(s => (
         <StatCardItem key={s.key} stat={s} />
       ))}
     </motion.div>

@@ -23,11 +23,16 @@ export default function ProofStrip({ coursesCount, vivencialCount, freeCount, in
   const hasContent = coursesCount > 0 || vivencialCount > 0
   if (!hasContent) return null
 
+  // Colores con contraste correcto sobre las cards BLANCAS del piloto claro de la
+  // Home (los números son texto grande → mínimo 3:1). Se conservan 4 acentos
+  // distintos (teal/gold/violeta/naranja) pero en tonos que pasan sobre blanco;
+  // el cyan/violeta claros previos eran para el fondo oscuro. Los tints (círculo
+  // del ícono) van suaves a juego. Solo aplica al Home (ProofStrip no es compartido).
   const propios: StatCard[] = [
-    { key: 'disponibles', n: String(coursesCount),     label: coursesCount === 1 ? 'Curso disponible' : 'Cursos disponibles', icon: <BookOpen className="h-[19px] w-[19px]" />,      color: '#00E5C8',  tint: 'rgba(0,229,200,.14)',   to: '/cursos' },
-    { key: 'gratis',      n: String(freeCount),         label: freeCount === 1 ? 'Curso gratis' : 'Cursos gratis',               icon: <Gift className="h-[19px] w-[19px]" />,          color: 'var(--gold)', tint: 'rgba(201,154,58,.15)', to: '/beneficios' },
-    { key: 'instructores', n: String(instructorsCount), label: instructorsCount === 1 ? 'Instructor' : 'Instructores',           icon: <GraduationCap className="h-[19px] w-[19px]" />, color: '#A78BFA',  tint: 'rgba(167,139,250,.16)', to: '/instructores' },
-    { key: 'vivencial',   n: String(vivencialCount),    label: vivencialCount === 1 ? 'Vivencial activo' : 'Vivenciales activos', icon: <Plane className="h-[19px] w-[19px]" />,         color: '#EF6B35',  tint: 'rgba(239,107,53,.15)', to: '/vivencial' },
+    { key: 'disponibles', n: String(coursesCount),     label: coursesCount === 1 ? 'Curso disponible' : 'Cursos disponibles', icon: <BookOpen className="h-[19px] w-[19px]" />,      color: '#0E6B5C',  tint: 'rgba(14,107,92,.12)',   to: '/cursos' },
+    { key: 'gratis',      n: String(freeCount),         label: freeCount === 1 ? 'Curso gratis' : 'Cursos gratis',               icon: <Gift className="h-[19px] w-[19px]" />,          color: '#A87C24', tint: 'rgba(201,154,58,.15)', to: '/beneficios' },
+    { key: 'instructores', n: String(instructorsCount), label: instructorsCount === 1 ? 'Instructor' : 'Instructores',           icon: <GraduationCap className="h-[19px] w-[19px]" />, color: '#6D4FD0',  tint: 'rgba(109,79,208,.13)', to: '/instructores' },
+    { key: 'vivencial',   n: String(vivencialCount),    label: vivencialCount === 1 ? 'Vivencial activo' : 'Vivenciales activos', icon: <Plane className="h-[19px] w-[19px]" />,         color: '#D9531F',  tint: 'rgba(217,83,31,.13)', to: '/vivencial' },
   ]
 
   const items = [...propios, ...community]

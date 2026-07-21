@@ -11,7 +11,13 @@
    ============================================================ */
 
 .home-root {
-  /* ---- tokens (copied from the prototype's :root) ---- */
+  /* ---- tokens ----
+     PILOTO PALETA CLARA (Sesión 44): la Home migra al branding real de Travexa
+     (fondo claro dominante + navy en bloques puntuales + turquesa de acento). El
+     resto de la plataforma sigue en dark. Los tokens navy (--bg*, --text-1/2/3,
+     --line*) se CONSERVAN porque los bloques que quedan oscuros (hero, CTA final,
+     card de vivencial, ticket, footer) los siguen usando; se agregan los tokens
+     de marca claros abajo. Tokens de marca (de `travexa_2_0_estrategia`). */
   --bg: #0A1E29;
   --bg2: #0F2C3B;
   --bg3: #162F3E;
@@ -26,9 +32,27 @@
   --text-3: #8FA3AB;
   --line: rgba(245, 243, 236, 0.10);
   --line-soft: rgba(245, 243, 236, 0.06);
-  --content-bg: #F2F5F4;
+
+  /* ---- paleta de marca clara (piloto) ---- */
+  --ink: #122733;            /* texto principal sobre claro */
+  --ink-soft: #4A6373;       /* texto secundario */
+  --ink-faint: #7C8E97;      /* texto muted */
+  --paper: #F4F5F2;          /* fondo general de la página */
+  --surface: #FFFFFF;        /* cards, banners blancos */
+  --brand-line: #DDE2DC;     /* borde sutil sobre claro */
+  --brand-line-strong: #C2C9C3;
+  --teal: #0E6B5C;           /* primario — botones/bordes/acentos */
+  --teal-soft: #D9ECE7;      /* fondo suave del primario */
+  --teal-outline: rgba(14, 107, 92, 0.30); /* borde turquesa de banners blancos */
+  --navy-deep: #0A1E29;      /* SOLO bloques (hero/CTA/etc.) */
+  --navy-deep-2: #0F2C3B;
+  --mint: #4ECDB8;           /* variante clara del teal (textos/checks sobre navy) */
+
+  /* content-* alineados a la paleta de marca (los usan catálogo y vivencial, ya
+     claros): mismos valores que --paper/--surface/--ink/--brand-line. */
+  --content-bg: #F4F5F2;
   --content-white: #FFFFFF;
-  --content-ink: #1A3040;
+  --content-ink: #122733;
   --content-ink-soft: #4A6373;
   --content-line: #DDE2DC;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -37,8 +61,10 @@
      el scroll-snap de las secciones lo descuentan para no quedar tapadas. */
   --hdr: 56px;
 
-  background: var(--bg);
-  color: var(--text-1);
+  /* Fondo general CLARO (piloto). Los bloques oscuros llevan su propio background
+     explícito; las secciones sin fondo (pilares/como/gami) heredan este claro. */
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -51,6 +77,14 @@
   & img, & svg{ display: block; max-width: 100%; }
 
   .container{ width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  /* El Header (compartido) es transparente arriba y renderiza un spacer .h-14
+     (56px) como hijo directo de .home-root. Con el fondo raíz ahora CLARO, ese
+     spacer quedaba claro y el header (texto claro, pensado para el hero oscuro)
+     perdía contraste. Se le da el navy del hero para que el tope siga oscuro
+     detrás del header y el hero arranque sin corte. No se toca el Header (queda
+     dark para el resto de la plataforma). */
+  & > .h-14{ background: var(--navy-deep); }
 
   /* ============ HERO ============ */
   /* Sin padding vertical: el Header ya aporta su spacer de 56px, y las columnas
@@ -141,7 +175,9 @@
   /* --- nubes de fondo (Pilares y Como funciona) --- */
   .bg-fx{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
   .pilares, .como{ position:relative; overflow:hidden; }
-  .bg-cloud{ position:absolute; border-radius:50%; background:radial-gradient(ellipse at center, rgba(245,243,236,0.10), rgba(245,243,236,0.03) 55%, transparent 75%); filter:blur(14px); }
+  /* nubes decorativas: tinte teal muy sutil sobre el fondo claro (antes eran claras
+     sobre oscuro → invisibles al migrar). */
+  .bg-cloud{ position:absolute; border-radius:50%; background:radial-gradient(ellipse at center, rgba(14,107,92,0.06), rgba(14,107,92,0.02) 55%, transparent 75%); filter:blur(14px); }
   .bg-cloud.a{ width:340px; height:130px; top:6%; animation:home-driftA 130s linear infinite; }
   .bg-cloud.b{ width:260px; height:100px; top:52%; animation:home-driftB 105s linear infinite; animation-delay:-30s; }
   .bg-cloud.c{ width:200px; height:80px; top:26%; animation:home-driftA 150s linear infinite; animation-delay:-70s; }
@@ -150,7 +186,18 @@
   /* Sección propia (no una franja pegada al hero): superficie elevada distinta
      del fondo del hero, padding vertical propio (altura acotada) y números con
      mucha más jerarquía. */
-  .proof-strip{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg3); padding:56px 0; }
+  /* Piloto claro: banda clara. Las cards son el componente COMPARTIDO StatCardItem
+     (también en /cursos, que sigue dark) → no se toca el componente; se le redefinen
+     acá, scopeados, los 3 tokens que usa por inline-style (--card/--line/--text-3) a
+     valores claros. Resultado: banners BLANCOS con BORDE TURQUESA (una de las
+     variedades que pidió Nico), sin afectar a /cursos. */
+  .proof-strip{
+    --card: var(--surface);
+    --line: var(--teal-outline);
+    --text-3: var(--ink-soft);
+    border-top:1px solid var(--brand-line); border-bottom:1px solid var(--brand-line);
+    background:var(--paper); padding:56px 0;
+  }
   .proof-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
   .proof-item{ padding:6px 20px; text-align:center; border-right:1px solid var(--line); }
   .proof-item:last-child{ border-right:none; }
@@ -159,14 +206,20 @@
   .proof-label{ margin-top:12px; font-size:12.5px; color:var(--text-3); font-family:var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
 
   /* ============ SECTION LABEL ============ */
-  .section-label{ font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--primary-l); display:flex; align-items:center; gap:10px; }
-  .section-label.on-light{ color:var(--primary); }
-  .section-title{ font-family:var(--font-display); font-weight:600; font-size:clamp(1.7rem, 3.4vw, 2.5rem); margin-top:12px; letter-spacing:-0.015em; color:var(--text-1); max-width:640px; }
-  .section-title.on-light{ color:var(--content-ink); }
-  .section-sub{ margin-top:14px; font-size:1rem; color:var(--text-2); max-width:580px; line-height:1.6; }
-  .section-sub.on-light{ color:var(--content-ink-soft); }
+  /* Piloto claro: el default de los section-* ahora es la paleta clara (teal/ink),
+     porque casi todas las secciones que los usan son claras. `.on-light` queda como
+     alias (mismo valor). La única sección oscura que los usa es Testimonios, que
+     está OCULTA (SHOW_TESTIMONIALS=false); igual se le deja un override abajo para
+     que se vea bien si se reactiva. */
+  .section-label{ font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); display:flex; align-items:center; gap:10px; }
+  .section-label.on-light{ color:var(--teal); }
+  .section-title{ font-family:var(--font-display); font-weight:600; font-size:clamp(1.7rem, 3.4vw, 2.5rem); margin-top:12px; letter-spacing:-0.015em; color:var(--ink); max-width:640px; }
+  .section-title.on-light{ color:var(--ink); }
+  .section-sub{ margin-top:14px; font-size:1rem; color:var(--ink-soft); max-width:580px; line-height:1.6; }
+  .section-sub.on-light{ color:var(--ink-soft); }
   .section-head-row{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; }
-  .link-arrow{ display:inline-flex; align-items:center; gap:7px; font-size:13.5px; font-weight:600; color:var(--primary-l); white-space:nowrap; padding-bottom:4px; transition:gap .2s var(--ease-out); }
+  /* link-arrow → teal profundo (contraste correcto sobre claro; el mint quedaba flojo). */
+  .link-arrow{ display:inline-flex; align-items:center; gap:7px; font-size:13.5px; font-weight:600; color:var(--teal); white-space:nowrap; padding-bottom:4px; transition:gap .2s var(--ease-out); }
   .link-arrow svg{ width:15px; height:15px; transition:transform .2s var(--ease-out); }
   .link-arrow:hover{ gap:11px; }
   .link-arrow:hover svg{ transform:translateX(2px); }
@@ -176,16 +229,21 @@
      las cards ganan tamaño y peso visual (íconos, títulos y bajadas más grandes). */
   .pilares{ padding:84px 0 84px; }
   .pilar-grid{ margin-top:40px; display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
-  .pilar-card{ position:relative; overflow:hidden; border-radius:22px; border:1px solid var(--line); background:var(--bg2); padding:32px 28px 30px; min-height:344px; display:flex; flex-direction:column; transition:transform .28s var(--ease-out), border-color .28s var(--ease-out); cursor:pointer; }
-  .pilar-card:hover{ transform:translateY(-6px); border-color:rgba(78,205,184,0.35); }
+  /* Piloto claro: cards blancas con borde sutil; hover eleva + borde turquesa +
+     sombra (efecto nuevo sobre lo que antes solo cambiaba el borde). La foto se
+     revela suave al hover y el degradé de la base ahora funde a blanco. */
+  .pilar-card{ position:relative; overflow:hidden; border-radius:22px; border:1px solid var(--brand-line); background:var(--surface); padding:32px 28px 30px; min-height:344px; display:flex; flex-direction:column; box-shadow:0 1px 2px rgba(18,39,51,0.04), 0 14px 32px -22px rgba(18,39,51,0.22); transition:transform .28s var(--ease-out), border-color .28s var(--ease-out), box-shadow .28s var(--ease-out); cursor:pointer; }
+  .pilar-card:hover{ transform:translateY(-6px); border-color:var(--teal); box-shadow:0 22px 46px -20px rgba(14,107,92,0.28); }
   .pilar-photo{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity .4s var(--ease-out), transform 6s var(--ease-out); transform:scale(1.08); }
-  .pilar-card:hover .pilar-photo{ opacity:0.34; transform:scale(1); }
-  .pilar-card::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,44,59,0.2) 0%, var(--bg2) 88%); pointer-events:none; }
-  .pilar-icon{ position:relative; z-index:1; width:56px; height:56px; border-radius:15px; background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
-  .pilar-icon svg{ width:27px; height:27px; color:var(--primary-l); }
+  .pilar-card:hover .pilar-photo{ opacity:0.22; transform:scale(1); }
+  .pilar-card::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(255,255,255,0.35) 0%, var(--surface) 86%); pointer-events:none; }
+  .pilar-icon{ position:relative; z-index:1; width:56px; height:56px; border-radius:15px; background:var(--teal-soft); border:1px solid var(--teal-outline); display:flex; align-items:center; justify-content:center; transition:transform .28s var(--ease-out); }
+  .pilar-card:hover .pilar-icon{ transform:scale(1.06) rotate(-3deg); }
+  .pilar-icon svg{ width:27px; height:27px; color:var(--teal); }
+  .pilar-card:nth-child(2) .pilar-icon{ background:var(--gold-soft); border-color:rgba(201,154,58,0.3); }
   .pilar-card:nth-child(2) .pilar-icon svg{ color:var(--gold); }
-  .pilar-card h3{ position:relative; z-index:1; font-family:var(--font-display); font-size:1.42rem; font-weight:600; margin-top:22px; letter-spacing:-0.01em; color:var(--text-1); }
-  .pilar-card p{ position:relative; z-index:1; font-size:1.02rem; color:var(--text-2); margin-top:12px; line-height:1.6; flex:1; }
+  .pilar-card h3{ position:relative; z-index:1; font-family:var(--font-display); font-size:1.42rem; font-weight:600; margin-top:22px; letter-spacing:-0.01em; color:var(--ink); }
+  .pilar-card p{ position:relative; z-index:1; font-size:1.02rem; color:var(--ink-soft); margin-top:12px; line-height:1.6; flex:1; }
   .pilar-tag{ position:relative; z-index:1; align-self:flex-start; margin-top:18px; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; color:var(--gold); background:rgba(201,154,58,0.12); border:1px solid rgba(201,154,58,0.3); padding:5px 12px; border-radius:999px; }
 
   /* ============ CATALOGO — marquee loop + hover reveal ============ */
@@ -266,16 +324,18 @@
   .como-step:last-child{ padding-bottom:0; }
   .como-step:not(:last-child)::before{
     content:''; position:absolute; left:22px; top:48px; bottom:2px; width:1px;
-    background:repeating-linear-gradient(180deg, var(--line) 0 6px, transparent 6px 12px);
+    background:repeating-linear-gradient(180deg, var(--brand-line-strong) 0 6px, transparent 6px 12px);
   }
+  /* Piloto claro: chips de paso turquesa suave sobre claro. El "ticket" (boarding
+     pass, más abajo) se MANTIENE navy a propósito como bloque de acento. */
   .como-icon{
     flex:0 0 auto; width:44px; height:44px; border-radius:12px;
-    background:var(--bg2); border:1px solid var(--line);
+    background:var(--teal-soft); border:1px solid var(--teal-outline);
     display:flex; align-items:center; justify-content:center; z-index:1;
   }
-  .como-icon svg{ width:20px; height:20px; color:var(--primary-l); }
-  .como-step h4{ font-family:var(--font-display); font-weight:600; font-size:1.05rem; color:var(--text-1); padding-top:9px; }
-  .como-step p{ margin-top:7px; font-size:0.92rem; color:var(--text-2); line-height:1.6; max-width:360px; }
+  .como-icon svg{ width:20px; height:20px; color:var(--teal); }
+  .como-step h4{ font-family:var(--font-display); font-weight:600; font-size:1.05rem; color:var(--ink); padding-top:9px; }
+  .como-step p{ margin-top:7px; font-size:0.92rem; color:var(--ink-soft); line-height:1.6; max-width:360px; }
 
   /* boarding-pass style mockup */
   .ticket{
@@ -301,7 +361,13 @@
   .ticket-grid .v.check svg{ width:15px; height:15px; }
 
   /* ============ TESTIMONIOS — marquee ============ */
+  /* Testimonios: sigue siendo un bloque NAVY y está OCULTO (SHOW_TESTIMONIALS=false).
+     Como el default de los section-* ahora es claro, acá se re-fuerzan a claro para
+     que se vean bien sobre el navy si algún día se reactiva la sección. */
   .testi{ padding:100px 0 150px; background:var(--bg2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); position:relative; overflow:hidden; }
+  .testi .section-label{ color:var(--primary-l); }
+  .testi .section-title{ color:var(--text-1); }
+  .testi .section-sub{ color:var(--text-2); }
   .testi-stats{ display:flex; gap:32px; margin-top:18px; flex-wrap:wrap; }
   .testi-stat{ display:flex; align-items:center; gap:9px; }
   .testi-stat .v{ font-family:var(--font-display); font-weight:700; font-size:1.3rem; color:var(--text-1); }
@@ -340,58 +406,66 @@
   .gami-value-row{ margin-top:22px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .gami-value-card{
     display:flex; align-items:flex-start; gap:12px;
-    background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--primary-l);
+    background:var(--surface); border:1px solid var(--brand-line); border-left:3px solid var(--teal);
     border-radius:14px; padding:13px 16px;
+    box-shadow:0 1px 2px rgba(18,39,51,0.04), 0 10px 26px -20px rgba(18,39,51,0.22);
+    transition:transform .24s var(--ease-out), box-shadow .24s var(--ease-out);
   }
+  .gami-value-card:hover{ transform:translateY(-3px); box-shadow:0 16px 34px -18px rgba(18,39,51,0.24); }
   .gami-value-card.gold{ border-left-color:var(--gold); }
-  .gami-value-card .ic{ flex:0 0 auto; width:32px; height:32px; border-radius:9px; background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
-  .gami-value-card .ic svg{ width:15px; height:15px; color:var(--primary-l); }
+  .gami-value-card .ic{ flex:0 0 auto; width:32px; height:32px; border-radius:9px; background:var(--teal-soft); border:1px solid var(--teal-outline); display:flex; align-items:center; justify-content:center; }
+  .gami-value-card .ic svg{ width:15px; height:15px; color:var(--teal); }
+  .gami-value-card.gold .ic{ background:var(--gold-soft); border-color:rgba(201,154,58,0.3); }
   .gami-value-card.gold .ic svg{ color:var(--gold); }
-  .gami-value-card h5{ font-family:var(--font-display); font-weight:600; font-size:0.9rem; color:var(--text-1); }
-  .gami-value-card p{ font-size:0.8rem; color:var(--text-2); margin-top:4px; line-height:1.5; }
+  .gami-value-card h5{ font-family:var(--font-display); font-weight:600; font-size:0.9rem; color:var(--ink); }
+  .gami-value-card p{ font-size:0.8rem; color:var(--ink-soft); margin-top:4px; line-height:1.5; }
 
+  /* BANNER BLANCO CON BORDE TURQUESA (variedad pedida por Nico): el bloque de sync
+     Academy↔Marketplace se destaca con superficie blanca, borde teal y glow suave. */
   .gami-sync{
     margin-top:20px; display:flex; align-items:center; justify-content:center; gap:22px;
-    padding:16px 24px; border-radius:18px; background:var(--bg2); border:1px solid var(--line);
+    padding:18px 24px; border-radius:18px; background:var(--surface); border:1.5px solid var(--teal);
+    box-shadow:0 18px 44px -26px rgba(14,107,92,0.40), inset 0 0 0 1px rgba(14,107,92,0.04);
     flex-wrap:wrap;
   }
-  .sync-card{ flex:0 0 auto; width:230px; background:var(--bg3); border:1px solid var(--line); border-radius:14px; padding:11px 14px; }
-  .sync-card.academy{ border-left:3px solid var(--primary-l); }
+  .sync-card{ flex:0 0 auto; width:230px; background:var(--paper); border:1px solid var(--brand-line); border-radius:14px; padding:11px 14px; }
+  .sync-card.academy{ border-left:3px solid var(--teal); }
   .sync-card.marketplace{ border-left:3px solid var(--gold); }
-  .sync-card .sync-label{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); }
+  .sync-card .sync-label{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); }
   .sync-card .sync-top{ display:flex; align-items:center; gap:10px; margin-top:9px; }
   .sync-card img{ width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0; }
   /* avatar genérico (sin foto de persona real): icono en placeholder */
-  .sync-avatar{ width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--bg4); border:1px solid var(--line); }
-  .sync-avatar svg{ width:17px; height:17px; color:var(--text-3); }
-  .sync-card .sync-name{ font-family:var(--font-display); font-weight:600; font-size:0.86rem; color:var(--text-1); }
-  .sync-card .sync-status{ font-size:10.5px; color:var(--primary-l); font-family:var(--font-mono); margin-top:2px; }
+  .sync-avatar{ width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--teal-soft); border:1px solid var(--teal-outline); }
+  .sync-avatar svg{ width:17px; height:17px; color:var(--teal); }
+  .sync-card .sync-name{ font-family:var(--font-display); font-weight:600; font-size:0.86rem; color:var(--ink); }
+  .sync-card .sync-status{ font-size:10.5px; color:var(--teal); font-family:var(--font-mono); margin-top:2px; }
   .sync-card.marketplace .sync-status{ color:var(--gold); }
   .sync-badges{ display:flex; gap:6px; margin-top:10px; }
-  .sync-mini-badge{ width:22px; height:22px; border-radius:6px; background:var(--bg4); display:flex; align-items:center; justify-content:center; }
+  .sync-mini-badge{ width:22px; height:22px; border-radius:6px; background:var(--gold-soft); display:flex; align-items:center; justify-content:center; }
   .sync-mini-badge svg{ width:11px; height:11px; color:var(--gold); }
   .sync-arrow{ flex:0 1 120px; min-width:70px; display:flex; align-items:center; justify-content:center; }
   .sync-arrow svg{ width:100%; height:22px; animation:home-syncPulse 2.6s ease-in-out infinite; }
-  .gami-sync-caption{ margin-top:10px; text-align:center; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); }
+  .gami-sync-caption{ margin-top:10px; text-align:center; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); }
 
   .gami-stepper-head{ margin-top:24px; display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  .gami-stepper-head h4{ font-family:var(--font-display); font-weight:600; font-size:0.98rem; color:var(--text-1); }
+  .gami-stepper-head h4{ font-family:var(--font-display); font-weight:600; font-size:0.98rem; color:var(--ink); }
   .gami-stepper{ margin-top:16px; position:relative; }
   .stepper-track{ position:relative; display:flex; justify-content:space-between; }
-  .stepper-line{ position:absolute; top:5px; left:12px; right:12px; height:2px; background:var(--line); border-radius:2px; }
-  .stepper-line-fill{ position:absolute; top:5px; left:12px; height:2px; background:var(--primary-l); border-radius:2px; width:38%; }
+  .stepper-line{ position:absolute; top:5px; left:12px; right:12px; height:2px; background:var(--brand-line); border-radius:2px; }
+  .stepper-line-fill{ position:absolute; top:5px; left:12px; height:2px; background:var(--teal); border-radius:2px; width:38%; }
   .stepper-node{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; text-align:center; flex:1; }
-  .stepper-dot{ width:12px; height:12px; border-radius:50%; background:var(--bg4); border:2px solid var(--bg); }
-  .stepper-node.done .stepper-dot{ background:var(--primary-l); }
-  .stepper-node.active .stepper-dot{ background:var(--primary-l); box-shadow:0 0 0 4px rgba(78,205,184,0.2); }
-  .stepper-name{ margin-top:11px; font-family:var(--font-display); font-weight:600; font-size:0.82rem; color:var(--text-1); }
-  .stepper-xp{ font-family:var(--font-mono); font-size:10px; color:var(--text-3); margin-top:2px; }
+  .stepper-dot{ width:12px; height:12px; border-radius:50%; background:#FFFFFF; border:2px solid var(--brand-line-strong); }
+  .stepper-node.done .stepper-dot{ background:var(--teal); border-color:var(--teal); }
+  .stepper-node.active .stepper-dot{ background:var(--teal); border-color:var(--teal); box-shadow:0 0 0 4px rgba(14,107,92,0.18); }
+  .stepper-name{ margin-top:11px; font-family:var(--font-display); font-weight:600; font-size:0.82rem; color:var(--ink); }
+  .stepper-xp{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); margin-top:2px; }
 
   /* ============ GLOW ORBS ============ */
   .glow-orb{ position:absolute; border-radius:50%; pointer-events:none; z-index:0; filter:blur(40px); }
   /* Mismo glow que el CTA final "Empezá a formarte hoy" (teal + home-glowMoveA),
      solo cambia la posición: arriba a la derecha en vez de centrado. */
-  .gami .glow-orb{ width:640px; height:480px; right:-160px; top:-160px; background:radial-gradient(ellipse at center, rgba(78,205,184,0.28), transparent 68%); animation:home-glowMoveA 15s ease-in-out infinite; }
+  /* Piloto claro: glow teal suave (el mint fuerte quedaba estridente sobre claro). */
+  .gami .glow-orb{ width:640px; height:480px; right:-160px; top:-160px; background:radial-gradient(ellipse at center, rgba(14,107,92,0.12), transparent 68%); animation:home-glowMoveA 15s ease-in-out infinite; }
 
   /* ============ CTA FINAL ============ */
   .cta-final{ padding:110px 0 120px; position:relative; overflow:hidden; background:linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%); }

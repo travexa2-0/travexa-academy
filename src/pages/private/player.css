@@ -5,20 +5,20 @@
    ============================================================ */
 
 .player-root {
-  --bg:#0A1E29;
-  --bg2:#0F2C3B;
-  --bg3:#162F3E;
-  --bg4:#1B3A4B;
-  --pl-line:rgba(245,243,236,0.09);
-  --pl-line-strong:rgba(245,243,236,0.16);
+  --bg:var(--surface-page-dark);
+  --bg2:var(--surface-card-dark);   /* Sesión 46: paneles del player (sidebar/rows) al cian, coherente con el tema (antes #0F2C3B) */
+  --bg3:#7DEADB;   /* elevación cian (antes #162F3E) */
+  --bg4:#6FE0CF;   /* elevación cian más profunda (antes #1B3A4B) */
+  --pl-line:rgba(10,30,41,0.14);        /* separadores oscuros, visibles sobre cian (antes near-white) */
+  --pl-line-strong:rgba(10,30,41,0.22);
   --pl-primary:#0E6B5C;
-  --pl-primary-l:#4ECDB8;
+  --pl-primary-l:var(--cta-primary);
   --pl-gold:#C99A3A;
   --pl-gold-deep:#A87C24;
   --pl-live:#EF4444;
-  --pl-text-1:#F5F3EC;
-  --pl-text-2:#C9D3D6;
-  --pl-text-3:#8FA3AB;
+  --pl-text-1:#0A1E29;   /* Sesión 46: texto oscuro sobre el fondo cian (antes #F5F3EC) */
+  --pl-text-2:#244049;
+  --pl-text-3:#3C5661;
   --pl-radius-sm:8px;
   --pl-radius-md:14px;
   --pl-radius-lg:20px;

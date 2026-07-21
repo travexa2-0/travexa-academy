@@ -1,9 +1,9 @@
   .admin-root{
-    --navy:#0A1E29;
+    --navy:var(--surface-page-dark);
     --navy-2:#0F2C3B;
     --navy-3:#16323F;
     --navy-line:rgba(245,243,236,0.09);
-    --paper:#F6F6F2;
+    --paper:var(--surface-page-light);
     --surface:#FFFFFF;
     --surface-2:#FBFBF8;
     --ink:#12242E;
@@ -12,7 +12,7 @@
     --line:#E4E5DF;
     --line-strong:#D2D5CB;
     --teal:#4ECDB8;
-    --teal-deep:#0B6B57;
+    --teal-deep:var(--cta-primary);
     --teal-soft:#DCF5EF;
     --teal-mid:#2FA48C;
     --on-teal:#0A1E29;
@@ -79,7 +79,7 @@
 
   /* ---------- SIDEBAR ---------- */
   .sidebar{
-    background:linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+    background:var(--navy);   /* Sesión 46: sidebar cian sólido (antes gradiente a navy-2) */
     color:var(--white);
     position:fixed;
     top:0; left:0; bottom:0;
@@ -177,7 +177,7 @@
     gap:12px;
     padding:10px 12px;
     border-radius:10px;
-    color:#B9C6CB;
+    color:#244049;   /* Sesión 46: nav del sidebar cian → texto oscuro (antes #B9C6CB) */
     font-size:13.6px;
     font-weight:500;
     position:relative;
@@ -188,15 +188,15 @@
     margin-left:auto;
     font-family:var(--font-mono);
     font-size:10.5px;
-    color:#7E939C;
+    color:#3C5661;
     background:rgba(245,243,236,0.07);
     padding:2px 7px;
     border-radius:20px;
   }
-  .nav-item:hover{background:rgba(245,243,236,0.06); color:var(--white);}
+  .nav-item:hover{background:rgba(10,30,41,0.06); color:#0A1E29;}
   .nav-item.active{
-    background:rgba(78,205,184,0.16);
-    color:var(--white);
+    background:rgba(11,107,87,0.16);
+    color:#0A1E29;
   }
   .nav-item.active svg{opacity:1; color:#5FCBB5;}
   .nav-item.active::before{
@@ -239,8 +239,8 @@
     color:var(--white);
     flex-shrink:0;
   }
-  .sidebar-user-name{font-size:12.8px; font-weight:600; color:var(--white); line-height:1.2;}
-  .sidebar-user-role{font-size:11px; color:#7E939C; margin-top:1px;}
+  .sidebar-user-name{font-size:12.8px; font-weight:600; color:#0A1E29; line-height:1.2;}
+  .sidebar-user-role{font-size:11px; color:#3C5661; margin-top:1px;}
   .sidebar-user svg{margin-left:auto; width:15px; height:15px; color:#7E939C;}
 
   /* ---------- MAIN / HEADER ---------- */
@@ -395,7 +395,7 @@
   .btn-primary{background:var(--teal); color:var(--on-teal); box-shadow:0 1px 2px rgba(11,107,87,0.15), 0 8px 18px -8px rgba(78,205,184,0.6);}
   .btn-primary:hover{background:#3FC0A9;}
   .btn-primary:active{background:#39B39D;}
-  .btn-gold{background:linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%); color:var(--navy); box-shadow:0 1px 2px rgba(168,124,36,0.2), 0 10px 20px -10px rgba(168,124,36,0.6);}
+  .btn-gold{background:linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%); color:#0A1E29; box-shadow:0 1px 2px rgba(168,124,36,0.2), 0 10px 20px -10px rgba(168,124,36,0.6);}
   .btn-gold:hover{filter:brightness(1.05);}
   .btn-secondary{background:var(--surface); color:var(--ink); border-color:var(--line-strong);}
   .btn-secondary:hover{border-color:var(--ink-faint); background:var(--surface-2);}
@@ -442,7 +442,7 @@
     border:1px solid var(--line);
     color:var(--ink-soft);
   }
-  .chip.chip-active{background:var(--navy); color:var(--white); border-color:var(--navy);}
+  .chip.chip-active{background:var(--navy); color:#0A1E29; border-color:var(--navy);}
 
   /* ============ CARDS / KPI ============ */
   .kpi-grid{
@@ -697,7 +697,7 @@
   }
   .view-toggle button{padding:7px 10px; border-radius:8px; color:var(--ink-faint);}
   .view-toggle button svg{width:15px; height:15px;}
-  .view-toggle button.active{background:var(--navy); color:var(--white);}
+  .view-toggle button.active{background:var(--navy); color:#0A1E29;}
 
   .filter-dd{position:relative;}
   .filter-dd-panel{
@@ -729,7 +729,7 @@
     padding:7px 13px; border-radius:8px; font-size:12.4px; font-weight:600; color:var(--ink-soft);
     transition:background .15s var(--ease-out), color .15s var(--ease-out);
   }
-  .segmented button.active{background:var(--navy); color:var(--white);}
+  .segmented button.active{background:var(--navy); color:#0A1E29;}
   .segmented button:not(.active):hover{background:var(--surface);}
 
   .kpi-card.accent-teal{border-top:3px solid var(--teal);}

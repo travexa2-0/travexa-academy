@@ -104,7 +104,7 @@ function SortDropdown({ value, onChange }: { value: SortKey; onChange: (s: SortK
                 className="w-full flex items-center justify-between px-[14px] py-[10px] text-left transition-colors"
                 style={{
                   fontSize:   '12.5px',
-                  color:      value === opt.value ? 'var(--neon)' : 'var(--text-2)',
+                  color:      value === opt.value ? 'var(--neon)' : '#C9D3D6',
                   background: value === opt.value ? 'var(--neon-dim)' : 'transparent',
                 }}
               >

@@ -41,9 +41,18 @@
 
 /* ── Brand CSS Variables ── */
 :root {
+  /* ── Tokens de ROL compartidos — fuente única de verdad para toda la plataforma ──
+     (Sesión 45) Cambiar un color de rol se hace ACÁ y se propaga a index/home/admin/
+     player: cada escopo referencia estos tokens con var(), ya no redefine el hex. */
+  --surface-page-dark:  #8AF3E4;      /* fondo general tema oscuro — antes #0A1E29 */
+  --surface-card-dark:  #8AF3E4;      /* card/superficie sobre fondo oscuro — antes #0F2C3B */
+  --surface-page-light: #FFFFFF;      /* fondo general tema claro — antes #F4F5F2 / #F6F6F2 */
+  --cta-primary:        var(--neon);  /* botón CTA primario unificado — antes mint/teal/teal-deep */
+  --border-dark:        var(--neon);  /* bordes/separadores tema oscuro — antes rgba(245,243,236,.12) */
+
   /* Fondos — dark cinematic de Academy */
-  --bg:              #0A1E29;
-  --bg-2:            #0F2C3B;
+  --bg:              var(--surface-page-dark);
+  --bg-2:            var(--surface-card-dark);
   --bg-3:            #162F3E;
   --bg-4:            #1A3444;
   --bg-deep:         #060D14;
@@ -77,32 +86,32 @@
   --success-s:       rgba(22,163,74,.14);
 
   /* Texto */
-  --text-1:          #F5F3EC;
-  --text-2:          #C9D3D6;
-  --text-3:          #8FA3AB;
+  --text-1:          #0A1E29;   /* Sesión 46: texto oscuro para legibilidad sobre el fondo cian (antes #F5F3EC) */
+  --text-2:          #244049;   /* antes #C9D3D6 */
+  --text-3:          #3C5661;   /* antes #8FA3AB */
 
   /* Superficies */
   --card:            rgba(255,255,255,.06);
   --card-h:          rgba(255,255,255,.10);
-  --line:            rgba(245,243,236,.12);
+  --line:            var(--border-dark);
   --line-s:          rgba(245,243,236,.22);
   --card-solid:      #132838;
   --card-solid-h:    #1A3548;
 
   /* Legacy aliases — mantener compat */
-  --brand-navy:             #0A1E29;
-  --brand-navy-2:           #0F2C3B;
+  --brand-navy:             var(--surface-page-dark);
+  --brand-navy-2:           var(--surface-card-dark);
   --brand-gold:             #C99A3A;
   --brand-gold-deep:        #A87C24;
   --brand-gold-soft:        rgba(201,154,58,.14);
   --brand-teal:             #0E6B5C;
   --brand-teal-soft:        rgba(14,107,92,.18);
-  --text-primary:           #F5F3EC;
-  --text-secondary:         #C9D3D6;
-  --text-muted:             #8FA3AB;
+  --text-primary:           #0A1E29;
+  --text-secondary:         #244049;
+  --text-muted:             #3C5661;
   --surface-card:           rgba(255,255,255,.06);
   --surface-card-hover:     rgba(255,255,255,.10);
-  --surface-border:         rgba(245,243,236,.12);
+  --surface-border:         var(--border-dark);
   --surface-border-strong:  rgba(245,243,236,.22);
 
   --radius: 0.625rem;
@@ -296,7 +305,7 @@
   border-radius: 8px;
   padding: 9px 12px;
   font-size: 0.85rem;
-  color: var(--text-1);
+  color: #F5F3EC;   /* Sesión 46: el inset del input sigue oscuro (--bg-3), texto claro a propósito */
   outline: none;
   transition: border-color 160ms, box-shadow 160ms;
 }
@@ -312,7 +321,7 @@ select.td-input {
   background-position: right 10px center;
   padding-right: 28px;
 }
-.td-input::placeholder { color: var(--text-3); }
+.td-input::placeholder { color: #8FA3AB; }
 /* hide horizontal scrollbar on tab strip */
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
